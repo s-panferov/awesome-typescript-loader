@@ -1,0 +1,30 @@
+{
+  "name": "awesome-typescript-loader",
+  "version": "0.0.1",
+  "description": "Awesome TS loader for webpack",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "keywords": [
+    "webpack",
+    "loader",
+    "webpack-loader",
+    "typescript"
+  ],
+  "dependencies": {
+    "bluebird": "^2.7.1",
+    "grunt-ts": "^3.0.0",
+    "loader-utils": "^0.2.6",
+    "object-assign": "^2.0.0",
+    "typescript": "^1.4.1"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-clean": "^0.6.0",
+    "grunt-contrib-copy": "^0.7.0",
+    "load-grunt-tasks": "^0.6.0"
+  }
+}
