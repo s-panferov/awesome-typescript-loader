@@ -80,8 +80,10 @@ function compiler(webpack: WebPack, text: string): void {
     if (currentTimes !== lastTimes) {
         for (var changedFile in currentTimes) {
             console.log("Update", changedFile, "in the TS compiler service");
-            webpack._compiler._tsState.readFileAndUpdatSync(changedFile);
-            webpack._compiler._tsState.resetService();
+            // `filename` will be updated inside the `emit` call
+            if (changedFile !== filename) {
+                webpack._compiler._tsState.readFileAndUpdateSync(changedFile);
+            }
         }
     }
 
@@ -96,8 +98,8 @@ function compiler(webpack: WebPack, text: string): void {
                 throw new Error('no output found for ' + filename);
             }
 
-            var sourceFilename = loaderUtils.getRemainingRequest(this);
-            var current = loaderUtils.getCurrentRequest(this);
+            var sourceFilename = loaderUtils.getRemainingRequest(webpack);
+            var current = loaderUtils.getCurrentRequest(webpack);
             var sourceMap = JSON.parse(result.sourceMap);
             sourceMap.sources = [sourceFilename];
             sourceMap.file = current;

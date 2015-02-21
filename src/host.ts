@@ -142,7 +142,9 @@ export class State {
 
         return <any>this.checkDependencies(resolver, fileName, deps).then((deps) => {
 
+            console.time(fileName);
             var output = this.services.getEmitOutput(fileName);
+            console.timeEnd(fileName);
 
             var depsDiagnostics = {};
             var diagnostics = this.services.getCompilerOptionsDiagnostics()
@@ -170,11 +172,15 @@ export class State {
 
     checkDependencies(resolver: Resolver, fileName: string, deps: Dependency): Promise<string[]> {
         deps.clear();
+
         // It's strange but we really need to add file to its deps
         // to make webpack to recompile it after change.
         deps.add(fileName);
+
         return this.checkDependenciesInternal(resolver, fileName, deps, {})
             .then(depFileNames => {
+                // Add dependency to all known declarations, because
+                // we don't know exact dependecies.
                 this.knownTypeDeclarations.forEach(declFileName => {
                     deps.add(declFileName)
                 })
@@ -202,7 +208,13 @@ export class State {
                 if (isTypeDeclaration && !visited.hasOwnProperty(depFileName)) {
                     visited[depFileName] = true;
                     result = this.readFileAndUpdate(depFileName, /*checked=*/true)
-                        .then(_ => this.checkDependenciesInternal(resolver, depFileName, deps, visited))
+                        .then(wasChanged => {
+                            if (wasChanged) {
+                                return this.checkDependenciesInternal(resolver, depFileName, deps, visited)
+                            } else {
+                                return Promise.resolve()
+                            }
+                        })
                         .then(_ => Promise.resolve(depFileName));
                 } else {
                     if (!this.files.hasOwnProperty(depFileName)) {
@@ -210,7 +222,7 @@ export class State {
                     }
                 }
 
-                return <Promise<string>>result;
+                return result;
 
             }));
 
@@ -239,20 +251,25 @@ export class State {
         return result;
     }
 
-    updateFile(fileName: string, text: string, checked: boolean = false): void {
+    updateFile(fileName: string, text: string, checked: boolean = false): boolean {
         var prevFile = this.files[fileName];
         var version = 0;
+        var changed = true;
 
         if (prevFile) {
             if (!checked || (checked && text !== prevFile.text)) {
                 version = prevFile.version + 1;
+            } else {
+                changed = false;
             }
         }
 
         this.files[fileName] = {
             text: text,
             version: version
-        }
+        };
+
+        return changed
     }
 
     addFile(fileName: string, text: string): void {
@@ -278,13 +295,13 @@ export class State {
         return this.readFile(fileName).then((text) => this.addFile(fileName, text));
     }
 
-    readFileAndUpdate(fileName: string, checked: boolean = false): Promise<any> {
+    readFileAndUpdate(fileName: string, checked: boolean = false): Promise<boolean> {
         return this.readFile(fileName).then((text) => this.updateFile(fileName, text, checked));
     }
 
-    readFileAndUpdatSync(fileName: string, checked: boolean = false) {
+    readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {
         var text = this.readFileSync(fileName);
-        this.updateFile(fileName, text, checked);
+        return this.updateFile(fileName, text, checked);
     }
 
     resolve(resolver: Resolver, fileName: string, defPath: string) {
