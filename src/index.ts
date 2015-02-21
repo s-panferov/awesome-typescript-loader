@@ -75,7 +75,7 @@ function compiler(webpack: WebPack, text: string): void {
     // The way is hacky, maybe we can find something better.
     var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
 
-    // This object doesn't change during compilation, so we will not
+    // `mtimes` object doesn't change during compilation, so we will not
     // do the same thing on the next changed file.
     if (currentTimes !== lastTimes) {
         for (var changedFile in currentTimes) {
@@ -102,7 +102,7 @@ function compiler(webpack: WebPack, text: string): void {
             sourceMap.sources = [sourceFilename];
             sourceMap.file = current;
             sourceMap.sourcesContent = [text];
-            
+
             callback(null, result.text, sourceMap);
         })
         .catch(host.TypeScriptCompilationError, err => {

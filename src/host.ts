@@ -28,8 +28,6 @@ export interface File {
     version: number;
 }
 
-var total = 0;
-
 export class Host implements ts.LanguageServiceHost {
 
     state: State;
@@ -144,11 +142,7 @@ export class State {
 
         return <any>this.checkDependencies(resolver, fileName, deps).then((deps) => {
 
-            var t1 = Date.now();
             var output = this.services.getEmitOutput(fileName);
-            var diff = Date.now() - t1;
-            total += diff;
-            console.log(fileName, diff, total);
 
             var depsDiagnostics = {};
             var diagnostics = this.services.getCompilerOptionsDiagnostics()
