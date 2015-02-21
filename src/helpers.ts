@@ -46,9 +46,9 @@ export function codegenErrorReport(errors) {
 export function formatErrors(errors) {
     return errors.map(function (diagnostic) {
         var lineChar;
-        //if (diagnostic.file) {
-        //    lineChar = diagnostic.file.getLineAndCharacterFromPosition(diagnostic.start);
-        //}
+        if (diagnostic.file) {
+            lineChar = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+        }
         return (
         (diagnostic.file ? diagnostic.file.fileName : '')
         + (lineChar ? formatLineChar(lineChar) + ' ' : '') + "\n"
@@ -58,7 +58,7 @@ export function formatErrors(errors) {
 }
 
 export function formatLineChar(lineChar) {
-    return ':' + lineChar.line + ', col: ' + lineChar.character;
+    return ':' + lineChar.line + ':' + lineChar.character;
 }
 
 export function loadLib(moduleId) {
