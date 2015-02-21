@@ -3,6 +3,11 @@
 TypeScript loader for Webpack. This project was started as a fork of https://github.com/andreypopp/typescript-loader.
 Thanks @andreypopp for the great project.
 
+## Unstable TypeScript warning
+
+**Right now this library works only with the master branch of the TypeScript compiler and
+will continue to track it until TypeScript 1.5 release.**
+
 ## Installation
 
 ```
