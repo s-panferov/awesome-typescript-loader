@@ -91,11 +91,18 @@ function compiler(webpack: WebPack, text: string): void {
         .emit(resolver, filename, text, deps)
         .then(output => {
             var result = helpers.findResultFor(output, filename);
+
             if (result.text === undefined) {
                 throw new Error('no output found for ' + filename);
             }
+
+            var sourceFilename = loaderUtils.getRemainingRequest(this);
+            var current = loaderUtils.getCurrentRequest(this);
             var sourceMap = JSON.parse(result.sourceMap);
+            sourceMap.sources = [sourceFilename];
+            sourceMap.file = current;
             sourceMap.sourcesContent = [text];
+            
             callback(null, result.text, sourceMap);
         })
         .catch(host.TypeScriptCompilationError, err => {
