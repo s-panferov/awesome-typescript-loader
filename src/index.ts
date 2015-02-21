@@ -80,10 +80,8 @@ function compiler(webpack: WebPack, text: string): void {
     if (currentTimes !== lastTimes) {
         for (var changedFile in currentTimes) {
             console.log("Update", changedFile, "in the TS compiler service");
-            // `filename` will be updated inside the `emit` call
-            if (changedFile !== filename) {
-                webpack._compiler._tsState.readFileAndUpdateSync(changedFile);
-            }
+            webpack._compiler._tsState.readFileAndUpdateSync(changedFile);
+            webpack._compiler._tsState.validFiles.markFileInvalid(changedFile);
         }
     }
 
@@ -118,7 +116,8 @@ function compiler(webpack: WebPack, text: string): void {
 
             callback(null, helpers.codegenErrorReport(errors));
         })
-        .catch(callback);
+        .catch(callback)
+
 }
 
 export = loader;

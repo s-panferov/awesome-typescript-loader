@@ -89,16 +89,94 @@ export class Host implements ts.LanguageServiceHost {
 
 }
 
+export class DependencyManager {
+    dependencies: {[fileName: string]: string[]} = {}
+    knownTypeDeclarations: {[fileName: string]: boolean} = {}
+
+    addDependency(fileName: string, depFileName: string): void {
+        if (!this.dependencies.hasOwnProperty(fileName)) {
+            this.clearDependencies(fileName);
+        }
+
+        this.dependencies[fileName].push(depFileName);
+    }
+
+    clearDependencies(fileName: string): void {
+        this.dependencies[fileName] = []
+    }
+
+    getDependencies(fileName: string): string[] {
+        if (!this.dependencies.hasOwnProperty(fileName)) {
+            this.clearDependencies(fileName);
+        }
+
+        return this.dependencies[fileName].slice()
+    }
+
+    addTypeDeclaration(fileName: string) {
+        this.knownTypeDeclarations[fileName] = true
+    }
+
+    hasTypeDeclaration(fileName: string): boolean {
+        return this.knownTypeDeclarations.hasOwnProperty(fileName)
+    }
+
+    getTypeDeclarations(): {[fileName: string]: boolean} {
+        return objectAssign({}, this.knownTypeDeclarations);
+    }
+
+    applyChain(fileName: string, deps: Dependency, appliedChains: {[fileName: string]: boolean} = {}) {
+        if (!this.dependencies.hasOwnProperty(fileName)) {
+            this.clearDependencies(fileName);
+        }
+
+        appliedChains[fileName] = true;
+
+        if (!appliedChains[".d.ts"]) {
+            appliedChains[".d.ts"] = true;
+            Object.keys(this.knownTypeDeclarations).forEach((declFileName) => {
+                deps.add(declFileName)
+            })
+        }
+
+        this.dependencies[fileName].forEach((depFileName) => {
+            deps.add(depFileName);
+
+            if (!appliedChains[depFileName]) {
+                this.applyChain(depFileName, deps, appliedChains);
+            }
+        })
+    }
+}
+
+class ValidManager {
+    files: {[fileName: string]: boolean} = {}
+
+    isFileValid(fileName: string): boolean {
+        return !!this.files[fileName]
+    }
+
+    markFileValid(fileName: string) {
+        this.files[fileName] = true;
+    }
+
+    markFileInvalid(fileName: string) {
+        this.files[fileName] = false;
+    }
+}
+
 export class State {
 
     ts: typeof ts;
     fs: typeof fs;
     host: Host;
     files: {[fileName: string]: File} = {};
-    knownTypeDeclarations: string[] = [];
     services: ts.LanguageService;
     options: ts.CompilerOptions;
     runtimeRead: boolean;
+
+    dependencies = new DependencyManager()
+    validFiles = new ValidManager()
 
     constructor(
         options: ts.CompilerOptions,
@@ -130,7 +208,7 @@ export class State {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
     }
 
-    emit(resolver: Resolver, fileName: string, text: string, deps: Dependency): Promise<ts.EmitOutput> {
+    emit(resolver: Resolver, fileName: string, text: string, depsManager: Dependency): Promise<ts.EmitOutput> {
 
         // Check if we need to compiler Webpack runtime definitions.
         if (!this.runtimeRead) {
@@ -138,9 +216,11 @@ export class State {
             this.runtimeRead = true;
         }
 
-        this.updateFile(fileName, text);
+        return <any>this.checkDependencies(resolver, fileName).then((deps) => {
 
-        return <any>this.checkDependencies(resolver, fileName, deps).then((deps) => {
+            depsManager.clear();
+            depsManager.add(fileName);
+            this.dependencies.applyChain(fileName, depsManager);
 
             console.time(fileName);
             var output = this.services.getEmitOutput(fileName);
@@ -151,15 +231,14 @@ export class State {
                 .concat(this.services.getSyntacticDiagnostics(fileName))
                 .concat(this.services.getSemanticDiagnostics(fileName));
 
-            if (diagnostics.length) {
-                deps.forEach((depFileName) => {
-                    depsDiagnostics[depFileName] = this.services.getSyntacticDiagnostics(depFileName)
-                        .concat(this.services.getSemanticDiagnostics(depFileName));
-                });
+            deps.forEach((depFileName) => {
+                diagnostics = diagnostics
+                    .concat(this.services.getSyntacticDiagnostics(depFileName))
+                    .concat(this.services.getSemanticDiagnostics(depFileName));
+            });
 
-                if (diagnostics.length) {
-                    throw new TypeScriptCompilationError(diagnostics, depsDiagnostics);
-                }
+            if (diagnostics.length) {
+                throw new TypeScriptCompilationError(diagnostics, depsDiagnostics);
             }
 
             if (!output.emitSkipped) {
@@ -170,25 +249,19 @@ export class State {
         });
     }
 
-    checkDependencies(resolver: Resolver, fileName: string, deps: Dependency): Promise<string[]> {
-        deps.clear();
+    checkDependencies(resolver: Resolver, fileName: string): Promise<string[]> {
+        this.dependencies.clearDependencies(fileName);
 
-        // It's strange but we really need to add file to its deps
-        // to make webpack to recompile it after change.
-        deps.add(fileName);
-
-        return this.checkDependenciesInternal(resolver, fileName, deps, {})
-            .then(depFileNames => {
-                // Add dependency to all known declarations, because
-                // we don't know exact dependecies.
-                this.knownTypeDeclarations.forEach(declFileName => {
-                    deps.add(declFileName)
-                })
-                return depFileNames;
+        if (!!this.files[fileName]) {
+            return this.checkDependenciesInternal(resolver, fileName)
+        } else {
+            return this.readFileAndUpdate(fileName).then(() => {
+                return this.checkDependenciesInternal(resolver, fileName)
             })
+        }
     }
 
-    checkDependenciesInternal(resolver, fileName, deps: Dependency, visited: VisitedDeclarations): Promise<string[]> {
+    checkDependenciesInternal(resolver, fileName): Promise<string[]> {
         var dependencies = this.findImportDeclarations(fileName)
             .map(depRelFileName =>
                 this.resolve(resolver, fileName, depRelFileName))
@@ -198,32 +271,20 @@ export class State {
                 var isTypeDeclaration = /\.d.ts$/.exec(depFileName);
 
                 if (isTypeDeclaration) {
-                    this.knownTypeDeclarations.push(depFileName);
+                    var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
+                    this.dependencies.addTypeDeclaration(depFileName);
+                    if (!hasDeclaration) {
+                        return this.checkDependencies(resolver, depFileName).then(() => result)
+                    }
                 } else {
-                    deps.add(depFileName);
-                }
-
-                // This is d.ts which doesn't go through typescript-loader separately so
-                // we should take care of it by analyzing its dependencies here.
-                if (isTypeDeclaration && !visited.hasOwnProperty(depFileName)) {
-                    visited[depFileName] = true;
-                    result = this.readFileAndUpdate(depFileName, /*checked=*/true)
-                        .then(wasChanged => {
-                            if (wasChanged) {
-                                return this.checkDependenciesInternal(resolver, depFileName, deps, visited)
-                            } else {
-                                return Promise.resolve()
-                            }
-                        })
-                        .then(_ => Promise.resolve(depFileName));
-                } else {
-                    if (!this.files.hasOwnProperty(depFileName)) {
-                        result = this.readFileAndAdd(depFileName).then(_ => Promise.resolve(depFileName));
+                    this.dependencies.addDependency(fileName, depFileName);
+                    if (!this.validFiles.isFileValid(depFileName)) {
+                        this.validFiles.markFileValid(depFileName);
+                        return this.checkDependencies(resolver, depFileName).then(() => result)
                     }
                 }
 
                 return result;
-
             }));
 
         return Promise.all<string>(dependencies)
