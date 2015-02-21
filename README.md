@@ -117,7 +117,7 @@ import React = require('react');
 ## Internal Modules
 
 This project doesn't aim to support internal modules, because it's hard to resolve dependencies for the watch
-mode if you use such modules. Of course, you can still use external and internal .d.ts files.
+mode if you use such modules. Of course, you can still use them without watch, but this function is **unstable**.
 
 ## Declaration files
 
