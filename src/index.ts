@@ -36,8 +36,8 @@ function ensureInit(webpack: WebPack) {
     var options = loaderUtils.parseQuery(webpack.query);
     var tsImpl: typeof ts;
 
-    if (options.typescriptCompiler) {
-        tsImpl = require(options.typescriptCompiler);
+    if (options.compiler) {
+        tsImpl = require(options.compiler);
     } else {
         tsImpl = require('typescript');
     }
