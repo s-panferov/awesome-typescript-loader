@@ -1,12 +1,16 @@
 {
   "name": "awesome-typescript-loader",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Awesome TS loader for webpack",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/s-panferov/awesome-typescript-loader.git"
+  },
   "license": "MIT",
   "keywords": [
     "webpack",
@@ -14,12 +18,16 @@
     "webpack-loader",
     "typescript"
   ],
+  "bugs": {
+    "url": "https://github.com/s-panferov/awesome-typescript-loader/issues"
+  },
+  "homepage": "https://github.com/s-panferov/awesome-typescript-loader",
   "dependencies": {
     "bluebird": "^2.7.1",
     "grunt-ts": "^3.0.0",
     "loader-utils": "^0.2.6",
     "object-assign": "^2.0.0",
-    "typescript": "^1.4.1"
+    "typescript": "^1.5.0"
   },
   "devDependencies": {
     "grunt": "^0.4.5",
