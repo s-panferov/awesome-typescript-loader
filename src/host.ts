@@ -269,6 +269,7 @@ export class State {
 
                 var result: Promise<string> = Promise.resolve(depFileName);
                 var isTypeDeclaration = /\.d.ts$/.exec(depFileName);
+                var isRequiredModule = /\.js$/.exec(depFileName);
 
                 if (isTypeDeclaration) {
                     var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
@@ -276,6 +277,8 @@ export class State {
                     if (!hasDeclaration) {
                         return this.checkDependencies(resolver, depFileName).then(() => result)
                     }
+                } else if (isRequiredModule) {
+                    return Promise.resolve(null);
                 } else {
                     this.dependencies.addDependency(fileName, depFileName);
                     if (!this.validFiles.isFileValid(depFileName)) {
@@ -287,7 +290,9 @@ export class State {
                 return result;
             }));
 
-        return Promise.all<string>(dependencies)
+        return Promise.all<string>(dependencies).then(dependencies => {
+            return dependencies.filter(val => val != null)
+        })
     }
 
     findImportDeclarations(fileName: string) {
@@ -365,8 +370,9 @@ export class State {
         return this.updateFile(fileName, text, checked);
     }
 
-    resolve(resolver: Resolver, fileName: string, defPath: string) {
+    resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
         var result;
+
         if (!path.extname(defPath).length) {
             result = resolver(path.dirname(fileName), defPath + ".ts")
                 .error(function (error) {
