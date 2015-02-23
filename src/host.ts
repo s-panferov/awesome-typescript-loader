@@ -28,6 +28,8 @@ export interface File {
     version: number;
 }
 
+type FileSet = {[fileName: string]: boolean};
+
 export class Host implements ts.LanguageServiceHost {
 
     state: State;
@@ -91,7 +93,7 @@ export class Host implements ts.LanguageServiceHost {
 
 export class DependencyManager {
     dependencies: {[fileName: string]: string[]} = {}
-    knownTypeDeclarations: {[fileName: string]: boolean} = {}
+    knownTypeDeclarations: FileSet = {}
 
     addDependency(fileName: string, depFileName: string): void {
         if (!this.dependencies.hasOwnProperty(fileName)) {
@@ -125,27 +127,61 @@ export class DependencyManager {
         return objectAssign({}, this.knownTypeDeclarations);
     }
 
-    applyChain(fileName: string, deps: Dependency, appliedChains: {[fileName: string]: boolean} = {}) {
+    applyChain(fileName: string, deps: Dependency, appliedChains: FileSet = {}, appliedDeps: FileSet = {}) {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
 
         appliedChains[fileName] = true;
 
-        if (!appliedChains[".d.ts"]) {
+        if (!appliedChains.hasOwnProperty(".d.ts")) {
             appliedChains[".d.ts"] = true;
             Object.keys(this.knownTypeDeclarations).forEach((declFileName) => {
                 deps.add(declFileName)
             })
         }
 
-        this.dependencies[fileName].forEach((depFileName) => {
-            deps.add(depFileName);
+        this.getDependencies(fileName).forEach((depFileName) => {
+            if (!appliedDeps.hasOwnProperty(depFileName)) {
+                deps.add(depFileName);
+                appliedDeps[depFileName] = true;
+            }
 
             if (!appliedChains[depFileName]) {
-                this.applyChain(depFileName, deps, appliedChains);
+                this.applyChain(depFileName, deps, appliedChains, appliedDeps);
             }
         })
+    }
+
+    recompileReason(fileName: string, changedFiles: string[]): string[] {
+        var changedFilesSet: FileSet = {};
+        changedFiles.forEach(fileName => changedFilesSet[fileName] = true);
+        return this.recompileReasonInternal(fileName, changedFilesSet, {});
+    }
+
+    private recompileReasonInternal(fileName: string, changedFilesSet: FileSet, visitedFiles: FileSet): string[] {
+        var fileDeps = this.getDependencies(fileName);
+
+        var currentVisitedFiles = objectAssign({}, visitedFiles);
+        currentVisitedFiles[fileName] = true;
+
+        for (var i = 0; i < fileDeps.length; i++) {
+            var depFileName = fileDeps[i];
+
+            if (changedFilesSet.hasOwnProperty(depFileName)) {
+                return [depFileName];
+            } else {
+                if (currentVisitedFiles.hasOwnProperty(depFileName)) {
+                    continue;
+                }
+                var internal = this.recompileReasonInternal(depFileName, changedFilesSet, currentVisitedFiles);
+                if (internal.length) {
+                    return [depFileName].concat(internal)
+                }
+            }
+        }
+
+        return [];
     }
 }
 
@@ -218,10 +254,6 @@ export class State {
 
         return <any>this.checkDependencies(resolver, fileName).then((deps) => {
 
-            depsManager.clear();
-            depsManager.add(fileName);
-            this.dependencies.applyChain(fileName, depsManager);
-
             console.time(fileName);
             var output = this.services.getEmitOutput(fileName);
             console.timeEnd(fileName);
@@ -246,22 +278,24 @@ export class State {
             } else {
                 throw new Error("Emit skipped");
             }
-        });
+        }).finally(() => {
+            depsManager.clear();
+            depsManager.add(fileName);
+            this.dependencies.applyChain(fileName, depsManager);
+        })
     }
 
-    checkDependencies(resolver: Resolver, fileName: string): Promise<string[]> {
+    private checkDependencies(resolver: Resolver, fileName: string): Promise<string[]> {
         this.dependencies.clearDependencies(fileName);
 
-        if (!!this.files[fileName]) {
-            return this.checkDependenciesInternal(resolver, fileName)
-        } else {
-            return this.readFileAndUpdate(fileName).then(() => {
-                return this.checkDependenciesInternal(resolver, fileName)
-            })
-        }
+        var flow = (!!this.files[fileName]) ?
+            Promise.resolve(false) :
+            this.readFileAndUpdate(fileName);
+
+        return flow.then(() => this.checkDependenciesInternal(resolver, fileName))
     }
 
-    checkDependenciesInternal(resolver, fileName): Promise<string[]> {
+    private checkDependenciesInternal(resolver, fileName): Promise<string[]> {
         var dependencies = this.findImportDeclarations(fileName)
             .map(depRelFileName =>
                 this.resolve(resolver, fileName, depRelFileName))
@@ -272,19 +306,30 @@ export class State {
                 var isRequiredModule = /\.js$/.exec(depFileName);
 
                 if (isTypeDeclaration) {
+
                     var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
-                    this.dependencies.addTypeDeclaration(depFileName);
                     if (!hasDeclaration) {
+                        this.dependencies.addTypeDeclaration(depFileName);
                         return this.checkDependencies(resolver, depFileName).then(() => result)
                     }
+
                 } else if (isRequiredModule) {
+
                     return Promise.resolve(null);
+
                 } else {
+
                     this.dependencies.addDependency(fileName, depFileName);
                     if (!this.validFiles.isFileValid(depFileName)) {
                         this.validFiles.markFileValid(depFileName);
-                        return this.checkDependencies(resolver, depFileName).then(() => result)
+                        return this.checkDependencies(resolver, depFileName)
+                            .catch(ResolutionError, err => {
+                                this.validFiles.markFileInvalid(depFileName);
+                                throw err
+                            })
+                            .then(() => result)
                     }
+
                 }
 
                 return result;
@@ -295,7 +340,7 @@ export class State {
         })
     }
 
-    findImportDeclarations(fileName: string) {
+    private findImportDeclarations(fileName: string) {
         var node = this.services.getSourceFile(fileName);
 
         var result = [];
@@ -387,8 +432,10 @@ export class State {
 
         return result
             .error(function (error) {
-                var detailedError: any = new Error(error.message + "\n    Required in " + fileName);
+                var detailedError: any = new ResolutionError();
+                detailedError.message = error.message + "\n    Required in " + fileName;
                 detailedError.cause = error;
+                detailedError.fileName = fileName;
 
                 throw detailedError;
             })
@@ -405,3 +452,14 @@ export function TypeScriptCompilationError(diagnostics, depsDiagnostics) {
     this.depsDiagnostics = depsDiagnostics;
 }
 util.inherits(TypeScriptCompilationError, Error);
+
+
+/**
+ * Emit compilation result for a specified fileName.
+ */
+export class ResolutionError {
+    message: string;
+    fileName: string;
+    cause: Error;
+}
+util.inherits(ResolutionError, Error);

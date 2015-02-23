@@ -105,6 +105,9 @@ function compiler(webpack: WebPack, text: string): void {
 
             callback(null, result.text, sourceMap);
         })
+        .catch(host.ResolutionError, err => {
+            callback(err, helpers.codegenErrorReport([err]));
+        })
         .catch(host.TypeScriptCompilationError, err => {
             var errors = helpers.formatErrors(err.diagnostics);
             errors.forEach((<any>webpack).emitError, webpack);
