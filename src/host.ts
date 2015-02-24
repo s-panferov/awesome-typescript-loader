@@ -2,6 +2,7 @@ import fs = require('fs');
 import util = require('util');
 import path = require('path');
 import Promise = require('bluebird');
+import _ = require('lodash');
 
 import helpers = require('./helpers');
 
@@ -92,8 +93,20 @@ export class Host implements ts.LanguageServiceHost {
 }
 
 export class DependencyManager {
-    dependencies: {[fileName: string]: string[]} = {}
-    knownTypeDeclarations: FileSet = {}
+    dependencies: {[fileName: string]: string[]}
+    knownTypeDeclarations: FileSet
+
+    constructor(dependencies: {[fileName: string]: string[]} = {}, knownTypeDeclarations: FileSet = {}) {
+        this.dependencies = dependencies;
+        this.knownTypeDeclarations = knownTypeDeclarations;
+    }
+
+    clone(): DependencyManager {
+        return new DependencyManager(
+            _.cloneDeep(this.dependencies),
+            _.cloneDeep(this.knownTypeDeclarations)
+        )
+    }
 
     addDependency(fileName: string, depFileName: string): void {
         if (!this.dependencies.hasOwnProperty(fileName)) {
@@ -254,19 +267,17 @@ export class State {
 
         return <any>this.checkDependencies(resolver, fileName).then((deps) => {
 
-            console.time(fileName);
             var output = this.services.getEmitOutput(fileName);
-            console.timeEnd(fileName);
 
             var depsDiagnostics = {};
             var diagnostics = this.services.getCompilerOptionsDiagnostics()
-                .concat(this.services.getSyntacticDiagnostics(fileName))
-                .concat(this.services.getSemanticDiagnostics(fileName));
+                //.concat(this.services.getSyntacticDiagnostics(fileName))
+                //.concat(this.services.getSemanticDiagnostics(fileName));
 
-            deps.forEach((depFileName) => {
+            Object.keys(this.files).forEach((fileName) => {
                 diagnostics = diagnostics
-                    .concat(this.services.getSyntacticDiagnostics(depFileName))
-                    .concat(this.services.getSemanticDiagnostics(depFileName));
+                    .concat(this.services.getSyntacticDiagnostics(fileName))
+                    .concat(this.services.getSemanticDiagnostics(fileName));
             });
 
             if (diagnostics.length) {

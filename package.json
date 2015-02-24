@@ -27,7 +27,8 @@
     "grunt-ts": "^3.0.0",
     "loader-utils": "^0.2.6",
     "object-assign": "^2.0.0",
-    "typescript": "^1.5.0"
+    "typescript": "^1.5.0",
+    "lodash": "^3.3.0"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

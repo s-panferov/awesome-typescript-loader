@@ -25,6 +25,10 @@ interface WebPack {
     clearDependencies: () => void;
 }
 
+var lastTimes = {};
+var lastDeps: host.DependencyManager;
+var showRecompileReason = false;
+
 /**
  * Creates compiler instance
  */
@@ -42,6 +46,8 @@ function ensureInit(webpack: WebPack) {
         tsImpl = require('typescript');
     }
 
+    showRecompileReason = !!options.showRecompileReason;
+
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
@@ -52,8 +58,6 @@ function ensureInit(webpack: WebPack) {
 function loader(text) {
     compiler.call(undefined, this, text)
 }
-
-var lastTimes = {};
 
 function compiler(webpack: WebPack, text: string): void {
     if (webpack.cacheable) {
@@ -74,10 +78,14 @@ function compiler(webpack: WebPack, text: string): void {
     // Here we receive information about what files were changed.
     // The way is hacky, maybe we can find something better.
     var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
+    var changedFiles = Object.keys(currentTimes);
 
     // `mtimes` object doesn't change during compilation, so we will not
     // do the same thing on the next changed file.
     if (currentTimes !== lastTimes) {
+        if (showRecompileReason) {
+            lastDeps = webpack._compiler._tsState.dependencies.clone();
+        }
         for (var changedFile in currentTimes) {
             console.log("Update", changedFile, "in the TS compiler service");
             webpack._compiler._tsState.readFileAndUpdateSync(changedFile);
@@ -86,6 +94,11 @@ function compiler(webpack: WebPack, text: string): void {
     }
 
     lastTimes = currentTimes;
+
+    if (showRecompileReason && changedFiles.length) {
+        console.log("Recompile reason:\n    " + filename + "\n        " +
+            lastDeps.recompileReason(filename, changedFiles).join("\n        "));
+    }
 
     webpack._compiler._tsState
         .emit(resolver, filename, text, deps)
