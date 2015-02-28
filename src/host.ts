@@ -317,7 +317,6 @@ export class State {
                 var isRequiredModule = /\.js$/.exec(depFileName);
 
                 if (isTypeDeclaration) {
-
                     var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
                     if (!hasDeclaration) {
                         this.dependencies.addTypeDeclaration(depFileName);
@@ -438,7 +437,13 @@ export class State {
                     return resolver(path.dirname(fileName), defPath)
                 })
         } else {
-            result = resolver(path.dirname(fileName), defPath)
+            // We don't need to resolve .d.ts here because they are already
+            // absolute at this step.
+            if (/\.d\.ts$/.test(defPath)) {
+                result = Promise.resolve(defPath)
+            } else {
+                result = resolver(path.dirname(fileName), defPath)
+            }
         }
 
         return result
