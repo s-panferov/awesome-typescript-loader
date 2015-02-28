@@ -355,9 +355,9 @@ export class State {
 
         var result = [];
         var visit = (node: ts.Node) => {
-            if (node.kind === ts.SyntaxKind.ImportDeclaration) {
+            if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
                 // we need this check to ensure that we have an external import
-                if ((<ts.ImportDeclaration>node).moduleReference.hasOwnProperty("expression")) {
+                if ((<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
                     result.push((<any>node).moduleReference.expression.text);
                 }
             } else if (node.kind === ts.SyntaxKind.SourceFile) {
