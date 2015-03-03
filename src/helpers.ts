@@ -66,7 +66,6 @@ export function formatMessageChain(chain: ts.DiagnosticMessageChain) {
 
     while (current) {
         result += current.messageText;
-        console.log(result);
 
         if (!!current.next) {
             result += separator;

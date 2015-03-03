@@ -67,46 +67,59 @@ function compiler(webpack: WebPack, text: string): void {
     ensureInit.call(undefined, webpack);
 
     var callback = webpack.async();
-    var filename = webpack.resourcePath;
+    var fileName = webpack.resourcePath;
     var resolver = <host.Resolver>Promise.promisify(webpack.resolve);
 
     var deps = {
-        add: webpack.addDependency.bind(webpack),
+        add: (depFileName) => {webpack.addDependency(depFileName)},
         clear: webpack.clearDependencies.bind(webpack)
     };
+
+    var state = webpack._compiler._tsState;
 
     // Here we receive information about what files were changed.
     // The way is hacky, maybe we can find something better.
     var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
     var changedFiles = Object.keys(currentTimes);
 
+    var flow = Promise.resolve();
+
     // `mtimes` object doesn't change during compilation, so we will not
     // do the same thing on the next changed file.
     if (currentTimes !== lastTimes) {
         if (showRecompileReason) {
-            lastDeps = webpack._compiler._tsState.dependencies.clone();
+            lastDeps = state.dependencies.clone();
         }
+
         for (var changedFile in currentTimes) {
-            console.log("Update", changedFile, "in the TS compiler service");
-            webpack._compiler._tsState.readFileAndUpdateSync(changedFile);
-            webpack._compiler._tsState.validFiles.markFileInvalid(changedFile);
+            state.validFiles.markFileInvalid(changedFile);
         }
+
+        flow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
+            return state.readFileAndUpdate(changedFile).then(() => {
+                return state.checkDependencies(resolver, changedFile);
+            });
+        })).then(_ => {});
+
+        flow = flow.then(() => {
+            webpack._compiler._tsState.resetProgram();
+        })
     }
 
     lastTimes = currentTimes;
 
     if (showRecompileReason && changedFiles.length) {
-        console.log("Recompile reason:\n    " + filename + "\n        " +
-            lastDeps.recompileReason(filename, changedFiles).join("\n        "));
+        console.log("Recompile reason:\n    " + fileName + "\n        " +
+            lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
     }
 
-    webpack._compiler._tsState
-        .emit(resolver, filename, text, deps)
+    flow.then(() => state.checkDependencies(resolver, fileName))
+        .then(() => state.emit(fileName))
         .then(output => {
-            var result = helpers.findResultFor(output, filename);
+            var result = helpers.findResultFor(output, fileName);
 
             if (result.text === undefined) {
-                throw new Error('no output found for ' + filename);
+                throw new Error('no output found for ' + fileName);
             }
 
             var sourceFilename = loaderUtils.getRemainingRequest(webpack);
@@ -117,6 +130,11 @@ function compiler(webpack: WebPack, text: string): void {
             sourceMap.sourcesContent = [text];
 
             callback(null, result.text, sourceMap);
+        })
+        .finally(() => {
+            deps.clear();
+            deps.add(fileName);
+            state.dependencies.applyChain(fileName, deps);
         })
         .catch(host.ResolutionError, err => {
             callback(err, helpers.codegenErrorReport([err]));
@@ -133,7 +151,6 @@ function compiler(webpack: WebPack, text: string): void {
             callback(null, helpers.codegenErrorReport(errors));
         })
         .catch(callback)
-
 }
 
 export = loader;

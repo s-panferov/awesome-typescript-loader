@@ -223,6 +223,7 @@ export class State {
     services: ts.LanguageService;
     options: ts.CompilerOptions;
     runtimeRead: boolean;
+    program: ts.Program;
 
     dependencies = new DependencyManager()
     validFiles = new ValidManager()
@@ -257,7 +258,11 @@ export class State {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
     }
 
-    emit(resolver: Resolver, fileName: string, text: string, depsManager: Dependency): Promise<ts.EmitOutput> {
+    resetProgram() {
+        this.program = null;
+    }
+
+    emit(fileName: string): ts.EmitOutput {
 
         // Check if we need to compiler Webpack runtime definitions.
         if (!this.runtimeRead) {
@@ -265,48 +270,61 @@ export class State {
             this.runtimeRead = true;
         }
 
-        return <any>this.checkDependencies(resolver, fileName).then((deps) => {
+        if (!this.program) {
+            this.program = this.services.getProgram();
+        }
 
-            var output = this.services.getEmitOutput(fileName);
+        var outputFiles: ts.OutputFile[] = [];
 
-            var depsDiagnostics = {};
-            var diagnostics = this.services.getCompilerOptionsDiagnostics()
-                //.concat(this.services.getSyntacticDiagnostics(fileName))
-                //.concat(this.services.getSemanticDiagnostics(fileName));
-
-            Object.keys(this.files).forEach((fileName) => {
-                diagnostics = diagnostics
-                    .concat(this.services.getSyntacticDiagnostics(fileName))
-                    .concat(this.services.getSemanticDiagnostics(fileName));
+        function writeFile(fileName: string, data: string, writeByteOrderMark: boolean) {
+            outputFiles.push({
+                name: fileName,
+                writeByteOrderMark: writeByteOrderMark,
+                text: data
             });
+        }
 
-            if (diagnostics.length) {
-                throw new TypeScriptCompilationError(diagnostics, depsDiagnostics);
-            }
+        var emitResult = this.program.emit(this.program.getSourceFile(fileName), writeFile);
 
-            if (!output.emitSkipped) {
-                return output;
-            } else {
-                throw new Error("Emit skipped");
-            }
-        }).finally(() => {
-            depsManager.clear();
-            depsManager.add(fileName);
-            this.dependencies.applyChain(fileName, depsManager);
-        })
+        var output = {
+            outputFiles: outputFiles,
+            emitSkipped: emitResult.emitSkipped
+        };
+
+        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
+
+        if (diagnostics.length) {
+            throw new TypeScriptCompilationError(diagnostics);
+        }
+
+        if (!output.emitSkipped) {
+            return output;
+        } else {
+            throw new Error("Emit skipped");
+        }
     }
 
-    private checkDependencies(resolver: Resolver, fileName: string): Promise<string[]> {
+    checkDependencies(resolver: Resolver, fileName: string): Promise<void> {
+        if (this.validFiles.isFileValid(fileName)) {
+            return Promise.resolve();
+        }
+
         this.dependencies.clearDependencies(fileName);
 
         var flow = (!!this.files[fileName]) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
 
-        return flow.then(() => this.checkDependenciesInternal(resolver, fileName))
+        this.validFiles.markFileValid(fileName);
+        return flow
+            .then(() => this.checkDependenciesInternal(resolver, fileName))
+            .catch((err) => {
+                this.validFiles.markFileInvalid(fileName);
+                throw err
+            });
     }
 
-    private checkDependenciesInternal(resolver, fileName): Promise<string[]> {
+    private checkDependenciesInternal(resolver, fileName): Promise<void> {
         var dependencies = this.findImportDeclarations(fileName)
             .map(depRelFileName =>
                 this.resolve(resolver, fileName, depRelFileName))
@@ -330,24 +348,14 @@ export class State {
                 } else {
 
                     this.dependencies.addDependency(fileName, depFileName);
-                    if (!this.validFiles.isFileValid(depFileName)) {
-                        this.validFiles.markFileValid(depFileName);
-                        return this.checkDependencies(resolver, depFileName)
-                            .catch(ResolutionError, err => {
-                                this.validFiles.markFileInvalid(depFileName);
-                                throw err
-                            })
-                            .then(() => result)
-                    }
+                    return this.checkDependencies(resolver, depFileName);
 
                 }
 
                 return result;
             }));
 
-        return Promise.all<string>(dependencies).then(dependencies => {
-            return dependencies.filter(val => val != null)
-        })
+        return Promise.all(dependencies).then((_) => {});
     }
 
     private findImportDeclarations(fileName: string) {
@@ -463,9 +471,8 @@ export class State {
 /**
  * Emit compilation result for a specified fileName.
  */
-export function TypeScriptCompilationError(diagnostics, depsDiagnostics) {
+export function TypeScriptCompilationError(diagnostics) {
     this.diagnostics = diagnostics;
-    this.depsDiagnostics = depsDiagnostics;
 }
 util.inherits(TypeScriptCompilationError, Error);
 
