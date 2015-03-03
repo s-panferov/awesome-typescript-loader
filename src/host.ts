@@ -11,8 +11,12 @@ var objectAssign = require('object-assign');
 var RUNTIME = helpers.loadLib('./runtime.d.ts');
 var LIB = helpers.loadLib('typescript/bin/lib.d.ts');
 
-export interface Resolver {
-    (base: string, dep: string): Promise<String>
+export interface AsyncResolver {
+    (base: string, dep: string): Promise<string>
+}
+
+export interface SyncResolver {
+    (base: string, dep: string): string
 }
 
 export interface Dependency {
@@ -257,59 +261,74 @@ export class State {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
     }
 
-    emit(resolver: Resolver, fileName: string, text: string, depsManager: Dependency): Promise<ts.EmitOutput> {
+    emitAsync(resolver: AsyncResolver, fileName: string, text: string, depsManager: Dependency): Promise<ts.EmitOutput> {
+        this.invokeRuntime();
+        return this.checkDependencies(resolver, fileName)
+            .then((deps) => this.emitAndCheck(fileName))
+            .finally(() => this.applyDeps(fileName, depsManager))
+    }
 
+    emitSync(resolver: SyncResolver, fileName: string, text: string, depsManager: Dependency): ts.EmitOutput {
+        this.invokeRuntime();
+        this.checkDependenciesSync(resolver, fileName);
+        try {
+            return this.emitAndCheck(fileName);
+        } finally {
+            this.applyDeps(fileName, depsManager)
+        }
+    }
+
+    invokeRuntime() {
         // Check if we need to compiler Webpack runtime definitions.
         if (!this.runtimeRead) {
             this.services.getEmitOutput(RUNTIME.fileName);
             this.runtimeRead = true;
         }
-
-        return <any>this.checkDependencies(resolver, fileName).then((deps) => {
-
-            var output = this.services.getEmitOutput(fileName);
-
-            var depsDiagnostics = {};
-            var diagnostics = this.services.getCompilerOptionsDiagnostics()
-                //.concat(this.services.getSyntacticDiagnostics(fileName))
-                //.concat(this.services.getSemanticDiagnostics(fileName));
-
-            Object.keys(this.files).forEach((fileName) => {
-                diagnostics = diagnostics
-                    .concat(this.services.getSyntacticDiagnostics(fileName))
-                    .concat(this.services.getSemanticDiagnostics(fileName));
-            });
-
-            if (diagnostics.length) {
-                throw new TypeScriptCompilationError(diagnostics, depsDiagnostics);
-            }
-
-            if (!output.emitSkipped) {
-                return output;
-            } else {
-                throw new Error("Emit skipped");
-            }
-        }).finally(() => {
-            depsManager.clear();
-            depsManager.add(fileName);
-            this.dependencies.applyChain(fileName, depsManager);
-        })
     }
 
-    private checkDependencies(resolver: Resolver, fileName: string): Promise<string[]> {
+    applyDeps(fileName: string, depsManager: Dependency) {
+        depsManager.clear();
+        depsManager.add(fileName);
+        this.dependencies.applyChain(fileName, depsManager);
+    }
+
+    emitAndCheck(fileName: string): ts.EmitOutput {
+        var output = this.services.getEmitOutput(fileName);
+
+        var depsDiagnostics = {};
+        var diagnostics = this.services.getCompilerOptionsDiagnostics()
+
+        Object.keys(this.files).forEach((fileName) => {
+            diagnostics = diagnostics
+                .concat(this.services.getSyntacticDiagnostics(fileName))
+                .concat(this.services.getSemanticDiagnostics(fileName));
+        });
+
+        if (diagnostics.length) {
+            throw new TypeScriptCompilationError(diagnostics, depsDiagnostics);
+        }
+
+        if (!output.emitSkipped) {
+            return output;
+        } else {
+            throw new Error("Emit skipped");
+        }
+    }
+
+    private checkDependencies(resolver: AsyncResolver, fileName: string): Promise<string[]> {
         this.dependencies.clearDependencies(fileName);
 
-        var flow = (!!this.files[fileName]) ?
+        var flow = (!this.files[fileName]) ?
             Promise.resolve(false) :
-            this.readFileAndUpdate(fileName);
+            this.readFileAndUpdateAsync(fileName);
 
-        return flow.then(() => this.checkDependenciesInternal(resolver, fileName))
+        return flow.then(() => this.checkDependenciesInternalAsync(resolver, fileName))
     }
 
-    private checkDependenciesInternal(resolver, fileName): Promise<string[]> {
+    private checkDependenciesInternalAsync(resolver: AsyncResolver, fileName: string): Promise<string[]> {
         var dependencies = this.findImportDeclarations(fileName)
             .map(depRelFileName =>
-                this.resolve(resolver, fileName, depRelFileName))
+                this.resolveAsync(resolver, fileName, depRelFileName))
             .map(depFileNamePromise => depFileNamePromise.then(depFileName => {
 
                 var result: Promise<string> = Promise.resolve(depFileName);
@@ -348,6 +367,50 @@ export class State {
         return Promise.all<string>(dependencies).then(dependencies => {
             return dependencies.filter(val => val != null)
         })
+    }
+
+    private checkDependenciesSync(resolver: SyncResolver, fileName: string): string[] {
+        this.dependencies.clearDependencies(fileName);
+
+        if (!this.files[fileName]) {
+            console.log("NOT FILE")
+            this.readFileAndUpdateSync(fileName);
+        }
+
+        return this.checkDependenciesInternalSync(resolver, fileName);
+    }
+
+    private checkDependenciesInternalSync(resolver: SyncResolver, fileName: string): string[] {
+        var dependencies = this.findImportDeclarations(fileName)
+            .map(depRelFileName => this.resolveSync(resolver, fileName, depRelFileName))
+            .map(depFileName => {
+                var isTypeDeclaration = /\.d.ts$/.exec(depFileName);
+                var isRequiredModule = /\.js$/.exec(depFileName);
+
+                if (isTypeDeclaration) {
+                    var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
+                    if (!hasDeclaration) {
+                        this.dependencies.addTypeDeclaration(depFileName);
+                        this.checkDependenciesSync(resolver, depFileName)
+                    }
+
+
+                } else if (isRequiredModule) {
+                    return null
+                } else {
+                    this.dependencies.addDependency(fileName, depFileName);
+                    if (!this.validFiles.isFileValid(depFileName)) {
+                        this.validFiles.markFileValid(depFileName);
+                        try {
+                            this.checkDependenciesSync(resolver, depFileName)
+                        } finally {
+                            this.validFiles.markFileInvalid(depFileName);
+                        }
+                    }
+                }
+            });
+
+        return dependencies.filter(val => val != null);
     }
 
     private findImportDeclarations(fileName: string) {
@@ -400,7 +463,7 @@ export class State {
         }
     }
 
-    readFile(fileName: string): Promise<string> {
+    readFileAsync(fileName: string): Promise<string> {
         var readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
         return readFile(fileName).then(function (buf) {
             return buf.toString('utf8');
@@ -412,12 +475,12 @@ export class State {
         return fs.readFileSync(fileName, {encoding: 'utf-8'});
     }
 
-    readFileAndAdd(fileName: string): Promise<any> {
-        return this.readFile(fileName).then((text) => this.addFile(fileName, text));
+    readFileAndAddAsync(fileName: string): Promise<any> {
+        return this.readFileAsync(fileName).then((text) => this.addFile(fileName, text));
     }
 
-    readFileAndUpdate(fileName: string, checked: boolean = false): Promise<boolean> {
-        return this.readFile(fileName).then((text) => this.updateFile(fileName, text, checked));
+    readFileAndUpdateAsync(fileName: string, checked: boolean = false): Promise<boolean> {
+        return this.readFileAsync(fileName).then((text) => this.updateFile(fileName, text, checked));
     }
 
     readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {
@@ -425,7 +488,7 @@ export class State {
         return this.updateFile(fileName, text, checked);
     }
 
-    resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
+    resolveAsync(resolver: AsyncResolver, fileName: string, defPath: string): Promise<string> {
         var result;
 
         if (!path.extname(defPath).length) {
@@ -457,18 +520,49 @@ export class State {
             })
     }
 
+    resolveSync(resolver: SyncResolver, fileName: string, defPath: string): string {
+        var result;
+
+        try {
+            if (!path.extname(defPath).length) {
+                try {
+                    return resolver(path.dirname(fileName), defPath + ".ts")
+                } catch (e) {
+                    try {
+                        return resolver(path.dirname(fileName), defPath + ".d.ts")
+                    } catch (e) {
+                        return resolver(path.dirname(fileName), defPath)
+                    }
+                }
+            } else {
+                // We don't need to resolve .d.ts here because they are already
+                // absolute at this step.
+                if (/\.d\.ts$/.test(defPath)) {
+                    return defPath
+                } else {
+                    return resolver(path.dirname(fileName), defPath)
+                }
+            }
+        } catch (error) {
+            var detailedError: any = new ResolutionError();
+            detailedError.message = error.message + "\n    Required in " + fileName;
+            detailedError.cause = error;
+            detailedError.fileName = fileName;
+
+            throw detailedError;
+        }
+    }
+
 }
 
 
 /**
  * Emit compilation result for a specified fileName.
  */
-export function TypeScriptCompilationError(diagnostics, depsDiagnostics) {
-    this.diagnostics = diagnostics;
-    this.depsDiagnostics = depsDiagnostics;
+export class TypeScriptCompilationError {
+    constructor(public diagnostics, public depsDiagnostics) {}
 }
 util.inherits(TypeScriptCompilationError, Error);
-
 
 /**
  * Emit compilation result for a specified fileName.

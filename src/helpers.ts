@@ -35,7 +35,7 @@ export function parseOptionTarget(target: string, ts: typeof ts) {
     }
 }
 
-export function codegenErrorReport(errors) {
+export function codegenErrorReport(errors: string[]) {
     return errors
         .map(function (error) {
             return 'console.error(' + JSON.stringify(error) + ');';
@@ -43,7 +43,7 @@ export function codegenErrorReport(errors) {
         .join('\n');
 }
 
-export function formatErrors(errors: ts.Diagnostic[]) {
+export function formatErrors(errors: ts.Diagnostic[]): string[] {
     return errors.map(function (diagnostic) {
         var lineChar;
         if (diagnostic.file) {

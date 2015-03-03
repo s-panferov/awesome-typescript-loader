@@ -21,13 +21,16 @@ interface WebPack {
     async: () => (err: Error, source?: string, map?: string) => void;
     resourcePath: string;
     resolve: () => void;
+    resolveSync: () => void;
     addDependency: (dep: string) => void;
     clearDependencies: () => void;
+    callback: any;
 }
 
 var lastTimes = {};
 var lastDeps: host.DependencyManager;
 var showRecompileReason = false;
+var sync = false;
 
 /**
  * Creates compiler instance
@@ -47,6 +50,7 @@ function ensureInit(webpack: WebPack) {
     }
 
     showRecompileReason = !!options.showRecompileReason;
+    sync = !!options.sync;
 
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
@@ -66,9 +70,18 @@ function compiler(webpack: WebPack, text: string): void {
 
     ensureInit.call(undefined, webpack);
 
-    var callback = webpack.async();
+    var callback = <any>function(){};//webpack.async();
+
+    var resolver;
+    var syncResolver;
+
+    if (!sync) {
+        resolver = <host.AsyncResolver>Promise.promisify(webpack.resolve);
+    } else {
+        syncResolver = webpack.resolveSync;
+    }
+
     var filename = webpack.resourcePath;
-    var resolver = <host.Resolver>Promise.promisify(webpack.resolve);
 
     var deps = {
         add: webpack.addDependency.bind(webpack),
@@ -100,40 +113,66 @@ function compiler(webpack: WebPack, text: string): void {
             lastDeps.recompileReason(filename, changedFiles).join("\n        "));
     }
 
-    webpack._compiler._tsState
-        .emit(resolver, filename, text, deps)
-        .then(output => {
-            var result = helpers.findResultFor(output, filename);
-
-            if (result.text === undefined) {
-                throw new Error('no output found for ' + filename);
+    if (!sync) {
+        webpack._compiler._tsState
+            .emitAsync(resolver, filename, text, deps)
+            .then(output => {
+                var result = prepareResult(output, filename, text, webpack);
+                callback(null, result[0], result[1]);
+            })
+            .catch(host.ResolutionError, err => {
+                callback(err, helpers.codegenErrorReport([err]));
+            })
+            .catch(host.TypeScriptCompilationError, err => {
+                var errors = emitError(err, webpack);
+                callback(null, helpers.codegenErrorReport(errors));
+            })
+            .catch(callback)
+    } else {
+        try {
+            var output = webpack._compiler._tsState.emitSync(syncResolver, filename, text, deps);
+            var result = prepareResult(output, filename, text, webpack);
+            webpack.callback(null, result[0], result[1]);
+        } catch (err) {
+            if (err instanceof host.ResolutionError) {
+                webpack.callback(err, helpers.codegenErrorReport([err]));
+            } else if (err instanceof host.TypeScriptCompilationError) {
+                var errors = emitError(err, webpack);
+                webpack.callback(null, helpers.codegenErrorReport(errors));
+            } else {
+                webpack.callback(err)
             }
+        }
+    }
+}
 
-            var sourceFilename = loaderUtils.getRemainingRequest(webpack);
-            var current = loaderUtils.getCurrentRequest(webpack);
-            var sourceMap = JSON.parse(result.sourceMap);
-            sourceMap.sources = [sourceFilename];
-            sourceMap.file = current;
-            sourceMap.sourcesContent = [text];
+function emitError(err: host.TypeScriptCompilationError, webpack: WebPack): string[] {
+    var errors = helpers.formatErrors(err.diagnostics);
+    errors.forEach((<any>webpack).emitError, webpack);
 
-            callback(null, result.text, sourceMap);
-        })
-        .catch(host.ResolutionError, err => {
-            callback(err, helpers.codegenErrorReport([err]));
-        })
-        .catch(host.TypeScriptCompilationError, err => {
-            var errors = helpers.formatErrors(err.diagnostics);
-            errors.forEach((<any>webpack).emitError, webpack);
+    //for (var depDiag in err.depsDiagnostics) {
+    //    var errors = helpers.formatErrors(err.depsDiagnostics[depDiag]);
+    //    errors.forEach((<any>webpack).emitError, webpack);
+    //}
 
-            for (var depDiag in err.depsDiagnostics) {
-                var errors = helpers.formatErrors(err.depsDiagnostics[depDiag]);
-                errors.forEach((<any>webpack).emitError, webpack);
-            }
+    return errors;
+}
 
-            callback(null, helpers.codegenErrorReport(errors));
-        })
-        .catch(callback)
+function prepareResult(output: ts.EmitOutput, fileName: string, text: string, webpack: WebPack): [string, any] {
+    var result = helpers.findResultFor(output, fileName);
 
+    if (result.text === undefined) {
+        throw new Error('no output found for ' + fileName);
+    }
+
+    var sourceFilename = loaderUtils.getRemainingRequest(webpack);
+    var current = loaderUtils.getCurrentRequest(webpack);
+    var sourceMap = JSON.parse(result.sourceMap);
+    sourceMap.sources = [sourceFilename];
+    sourceMap.file = current;
+    sourceMap.sourcesContent = [text];
+
+    return [result.text, sourceMap];
 }
 
 export = loader;
