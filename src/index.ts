@@ -102,9 +102,13 @@ function compiler(webpack: WebPack, text: string): void {
         }
 
         flow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
-            return state.readFileAndUpdate(changedFile).then(() => {
-                return state.checkDependencies(resolver, changedFile);
-            });
+            if (/\.ts$|\.d\.ts$/.test(changedFile)) {
+                return state.readFileAndUpdate(changedFile).then(() => {
+                    return state.checkDependencies(resolver, changedFile);
+                });
+            } else {
+                return Promise.resolve()
+            }
         })).then(_ => {});
 
         flow = flow.then(() => {
