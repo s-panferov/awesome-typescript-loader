@@ -23,7 +23,7 @@ export function findResultFor(output: ts.EmitOutput, filename: string) {
     };
 }
 
-export function parseOptionTarget(target: string, ts: typeof ts) {
+export function parseOptionTarget(target: string, ts: typeof ts): ts.ScriptTarget {
     target = target.toLowerCase();
     switch (target) {
         case 'es3':

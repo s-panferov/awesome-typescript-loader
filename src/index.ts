@@ -9,6 +9,7 @@ import fs = require('fs');
 var loaderUtils = require('loader-utils');
 
 import host = require('./host');
+import deps = require('./deps');
 import helpers = require('./helpers');
 
 interface WebPack {
@@ -26,8 +27,13 @@ interface WebPack {
 }
 
 var lastTimes = {};
-var lastDeps: host.DependencyManager;
+var lastDeps: deps.DependencyManager;
 var showRecompileReason = false;
+
+interface Options extends ts.CompilerOptions {
+    showRecompileReason: boolean;
+    compiler: string;
+}
 
 /**
  * Creates compiler instance
@@ -37,7 +43,7 @@ function ensureInit(webpack: WebPack) {
         return;
     }
 
-    var options = loaderUtils.parseQuery(webpack.query);
+    var options = <Options>loaderUtils.parseQuery(webpack.query);
     var tsImpl: typeof ts;
 
     if (options.compiler) {
@@ -49,7 +55,7 @@ function ensureInit(webpack: WebPack) {
     showRecompileReason = !!options.showRecompileReason;
 
     if (options.target) {
-        options.target = helpers.parseOptionTarget(options.target, tsImpl);
+        options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
 
     webpack._compiler._tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
@@ -102,7 +108,7 @@ function compiler(webpack: WebPack, text: string): void {
         })).then(_ => {});
 
         flow = flow.then(() => {
-            webpack._compiler._tsState.resetProgram();
+            state.resetProgram();
         })
     }
 
