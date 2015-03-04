@@ -3,6 +3,9 @@
 TypeScript loader for Webpack. This project was started as a fork of https://github.com/andreypopp/typescript-loader.
 Thanks @andreypopp for the great project.
 
+The main goal of this loader is to support the **watch** mode and *webpack-dev-server* with **incremental** compilation.
+Also there are a lot of problems in other TypeScript loaders that were fixed here.
+
 ## Unstable TypeScript warning
 
 **Right now this library works only with the master branch of the TypeScript compiler and
