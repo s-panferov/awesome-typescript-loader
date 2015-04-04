@@ -1,4 +1,4 @@
-# TypeScript Webpack Loader
+# The best TypeScript loader for Webpack 
 
 [![Join the chat at https://gitter.im/s-panferov/awesome-typescript-loader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-panferov/awesome-typescript-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -10,8 +10,7 @@ Also there are a lot of problems in other TypeScript loaders that were fixed her
 
 ## Unstable TypeScript warning
 
-**Right now this library works only with the master branch of the TypeScript compiler and
-will continue to track it until TypeScript 1.5 release.**
+**Right now this library works only with the TypeScript 1.5-alfa compiler.
 
 ## Installation
 
