@@ -15,7 +15,7 @@ Right now this library works only with the **TypeScript 1.5-alfa** compiler.
 ## Installation
 
 ```
-npm install awesome-typescript-loader
+npm install awesome-typescript-loader --save-dev
 ```
 
 ## Configuration
