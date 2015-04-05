@@ -11,6 +11,7 @@ var objectAssign = require('object-assign');
 
 var RUNTIME = helpers.loadLib('./runtime.d.ts');
 var LIB = helpers.loadLib('typescript/bin/lib.d.ts');
+var LIB6 = helpers.loadLib('typescript/bin/lib.es6.d.ts');
 
 export interface Resolver {
     (base: string, dep: string): Promise<String>
@@ -73,7 +74,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getDefaultLibFileName(options) {
-        return LIB.fileName;
+        return options.target === ts.ScriptTarget.ES6 ? LIB6.fileName : LIB.fileName;
     }
 
     log(message) {
@@ -119,7 +120,12 @@ export class State {
         objectAssign(this.options, options);
 
         this.addFile(RUNTIME.fileName, RUNTIME.text);
-        this.addFile(LIB.fileName, LIB.text);
+
+        if (options.target === ts.ScriptTarget.ES6) {
+            this.addFile(LIB6.fileName, LIB6.text);
+        } else {
+            this.addFile(LIB.fileName, LIB.text);
+        }
     }
 
     resetService() {

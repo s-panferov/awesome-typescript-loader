@@ -7,6 +7,7 @@ var deps = require('./deps');
 var objectAssign = require('object-assign');
 var RUNTIME = helpers.loadLib('./runtime.d.ts');
 var LIB = helpers.loadLib('typescript/bin/lib.d.ts');
+var LIB6 = helpers.loadLib('typescript/bin/lib.es6.d.ts');
 var Host = (function () {
     function Host(state) {
         this.state = state;
@@ -47,7 +48,7 @@ var Host = (function () {
         return this.state.options;
     };
     Host.prototype.getDefaultLibFileName = function (options) {
-        return LIB.fileName;
+        return options.target === 2 ? LIB6.fileName : LIB.fileName;
     };
     Host.prototype.log = function (message) {
     };
@@ -73,7 +74,12 @@ var State = (function () {
         });
         objectAssign(this.options, options);
         this.addFile(RUNTIME.fileName, RUNTIME.text);
-        this.addFile(LIB.fileName, LIB.text);
+        if (options.target === 2) {
+            this.addFile(LIB6.fileName, LIB6.text);
+        }
+        else {
+            this.addFile(LIB.fileName, LIB.text);
+        }
     }
     State.prototype.resetService = function () {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
