@@ -10,7 +10,7 @@ Also there are a lot of problems in other TypeScript loaders that were fixed her
 
 ## Unstable TypeScript warning
 
-Right now this library works only with the **TypeScript 1.5-alfa** compiler.
+Right now this library works only with the **TypeScript 1.5-alpha** compiler.
 
 ## Installation
 
