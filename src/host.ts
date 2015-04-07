@@ -242,6 +242,8 @@ export class State {
                 if ((<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
                     result.push((<any>node).moduleReference.expression.text);
                 }
+            } else if (node.kind === ts.SyntaxKind.ImportDeclaration) {
+                result.push((<any>node).moduleSpecifier.text);
             } else if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
                     return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);

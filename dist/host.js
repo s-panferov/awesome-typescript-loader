@@ -174,6 +174,9 @@ var State = (function () {
                     result.push(node.moduleReference.expression.text);
                 }
             }
+            else if (node.kind === 209) {
+                result.push(node.moduleSpecifier.text);
+            }
             else if (node.kind === 227) {
                 result = result.concat(node.referencedFiles.map(function (f) {
                     return path.resolve(path.dirname(node.fileName), f.fileName);
