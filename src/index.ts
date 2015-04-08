@@ -123,7 +123,7 @@ function compiler(webpack: WebPack, text: string): void {
             lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
     }
 
-    flow.then(() => state.checkDependencies(resolver, fileName))
+    flow.then(() => state.checkDependenciesSafe(resolver, fileName))
         .then(() => state.emit(fileName))
         .then(output => {
             var result = helpers.findResultFor(output, fileName);

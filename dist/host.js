@@ -60,6 +60,7 @@ var State = (function () {
         this.files = {};
         this.dependencies = new deps.DependencyManager();
         this.validFiles = new deps.ValidFilesManager();
+        this.currentDependenciesLookup = null;
         this.ts = tsImpl || require('typescript');
         this.fs = fsImpl;
         this.host = new Host(this);
@@ -117,6 +118,19 @@ var State = (function () {
         }
         else {
             throw new Error("Emit skipped");
+        }
+    };
+    State.prototype.checkDependenciesSafe = function (resolver, fileName) {
+        var _this = this;
+        if (this.currentDependenciesLookup) {
+            return this.currentDependenciesLookup.finally(function () {
+                return _this.checkDependencies(resolver, fileName);
+            });
+        }
+        else {
+            var flow = this.checkDependencies(resolver, fileName);
+            this.currentDependenciesLookup = flow;
+            return flow;
         }
     };
     State.prototype.checkDependencies = function (resolver, fileName) {

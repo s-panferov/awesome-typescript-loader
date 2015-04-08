@@ -70,7 +70,7 @@ function compiler(webpack, text) {
         console.log("Recompile reason:\n    " + fileName + "\n        " +
             lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
     }
-    flow.then(function () { return state.checkDependencies(resolver, fileName); })
+    flow.then(function () { return state.checkDependenciesSafe(resolver, fileName); })
         .then(function () { return state.emit(fileName); })
         .then(function (output) {
         var result = helpers.findResultFor(output, fileName);
