@@ -88,6 +88,9 @@ var State = (function () {
     State.prototype.resetProgram = function () {
         this.program = null;
     };
+    State.prototype.updateProgram = function () {
+        this.program = this.services.getProgram();
+    };
     State.prototype.emit = function (fileName) {
         if (!this.runtimeRead) {
             this.services.getEmitOutput(RUNTIME.fileName);
@@ -104,7 +107,15 @@ var State = (function () {
                 text: data
             });
         }
-        var emitResult = this.program.emit(this.program.getSourceFile(fileName), writeFile);
+        var source = this.program.getSourceFile(fileName);
+        if (!source) {
+            this.updateProgram();
+            source = this.program.getSourceFile(fileName);
+            if (!source) {
+                throw new Error("File " + fileName + " was not found in program");
+            }
+        }
+        var emitResult = this.program.emit(source, writeFile);
         var output = {
             outputFiles: outputFiles,
             emitSkipped: emitResult.emitSkipped

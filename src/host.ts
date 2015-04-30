@@ -137,6 +137,10 @@ export class State {
         this.program = null;
     }
 
+    updateProgram() {
+        this.program = this.services.getProgram();
+    }
+
     emit(fileName: string): ts.EmitOutput {
 
         // Check if we need to compiler Webpack runtime definitions.
@@ -159,7 +163,16 @@ export class State {
             });
         }
 
-        var emitResult = this.program.emit(this.program.getSourceFile(fileName), writeFile);
+        var source = this.program.getSourceFile(fileName);
+        if (!source) {
+            this.updateProgram();
+            source = this.program.getSourceFile(fileName);
+            if (!source) {
+                throw new Error(`File ${fileName} was not found in program`);
+            }
+        }
+
+        var emitResult = this.program.emit(source, writeFile);
 
         var output = {
             outputFiles: outputFiles,
