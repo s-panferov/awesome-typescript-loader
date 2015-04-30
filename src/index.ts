@@ -15,6 +15,7 @@ import helpers = require('./helpers');
 interface WebPack {
     _compiler: {
         inputFileSystem: typeof fs;
+        _tsFlow: Promise<any>;
         _tsState: host.State
     };
     cacheable: () => void;
@@ -43,6 +44,8 @@ function ensureInit(webpack: WebPack) {
         return;
     }
 
+    webpack._compiler._tsFlow = Promise.resolve();
+
     var options = <Options>loaderUtils.parseQuery(webpack.query);
     var tsImpl: typeof ts;
 
@@ -70,7 +73,7 @@ function compiler(webpack: WebPack, text: string): void {
         webpack.cacheable();
     }
 
-    ensureInit.call(undefined, webpack);
+    ensureInit(webpack);
 
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
@@ -88,42 +91,43 @@ function compiler(webpack: WebPack, text: string): void {
     var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
     var changedFiles = Object.keys(currentTimes);
 
-    var flow = Promise.resolve();
+    webpack._compiler._tsFlow = webpack._compiler._tsFlow
+        .then(() => {
+            var depsFlow = Promise.resolve();
 
-    // `mtimes` object doesn't change during compilation, so we will not
-    // do the same thing on the next changed file.
-    if (currentTimes !== lastTimes) {
-        if (showRecompileReason) {
-            lastDeps = state.dependencies.clone();
-        }
+            // `mtimes` object doesn't change during compilation, so we will not
+            // do the same thing on the next changed file.
+            if (currentTimes !== lastTimes) {
+                if (showRecompileReason) {
+                    lastDeps = state.dependencies.clone();
+                }
 
-        for (var changedFile in currentTimes) {
-            state.validFiles.markFileInvalid(changedFile);
-        }
+                for (var changedFile in currentTimes) {
+                    state.validFiles.markFileInvalid(changedFile);
+                }
 
-        flow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
-            if (/\.ts$|\.d\.ts$/.test(changedFile)) {
-                return state.readFileAndUpdate(changedFile).then(() => {
-                    return state.checkDependencies(resolver, changedFile);
-                });
-            } else {
-                return Promise.resolve()
+                depsFlow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
+                    if (/\.ts$|\.d\.ts$/.test(changedFile)) {
+                        return state.readFileAndUpdate(changedFile).then(() => {
+                            return state.checkDependencies(resolver, changedFile);
+                        });
+                    } else {
+                        return Promise.resolve()
+                    }
+                }))
+                    .then(_ => state.resetProgram())
             }
-        })).then(_ => {});
 
-        flow = flow.then(() => {
-            state.resetProgram();
+            lastTimes = currentTimes;
+
+            if (showRecompileReason && changedFiles.length) {
+                console.log("Recompile reason:\n    " + fileName + "\n        " +
+                lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
+            }
+
+            return depsFlow;
         })
-    }
-
-    lastTimes = currentTimes;
-
-    if (showRecompileReason && changedFiles.length) {
-        console.log("Recompile reason:\n    " + fileName + "\n        " +
-            lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
-    }
-
-    flow.then(() => state.checkDependenciesSafe(resolver, fileName))
+        .then(() => state.checkDependencies(resolver, fileName))
         .then(() => state.emit(fileName))
         .then(output => {
             var result = helpers.findResultFor(output, fileName);

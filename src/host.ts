@@ -179,21 +179,6 @@ export class State {
         }
     }
 
-    checkDependenciesSafe(resolver: Resolver, fileName: string): Promise<void> {
-        // We need this lock function because we don't want to allow
-        // two simultaneous lookups because of promise hell and possibility
-        // to be in inconsistent state.
-        if (this.currentDependenciesLookup) {
-            return this.currentDependenciesLookup.finally(() => {
-                return this.checkDependencies(resolver, fileName)
-            })
-        } else {
-            var flow = this.checkDependencies(resolver, fileName);
-            this.currentDependenciesLookup = flow;
-            return flow;
-        }
-    }
-
     checkDependencies(resolver: Resolver, fileName: string): Promise<void> {
         if (this.validFiles.isFileValid(fileName)) {
             return Promise.resolve();

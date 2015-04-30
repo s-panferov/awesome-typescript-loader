@@ -11,6 +11,7 @@ function ensureInit(webpack) {
     if (typeof webpack._compiler._tsState !== "undefined") {
         return;
     }
+    webpack._compiler._tsFlow = Promise.resolve();
     var options = loaderUtils.parseQuery(webpack.query);
     var tsImpl;
     if (options.compiler) {
@@ -32,7 +33,7 @@ function compiler(webpack, text) {
     if (webpack.cacheable) {
         webpack.cacheable();
     }
-    ensureInit.call(undefined, webpack);
+    ensureInit(webpack);
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
     var resolver = Promise.promisify(webpack.resolve);
@@ -43,34 +44,36 @@ function compiler(webpack, text) {
     var state = webpack._compiler._tsState;
     var currentTimes = webpack._compiler.watchFileSystem.watcher.mtimes;
     var changedFiles = Object.keys(currentTimes);
-    var flow = Promise.resolve();
-    if (currentTimes !== lastTimes) {
-        if (showRecompileReason) {
-            lastDeps = state.dependencies.clone();
-        }
-        for (var changedFile in currentTimes) {
-            state.validFiles.markFileInvalid(changedFile);
-        }
-        flow = Promise.all(Object.keys(currentTimes).map(function (changedFile) {
-            if (/\.ts$|\.d\.ts$/.test(changedFile)) {
-                return state.readFileAndUpdate(changedFile).then(function () {
-                    return state.checkDependencies(resolver, changedFile);
-                });
+    webpack._compiler._tsFlow = webpack._compiler._tsFlow
+        .then(function () {
+        var depsFlow = Promise.resolve();
+        if (currentTimes !== lastTimes) {
+            if (showRecompileReason) {
+                lastDeps = state.dependencies.clone();
             }
-            else {
-                return Promise.resolve();
+            for (var changedFile in currentTimes) {
+                state.validFiles.markFileInvalid(changedFile);
             }
-        })).then(function (_) { });
-        flow = flow.then(function () {
-            state.resetProgram();
-        });
-    }
-    lastTimes = currentTimes;
-    if (showRecompileReason && changedFiles.length) {
-        console.log("Recompile reason:\n    " + fileName + "\n        " +
-            lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
-    }
-    flow.then(function () { return state.checkDependenciesSafe(resolver, fileName); })
+            depsFlow = Promise.all(Object.keys(currentTimes).map(function (changedFile) {
+                if (/\.ts$|\.d\.ts$/.test(changedFile)) {
+                    return state.readFileAndUpdate(changedFile).then(function () {
+                        return state.checkDependencies(resolver, changedFile);
+                    });
+                }
+                else {
+                    return Promise.resolve();
+                }
+            }))
+                .then(function (_) { return state.resetProgram(); });
+        }
+        lastTimes = currentTimes;
+        if (showRecompileReason && changedFiles.length) {
+            console.log("Recompile reason:\n    " + fileName + "\n        " +
+                lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
+        }
+        return depsFlow;
+    })
+        .then(function () { return state.checkDependencies(resolver, fileName); })
         .then(function () { return state.emit(fileName); })
         .then(function (output) {
         var result = helpers.findResultFor(output, fileName);

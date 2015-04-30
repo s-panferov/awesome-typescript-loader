@@ -120,19 +120,6 @@ var State = (function () {
             throw new Error("Emit skipped");
         }
     };
-    State.prototype.checkDependenciesSafe = function (resolver, fileName) {
-        var _this = this;
-        if (this.currentDependenciesLookup) {
-            return this.currentDependenciesLookup.finally(function () {
-                return _this.checkDependencies(resolver, fileName);
-            });
-        }
-        else {
-            var flow = this.checkDependencies(resolver, fileName);
-            this.currentDependenciesLookup = flow;
-            return flow;
-        }
-    };
     State.prototype.checkDependencies = function (resolver, fileName) {
         var _this = this;
         if (this.validFiles.isFileValid(fileName)) {
