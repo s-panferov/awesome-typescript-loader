@@ -85,32 +85,6 @@ set to the NPM name of the compiler.
 This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies
 using internal webpack dependency markers. When you change a file, the loader recompiles all dependencies.
 
-## Using with JSX-TypeScript compiler
-
-You can use `typescript-loader` together with
-[jsx-typscript](https://github.com/fdecampredon/jsx-typescript) compiler which
-has support for JSX syntax (used in React.js).
-
-For that you need to install `jsx-typescript`:
-
-    % npm install jsx-typescript
-
-And specify `compiler` loader option:
-
-```javascript
-module.exports = {
-
-  module: {
-    loaders: [
-      {
-        test: /\.ts$/,
-        loader: 'typescript-loader?compiler=jsx-typescript'
-      }
-    ]
-  }
-};
-```
-
 ## External Modules
 
 The most natural way to structure your code with TypeScript and webpack is to use [external modules](https://github.com/Microsoft/TypeScript/wiki/Modules#going-external), and these work as you would expect. 
