@@ -12,11 +12,12 @@ import host = require('./host');
 import deps = require('./deps');
 import helpers = require('./helpers');
 
+import CompilerOptions = host.CompilerOptions;
+
 interface WebPack {
     _compiler: {
         inputFileSystem: typeof fs;
-        _tsFlow: Promise<any>;
-        _tsState: host.State
+        _tsInstances: {[key:string]: CompilerInstance};
     };
     cacheable: () => void;
     query: string;
@@ -27,26 +28,27 @@ interface WebPack {
     clearDependencies: () => void;
 }
 
-var lastTimes = {};
-var lastDeps: deps.DependencyManager;
-var showRecompileReason = false;
-
-interface Options extends ts.CompilerOptions {
+interface CompilerInstance {
+    tsFlow: Promise<any>;
+    tsState: host.State;
+    lastTimes: {};
+    lastDeps: deps.DependencyManager;
     showRecompileReason: boolean;
-    compiler: string;
 }
 
 /**
  * Creates compiler instance
  */
-function ensureInit(webpack: WebPack) {
-    if (typeof webpack._compiler._tsState !== "undefined") {
-        return;
+function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName: string): CompilerInstance {
+    if (typeof webpack._compiler._tsInstances === 'undefined') {
+        webpack._compiler._tsInstances = {};
     }
 
-    webpack._compiler._tsFlow = Promise.resolve();
+    if (typeof webpack._compiler._tsInstances[instanceName] !== "undefined") {
+        return webpack._compiler._tsInstances[instanceName];
+    }
 
-    var options = <Options>loaderUtils.parseQuery(webpack.query);
+    var tsFlow = Promise.resolve();
     var tsImpl: typeof ts;
 
     if (options.compiler) {
@@ -55,13 +57,29 @@ function ensureInit(webpack: WebPack) {
         tsImpl = require('typescript');
     }
 
-    showRecompileReason = !!options.showRecompileReason;
+    var showRecompileReason = !!options.showRecompileReason;
+
+    if (typeof options.emitRequireType === 'undefined') {
+        options.emitRequireType = true;
+    } else {
+        options.emitRequireType = (<any>options.emitRequireType == 'true' ? true : false);
+    }
 
     if (options.target) {
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
 
-    webpack._compiler._tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+
+    console.log(options);
+
+    return webpack._compiler._tsInstances[instanceName] = {
+        tsFlow,
+        tsState,
+        showRecompileReason,
+        lastTimes: {},
+        lastDeps: null
+    }
 }
 
 function loader(text) {
@@ -73,7 +91,10 @@ function compiler(webpack: WebPack, text: string): void {
         webpack.cacheable();
     }
 
-    ensureInit(webpack);
+    var options = <CompilerOptions>loaderUtils.parseQuery(webpack.query);
+    var instanceName = options.instanceName || 'default';
+
+    var instance = ensureInstance(webpack, options, instanceName);
 
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
@@ -84,22 +105,22 @@ function compiler(webpack: WebPack, text: string): void {
         clear: webpack.clearDependencies.bind(webpack)
     };
 
-    var state = webpack._compiler._tsState;
+    var state = instance.tsState;
 
     // Here we receive information about what files were changed.
     // The way is hacky, maybe we can find something better.
     var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
     var changedFiles = Object.keys(currentTimes);
 
-    webpack._compiler._tsFlow = webpack._compiler._tsFlow
+    instance.tsFlow = instance.tsFlow
         .then(() => {
             var depsFlow = Promise.resolve();
 
             // `mtimes` object doesn't change during compilation, so we will not
             // do the same thing on the next changed file.
-            if (currentTimes !== lastTimes) {
-                if (showRecompileReason) {
-                    lastDeps = state.dependencies.clone();
+            if (currentTimes !== instance.lastTimes) {
+                if (instance.showRecompileReason) {
+                    instance.lastDeps = state.dependencies.clone();
                 }
 
                 for (var changedFile in currentTimes) {
@@ -118,11 +139,11 @@ function compiler(webpack: WebPack, text: string): void {
                     .then(_ => state.resetProgram())
             }
 
-            lastTimes = currentTimes;
+            instance.lastTimes = currentTimes;
 
-            if (showRecompileReason && changedFiles.length) {
+            if (instance.showRecompileReason && changedFiles.length) {
                 console.log("Recompile reason:\n    " + fileName + "\n        " +
-                lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
+                instance.lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
             }
 
             return depsFlow;

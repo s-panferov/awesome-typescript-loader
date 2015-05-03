@@ -1,4 +1,4 @@
-# The best TypeScript loader for Webpack 
+# The best TypeScript loader for Webpack
 
 [![Join the chat at https://gitter.im/s-panferov/awesome-typescript-loader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-panferov/awesome-typescript-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -69,7 +69,7 @@ Specify the type of modules that TypeScript emits.
 
 ### sourceMap *(boolean) (default=false)*
 
-Specify whether or not TypeScript emits source maps. 
+Specify whether or not TypeScript emits source maps.
 
 ### noImplicitAny *(boolean) (default=false)*
 
@@ -80,6 +80,18 @@ Specify whether or not TypeScript will allow inferring the `any` type.
 Allows use of TypeScript compilers other than the official one. Should be
 set to the NPM name of the compiler.
 
+### emitRequireType *(boolean) (default=true)*
+
+Specify whether or not the loader emits webpacks's require type. You might use `emitRequireType=false` with Node, because it already has own require type in `node.d.ts` file.
+
+### library *(string) (default='es5' possible='es6')*
+
+Allows use of library other than the `target`'s default one. Useful when you want to use ES6 library with ES5 target. Also you might use `library=es6` with Node.
+
+### instanceName *(string) (default='default')*
+
+Allows to use several TypeScript compilers with different settings in one app. Just override `instanceName` to initialize another instance.
+
 ## Using with --watch or webpack-dev-server
 
 This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies
@@ -87,7 +99,7 @@ using internal webpack dependency markers. When you change a file, the loader re
 
 ## External Modules
 
-The most natural way to structure your code with TypeScript and webpack is to use [external modules](https://github.com/Microsoft/TypeScript/wiki/Modules#going-external), and these work as you would expect. 
+The most natural way to structure your code with TypeScript and webpack is to use [external modules](https://github.com/Microsoft/TypeScript/wiki/Modules#going-external), and these work as you would expect.
 
 ```
 npm install --save react
@@ -104,7 +116,7 @@ mode if you use such modules. Of course, you can still use them without watch, b
 
 ## Declaration files
 
-All declaration files should be resolvable from the entry file. 
-The easiest way to do this is to create a `references.d.ts` file which contains 
-references to all of your declaration files. Then reference 
+All declaration files should be resolvable from the entry file.
+The easiest way to do this is to create a `references.d.ts` file which contains
+references to all of your declaration files. Then reference
 `references.d.ts` from your entry file.

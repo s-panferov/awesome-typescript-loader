@@ -22,6 +22,14 @@ export interface File {
     version: number;
 }
 
+export interface CompilerOptions extends ts.CompilerOptions {
+    instanceName?: string;
+    showRecompileReason?: boolean;
+    compiler?: string;
+    emitRequireType?: boolean;
+    library?: string;
+}
+
 export class Host implements ts.LanguageServiceHost {
 
     state: State;
@@ -83,6 +91,10 @@ export class Host implements ts.LanguageServiceHost {
 
 }
 
+function isTypeDeclaration(fileName: string): boolean {
+    return /\.d.ts$/.test(fileName);
+}
+
 export class State {
 
     ts: typeof ts;
@@ -90,7 +102,7 @@ export class State {
     host: Host;
     files: {[fileName: string]: File} = {};
     services: ts.LanguageService;
-    options: ts.CompilerOptions;
+    options: CompilerOptions;
     runtimeRead: boolean;
     program: ts.Program;
 
@@ -99,7 +111,7 @@ export class State {
     currentDependenciesLookup: Promise<void> = null;
 
     constructor(
-        options: ts.CompilerOptions,
+        options: CompilerOptions,
         fsImpl: typeof fs,
         tsImpl: typeof ts
     ) {
@@ -120,9 +132,13 @@ export class State {
 
         objectAssign(this.options, options);
 
-        this.addFile(RUNTIME.fileName, RUNTIME.text);
+        console.log(options);
 
-        if (options.target === ts.ScriptTarget.ES6) {
+        if (this.options.emitRequireType) {
+            this.addFile(RUNTIME.fileName, RUNTIME.text);
+        }
+
+        if (this.options.target === ts.ScriptTarget.ES6 || this.options.library === 'es6') {
             this.addFile(LIB6.fileName, LIB6.text);
         } else {
             this.addFile(LIB.fileName, LIB.text);
@@ -145,7 +161,7 @@ export class State {
 
         // Check if we need to compiler Webpack runtime definitions.
         if (!this.runtimeRead) {
-            this.services.getEmitOutput(RUNTIME.fileName);
+            // this.services.getEmitOutput(RUNTIME.fileName);
             this.runtimeRead = true;
         }
 
@@ -219,10 +235,10 @@ export class State {
             .map(depFileNamePromise => depFileNamePromise.then(depFileName => {
 
                 var result: Promise<string> = Promise.resolve(depFileName);
-                var isTypeDeclaration = /\.d.ts$/.exec(depFileName);
+                var isDeclaration = isTypeDeclaration(depFileName);
                 var isRequiredModule = /\.js$/.exec(depFileName);
 
-                if (isTypeDeclaration) {
+                if (isDeclaration) {
                     var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
                     if (!hasDeclaration) {
                         this.dependencies.addTypeDeclaration(depFileName);
@@ -249,14 +265,16 @@ export class State {
     private findImportDeclarations(fileName: string) {
         var node = this.services.getSourceFile(fileName);
 
+        var isDeclaration = isTypeDeclaration(fileName);
+
         var result = [];
         var visit = (node: ts.Node) => {
             if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
                 // we need this check to ensure that we have an external import
-                if ((<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
+                if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
                     result.push((<any>node).moduleReference.expression.text);
                 }
-            } else if (node.kind === ts.SyntaxKind.ImportDeclaration) {
+            } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
                 result.push((<any>node).moduleSpecifier.text);
             } else if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {

@@ -4,15 +4,14 @@ var Promise = require("bluebird");
 var loaderUtils = require('loader-utils');
 var host = require('./host');
 var helpers = require('./helpers');
-var lastTimes = {};
-var lastDeps;
-var showRecompileReason = false;
-function ensureInit(webpack) {
-    if (typeof webpack._compiler._tsState !== "undefined") {
-        return;
+function ensureInstance(webpack, options, instanceName) {
+    if (typeof webpack._compiler._tsInstances === 'undefined') {
+        webpack._compiler._tsInstances = {};
     }
-    webpack._compiler._tsFlow = Promise.resolve();
-    var options = loaderUtils.parseQuery(webpack.query);
+    if (typeof webpack._compiler._tsInstances[instanceName] !== "undefined") {
+        return webpack._compiler._tsInstances[instanceName];
+    }
+    var tsFlow = Promise.resolve();
     var tsImpl;
     if (options.compiler) {
         tsImpl = require(options.compiler);
@@ -20,11 +19,25 @@ function ensureInit(webpack) {
     else {
         tsImpl = require('typescript');
     }
-    showRecompileReason = !!options.showRecompileReason;
+    var showRecompileReason = !!options.showRecompileReason;
+    if (typeof options.emitRequireType === 'undefined') {
+        options.emitRequireType = true;
+    }
+    else {
+        options.emitRequireType = (options.emitRequireType == 'true' ? true : false);
+    }
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
-    webpack._compiler._tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    console.log(options);
+    return webpack._compiler._tsInstances[instanceName] = {
+        tsFlow: tsFlow,
+        tsState: tsState,
+        showRecompileReason: showRecompileReason,
+        lastTimes: {},
+        lastDeps: null
+    };
 }
 function loader(text) {
     compiler.call(undefined, this, text);
@@ -33,7 +46,9 @@ function compiler(webpack, text) {
     if (webpack.cacheable) {
         webpack.cacheable();
     }
-    ensureInit(webpack);
+    var options = loaderUtils.parseQuery(webpack.query);
+    var instanceName = options.instanceName || 'default';
+    var instance = ensureInstance(webpack, options, instanceName);
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
     var resolver = Promise.promisify(webpack.resolve);
@@ -41,15 +56,15 @@ function compiler(webpack, text) {
         add: function (depFileName) { webpack.addDependency(depFileName); },
         clear: webpack.clearDependencies.bind(webpack)
     };
-    var state = webpack._compiler._tsState;
+    var state = instance.tsState;
     var currentTimes = webpack._compiler.watchFileSystem.watcher.mtimes;
     var changedFiles = Object.keys(currentTimes);
-    webpack._compiler._tsFlow = webpack._compiler._tsFlow
+    instance.tsFlow = instance.tsFlow
         .then(function () {
         var depsFlow = Promise.resolve();
-        if (currentTimes !== lastTimes) {
-            if (showRecompileReason) {
-                lastDeps = state.dependencies.clone();
+        if (currentTimes !== instance.lastTimes) {
+            if (instance.showRecompileReason) {
+                instance.lastDeps = state.dependencies.clone();
             }
             for (var changedFile in currentTimes) {
                 state.validFiles.markFileInvalid(changedFile);
@@ -66,10 +81,10 @@ function compiler(webpack, text) {
             }))
                 .then(function (_) { return state.resetProgram(); });
         }
-        lastTimes = currentTimes;
-        if (showRecompileReason && changedFiles.length) {
+        instance.lastTimes = currentTimes;
+        if (instance.showRecompileReason && changedFiles.length) {
             console.log("Recompile reason:\n    " + fileName + "\n        " +
-                lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
+                instance.lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
         }
         return depsFlow;
     })

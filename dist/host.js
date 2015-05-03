@@ -55,6 +55,9 @@ var Host = (function () {
     return Host;
 })();
 exports.Host = Host;
+function isTypeDeclaration(fileName) {
+    return /\.d.ts$/.test(fileName);
+}
 var State = (function () {
     function State(options, fsImpl, tsImpl) {
         this.files = {};
@@ -74,8 +77,11 @@ var State = (function () {
             verbose: false
         });
         objectAssign(this.options, options);
-        this.addFile(RUNTIME.fileName, RUNTIME.text);
-        if (options.target === 2) {
+        console.log(options);
+        if (this.options.emitRequireType) {
+            this.addFile(RUNTIME.fileName, RUNTIME.text);
+        }
+        if (this.options.target === 2 || this.options.library === 'es6') {
             this.addFile(LIB6.fileName, LIB6.text);
         }
         else {
@@ -93,7 +99,6 @@ var State = (function () {
     };
     State.prototype.emit = function (fileName) {
         if (!this.runtimeRead) {
-            this.services.getEmitOutput(RUNTIME.fileName);
             this.runtimeRead = true;
         }
         if (!this.program) {
@@ -156,9 +161,9 @@ var State = (function () {
         })
             .map(function (depFileNamePromise) { return depFileNamePromise.then(function (depFileName) {
             var result = Promise.resolve(depFileName);
-            var isTypeDeclaration = /\.d.ts$/.exec(depFileName);
+            var isDeclaration = isTypeDeclaration(depFileName);
             var isRequiredModule = /\.js$/.exec(depFileName);
-            if (isTypeDeclaration) {
+            if (isDeclaration) {
                 var hasDeclaration = _this.dependencies.hasTypeDeclaration(depFileName);
                 if (!hasDeclaration) {
                     _this.dependencies.addTypeDeclaration(depFileName);
@@ -179,14 +184,15 @@ var State = (function () {
     State.prototype.findImportDeclarations = function (fileName) {
         var _this = this;
         var node = this.services.getSourceFile(fileName);
+        var isDeclaration = isTypeDeclaration(fileName);
         var result = [];
         var visit = function (node) {
             if (node.kind === 208) {
-                if (node.moduleReference.hasOwnProperty("expression")) {
+                if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
                     result.push(node.moduleReference.expression.text);
                 }
             }
-            else if (node.kind === 209) {
+            else if (!isDeclaration && node.kind === 209) {
                 result.push(node.moduleSpecifier.text);
             }
             else if (node.kind === 227) {
