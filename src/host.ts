@@ -132,8 +132,6 @@ export class State {
 
         objectAssign(this.options, options);
 
-        console.log(options);
-
         if (this.options.emitRequireType) {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }

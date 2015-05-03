@@ -71,8 +71,6 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
 
-    console.log(options);
-
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow,
         tsState,
