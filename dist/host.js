@@ -74,7 +74,8 @@ var State = (function () {
             target: 1,
             module: 1,
             sourceMap: true,
-            verbose: false
+            verbose: false,
+            failOnTypeErrors: true
         });
         objectAssign(this.options, options);
         if (this.options.emitRequireType) {
@@ -123,11 +124,13 @@ var State = (function () {
         var emitResult = this.program.emit(source, writeFile);
         var output = {
             outputFiles: outputFiles,
-            emitSkipped: emitResult.emitSkipped
+            emitSkipped: emitResult.emitSkipped,
+            diagnostics: this.ts.getPreEmitDiagnostics(this.program).filter(function (err) { return err.file.fileName === fileName; })
         };
-        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
-        if (diagnostics.length) {
-            throw new TypeScriptCompilationError(diagnostics);
+        if (output.diagnostics.length) {
+            if (this.options.failOnTypeErrors || output.diagnostics.some(function (err) { return /^[51]/.test(err.code.toString()); })) {
+                throw new TypeScriptCompilationError(output.diagnostics);
+            }
         }
         if (!output.emitSkipped) {
             return output;

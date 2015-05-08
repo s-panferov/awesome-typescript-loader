@@ -163,6 +163,10 @@ function compiler(webpack: WebPack, text: string): void {
             sourceMap.file = current;
             sourceMap.sourcesContent = [text];
 
+            if (output.diagnostics.length) {
+                helpers.formatErrors(output.diagnostics).forEach((<any>webpack).emitWarning, webpack);
+            }
+
             callback(null, result.text, sourceMap);
         })
         .finally(() => {

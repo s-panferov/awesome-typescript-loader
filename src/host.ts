@@ -28,6 +28,11 @@ export interface CompilerOptions extends ts.CompilerOptions {
     compiler?: string;
     emitRequireType?: boolean;
     library?: string;
+    failOnTypeErrors?: boolean;
+}
+
+export interface EmitOutput extends ts.EmitOutput {
+    diagnostics: ts.Diagnostic[];
 }
 
 export class Host implements ts.LanguageServiceHost {
@@ -127,7 +132,8 @@ export class State {
             target: this.ts.ScriptTarget.ES5,
             module: this.ts.ModuleKind.CommonJS,
             sourceMap: true,
-            verbose: false
+            verbose: false,
+            failOnTypeErrors: true
         });
 
         objectAssign(this.options, options);
@@ -155,7 +161,7 @@ export class State {
         this.program = this.services.getProgram();
     }
 
-    emit(fileName: string): ts.EmitOutput {
+    emit(fileName: string): EmitOutput {
 
         // Check if we need to compiler Webpack runtime definitions.
         if (!this.runtimeRead) {
@@ -191,13 +197,15 @@ export class State {
 
         var output = {
             outputFiles: outputFiles,
-            emitSkipped: emitResult.emitSkipped
+            emitSkipped: emitResult.emitSkipped,
+            diagnostics: this.ts.getPreEmitDiagnostics(this.program).filter(err => err.file.fileName === fileName)
         };
 
-        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
-
-        if (diagnostics.length) {
-            throw new TypeScriptCompilationError(diagnostics);
+        if (output.diagnostics.length) {
+            // from grunt-ts: ignore type errors, assumed to start with 1 (syntax error) or 5 (compiler flag error)
+            if (this.options.failOnTypeErrors || output.diagnostics.some(err => /^[51]/.test(err.code.toString()))) {
+                throw new TypeScriptCompilationError(output.diagnostics);
+            }
         }
 
         if (!output.emitSkipped) {

@@ -100,6 +100,9 @@ function compiler(webpack, text) {
         sourceMap.sources = [sourceFilename];
         sourceMap.file = current;
         sourceMap.sourcesContent = [text];
+        if (output.diagnostics.length) {
+            helpers.formatErrors(output.diagnostics).forEach(webpack.emitWarning, webpack);
+        }
         callback(null, result.text, sourceMap);
     })
         .finally(function () {
