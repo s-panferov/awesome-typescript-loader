@@ -62,14 +62,11 @@ var State = (function () {
     function State(options, fsImpl, tsImpl) {
         this.files = {};
         this.dependencies = new deps.DependencyManager();
-        this.validFiles = new deps.ValidFilesManager();
-        this.currentDependenciesLookup = null;
         this.ts = tsImpl || require('typescript');
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.options = {};
-        this.runtimeRead = false;
         objectAssign(this.options, {
             target: 1,
             module: 1,
@@ -97,9 +94,6 @@ var State = (function () {
         this.program = this.services.getProgram();
     };
     State.prototype.emit = function (fileName) {
-        if (!this.runtimeRead) {
-            this.runtimeRead = true;
-        }
         if (!this.program) {
             this.program = this.services.getProgram();
         }
@@ -132,54 +126,30 @@ var State = (function () {
             throw new Error("Emit skipped");
         }
     };
-    State.prototype.checkDependencies = function (resolver, fileName) {
+    State.prototype.checkDeclarations = function (resolver, fileName) {
         var _this = this;
-        if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
-        }
         this.dependencies.clearDependencies(fileName);
         var flow = this.hasFile(fileName) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
-        this.validFiles.markFileValid(fileName);
-        return flow
-            .then(function () { return _this.checkDependenciesInternal(resolver, fileName); })
-            .catch(function (err) {
-            _this.validFiles.markFileInvalid(fileName);
-            throw err;
-        });
+        return flow.then(function () { return _this.checkDeclarationsInternal(resolver, fileName); });
     };
-    State.prototype.checkDependenciesInternal = function (resolver, fileName) {
+    State.prototype.checkDeclarationsInternal = function (resolver, fileName) {
         var _this = this;
-        var dependencies = this.findImportDeclarations(fileName)
+        var dependencies = this.findDeclarations(fileName)
             .map(function (depRelFileName) {
             return _this.resolve(resolver, fileName, depRelFileName);
         })
             .map(function (depFileNamePromise) { return depFileNamePromise.then(function (depFileName) {
             var result = Promise.resolve(depFileName);
-            var isDeclaration = isTypeDeclaration(depFileName);
-            var isRequiredModule = /\.js$/.exec(depFileName);
-            if (isDeclaration) {
-                var hasDeclaration = _this.dependencies.hasTypeDeclaration(depFileName);
-                if (!hasDeclaration) {
-                    _this.dependencies.addTypeDeclaration(depFileName);
-                    return _this.checkDependencies(resolver, depFileName).then(function () { return result; });
-                }
-            }
-            else if (isRequiredModule) {
-                return Promise.resolve(null);
-            }
-            else {
-                return Promise.resolve(null);
-            }
-            return result;
+            _this.dependencies.addTypeDeclaration(depFileName);
+            return _this.checkDeclarations(resolver, depFileName).then(function () { return result; });
         }); });
         return Promise.all(dependencies).then(function (_) { });
     };
-    State.prototype.findImportDeclarations = function (fileName) {
+    State.prototype.findDeclarations = function (fileName) {
         var _this = this;
         var node = this.services.getSourceFile(fileName);
-        var isDeclaration = isTypeDeclaration(fileName);
         var result = [];
         var visit = function (node) {
             if (node.kind === 227) {

@@ -72,7 +72,26 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
 
-    (<any>webpack._compiler).plugin("after-compile", function(compilation, callback) {
+    var compiler = (<any>webpack._compiler);
+
+    compiler.plugin("watch-run", (watching, callback) => {
+        var resolver = <host.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
+        var state = watching.compiler._tsInstances[instanceName].tsState;
+        var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
+        Promise.all(Object.keys(mtimes).map((changedFile) => {
+            if (/\.d\.ts$/.test(changedFile)) {
+                return state.readFileAndUpdate(changedFile).then(() => {
+                    return state.checkDeclarations(resolver, changedFile);
+                });
+            } else {
+                return Promise.resolve()
+            }
+        }))
+            .then(_ => { state.updateProgram(); callback(); })
+            .catch((err) => console.error(err))
+    });
+
+    compiler.plugin("after-compile", function(compilation, callback) {
         var state = compilation.compiler._tsInstances[instanceName].tsState;
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
 
@@ -119,49 +138,10 @@ function compiler(webpack: WebPack, text: string): void {
         clear: webpack.clearDependencies.bind(webpack)
     };
 
-    // Here we receive information about what files were changed.
-    // The way is hacky, maybe we can find something better.
-    var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
-    var changedFiles = Object.keys(currentTimes);
-
     instance.tsFlow = instance.tsFlow
-        .then(() => {
-            var depsFlow = Promise.resolve();
-
-            // `mtimes` object doesn't change during compilation, so we will not
-            // do the same thing on the next changed file.
-            if (currentTimes !== instance.lastTimes) {
-                if (instance.showRecompileReason) {
-                    instance.lastDeps = state.dependencies.clone();
-                }
-
-                for (var changedFile in currentTimes) {
-                    state.validFiles.markFileInvalid(changedFile);
-                }
-
-                depsFlow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
-                    if (/\.d\.ts$/.test(changedFile)) {
-                        return state.readFileAndUpdate(changedFile).then(() => {
-                            return state.checkDependencies(resolver, changedFile);
-                        });
-                    } else {
-                        return Promise.resolve()
-                    }
-                }))
-                    .then(_ => state.resetProgram())
-            }
-
-            instance.lastTimes = currentTimes;
-
-            if (instance.showRecompileReason && changedFiles.length) {
-                console.log("Recompile reason:\n    " + fileName + "\n        " +
-                instance.lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
-            }
-
-            return depsFlow;
-        })
-        .then(() => state.updateFile(fileName, text, false))
-        .then(() => state.checkDependencies(resolver, fileName))
+        .then(() => { state.updateFile(fileName, text, false); })
+        .then(() => state.checkDeclarations(resolver, fileName))
+        .then(() => state.updateProgram())
         .then(() => state.emit(fileName))
         .then(output => {
             var result = helpers.findResultFor(output, fileName);
@@ -188,7 +168,7 @@ function compiler(webpack: WebPack, text: string): void {
             console.error(err)
             callback(err, helpers.codegenErrorReport([err]));
         })
-        .catch(callback)
+        .catch((err) => { console.error(err); callback(err) })
 }
 
 export = loader;

@@ -1,0 +1,15 @@
+{
+  "name": "tsjsx-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ts-jsx-loader": "^0.2.0",
+    "webpack": "^1.8.11"
+  }
+}

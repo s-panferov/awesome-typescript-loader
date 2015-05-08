@@ -103,12 +103,9 @@ export class State {
     files: {[fileName: string]: File} = {};
     services: ts.LanguageService;
     options: CompilerOptions;
-    runtimeRead: boolean;
     program: ts.Program;
 
     dependencies = new deps.DependencyManager();
-    validFiles = new deps.ValidFilesManager();
-    currentDependenciesLookup: Promise<void> = null;
 
     constructor(
         options: CompilerOptions,
@@ -121,7 +118,6 @@ export class State {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
 
         this.options = {};
-        this.runtimeRead = false;
 
         objectAssign(this.options, {
             target: this.ts.ScriptTarget.ES5,
@@ -156,12 +152,6 @@ export class State {
     }
 
     emit(fileName: string): ts.EmitOutput {
-
-        // Check if we need to compiler Webpack runtime definitions.
-        if (!this.runtimeRead) {
-            // this.services.getEmitOutput(RUNTIME.fileName);
-            this.runtimeRead = true;
-        }
 
         if (!this.program) {
             this.program = this.services.getProgram();
@@ -201,58 +191,31 @@ export class State {
         }
     }
 
-    checkDependencies(resolver: Resolver, fileName: string): Promise<void> {
-        if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
-        }
-
+    checkDeclarations(resolver: Resolver, fileName: string): Promise<void> {
         this.dependencies.clearDependencies(fileName);
 
         var flow = this.hasFile(fileName) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
 
-        this.validFiles.markFileValid(fileName);
-        return flow
-            .then(() => this.checkDependenciesInternal(resolver, fileName))
-            .catch((err) => {
-                this.validFiles.markFileInvalid(fileName);
-                throw err
-            })
+        return flow.then(() => this.checkDeclarationsInternal(resolver, fileName))
     }
 
-    private checkDependenciesInternal(resolver: Resolver, fileName: string): Promise<void> {
-        var dependencies = this.findImportDeclarations(fileName)
+    private checkDeclarationsInternal(resolver: Resolver, fileName: string): Promise<void> {
+        var dependencies = this.findDeclarations(fileName)
             .map(depRelFileName =>
                 this.resolve(resolver, fileName, depRelFileName))
             .map(depFileNamePromise => depFileNamePromise.then(depFileName => {
-
                 var result: Promise<string> = Promise.resolve(depFileName);
-                var isDeclaration = isTypeDeclaration(depFileName);
-                var isRequiredModule = /\.js$/.exec(depFileName);
-
-                if (isDeclaration) {
-                    var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
-                    if (!hasDeclaration) {
-                        this.dependencies.addTypeDeclaration(depFileName);
-                        return this.checkDependencies(resolver, depFileName).then(() => result)
-                    }
-                } else if (isRequiredModule) {
-                    return Promise.resolve(null);
-                } else {
-                    return Promise.resolve(null);
-                }
-
-                return result;
+                this.dependencies.addTypeDeclaration(depFileName);
+                return this.checkDeclarations(resolver, depFileName).then(() => result)
             }));
 
         return Promise.all(dependencies).then((_) => {});
     }
 
-    private findImportDeclarations(fileName: string) {
+    private findDeclarations(fileName: string) {
         var node = this.services.getSourceFile(fileName);
-
-        var isDeclaration = isTypeDeclaration(fileName);
 
         var result = [];
         var visit = (node: ts.Node) => {
@@ -261,7 +224,6 @@ export class State {
                     return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
                 }));
             }
-
             this.ts.forEachChild(node, visit);
         };
         visit(node);
@@ -331,7 +293,6 @@ export class State {
 
     resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
         var result;
-
         if (!path.extname(defPath).length) {
             result = resolver(path.dirname(fileName), defPath + ".ts")
                 .error(function (error) {

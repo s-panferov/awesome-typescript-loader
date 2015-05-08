@@ -58,49 +58,7 @@ var DependencyManager = (function () {
             }
         });
     };
-    DependencyManager.prototype.recompileReason = function (fileName, changedFiles) {
-        var changedFilesSet = {};
-        changedFiles.forEach(function (fileName) { return changedFilesSet[fileName] = true; });
-        return this.recompileReasonInternal(fileName, changedFilesSet, {});
-    };
-    DependencyManager.prototype.recompileReasonInternal = function (fileName, changedFilesSet, visitedFiles) {
-        var fileDeps = this.getDependencies(fileName);
-        var currentVisitedFiles = objectAssign({}, visitedFiles);
-        currentVisitedFiles[fileName] = true;
-        for (var i = 0; i < fileDeps.length; i++) {
-            var depFileName = fileDeps[i];
-            if (changedFilesSet.hasOwnProperty(depFileName)) {
-                return [depFileName];
-            }
-            else {
-                if (currentVisitedFiles.hasOwnProperty(depFileName)) {
-                    continue;
-                }
-                var internal = this.recompileReasonInternal(depFileName, changedFilesSet, currentVisitedFiles);
-                if (internal.length) {
-                    return [depFileName].concat(internal);
-                }
-            }
-        }
-        return [];
-    };
     return DependencyManager;
 })();
 exports.DependencyManager = DependencyManager;
-var ValidFilesManager = (function () {
-    function ValidFilesManager() {
-        this.files = {};
-    }
-    ValidFilesManager.prototype.isFileValid = function (fileName) {
-        return !!this.files[fileName];
-    };
-    ValidFilesManager.prototype.markFileValid = function (fileName) {
-        this.files[fileName] = true;
-    };
-    ValidFilesManager.prototype.markFileInvalid = function (fileName) {
-        this.files[fileName] = false;
-    };
-    return ValidFilesManager;
-})();
-exports.ValidFilesManager = ValidFilesManager;
 //# sourceMappingURL=deps.js.map
