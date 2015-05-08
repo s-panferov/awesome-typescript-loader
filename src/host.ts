@@ -177,12 +177,13 @@ export class State {
             });
         }
 
-        var source = this.program.getSourceFile(fileName);
+        var normalizedFileName = this.normalizePath(fileName);
+        var source = this.program.getSourceFile(normalizedFileName);
         if (!source) {
             this.updateProgram();
-            source = this.program.getSourceFile(fileName);
+            source = this.program.getSourceFile(normalizedFileName);
             if (!source) {
-                throw new Error(`File ${fileName} was not found in program`);
+                throw new Error(`File ${normalizedFileName} was not found in program`);
             }
         }
 
@@ -213,7 +214,7 @@ export class State {
 
         this.dependencies.clearDependencies(fileName);
 
-        var flow = (!!this.files[fileName]) ?
+        var flow = this.hasFile(fileName) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
 
@@ -314,6 +315,10 @@ export class State {
         }
     }
 
+    hasFile(fileName: string): boolean {
+        return this.files.hasOwnProperty(fileName);
+    }
+
     readFile(fileName: string): Promise<string> {
         var readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
         return readFile(fileName).then(function (buf) {
@@ -337,6 +342,10 @@ export class State {
     readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {
         var text = this.readFileSync(fileName);
         return this.updateFile(fileName, text, checked);
+    }
+
+    normalizePath(path: string): string {
+        return (<any>this.ts).normalizePath(path)
     }
 
     resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {

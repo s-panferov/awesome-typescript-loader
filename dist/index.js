@@ -30,7 +30,6 @@ function ensureInstance(webpack, options, instanceName) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
-    console.log(options);
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow: tsFlow,
         tsState: tsState,
@@ -49,6 +48,7 @@ function compiler(webpack, text) {
     var options = loaderUtils.parseQuery(webpack.query);
     var instanceName = options.instanceName || 'default';
     var instance = ensureInstance(webpack, options, instanceName);
+    var state = instance.tsState;
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
     var resolver = Promise.promisify(webpack.resolve);
@@ -56,7 +56,6 @@ function compiler(webpack, text) {
         add: function (depFileName) { webpack.addDependency(depFileName); },
         clear: webpack.clearDependencies.bind(webpack)
     };
-    var state = instance.tsState;
     var currentTimes = webpack._compiler.watchFileSystem.watcher.mtimes;
     var changedFiles = Object.keys(currentTimes);
     instance.tsFlow = instance.tsFlow
