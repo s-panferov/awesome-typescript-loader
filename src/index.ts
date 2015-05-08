@@ -13,6 +13,7 @@ import deps = require('./deps');
 import helpers = require('./helpers');
 
 import CompilerOptions = host.CompilerOptions;
+import TypeScriptCompilationError = host.TypeScriptCompilationError;
 
 interface WebPack {
     _compiler: {
@@ -71,6 +72,19 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
 
+    (<any>webpack._compiler).plugin("after-compile", function(compilation, callback) {
+        var state = compilation.compiler._tsInstances[instanceName].tsState;
+        var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
+
+        var emitError = (err) => {
+            compilation.errors.push(new Error(err))
+        }
+
+        var errors = helpers.formatErrors(diagnostics);
+        errors.forEach(emitError);
+        callback();
+    });
+
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow,
         tsState,
@@ -105,7 +119,6 @@ function compiler(webpack: WebPack, text: string): void {
         clear: webpack.clearDependencies.bind(webpack)
     };
 
-
     // Here we receive information about what files were changed.
     // The way is hacky, maybe we can find something better.
     var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
@@ -127,7 +140,7 @@ function compiler(webpack: WebPack, text: string): void {
                 }
 
                 depsFlow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
-                    if (/\.ts$|\.d\.ts$/.test(changedFile)) {
+                    if (/\.d\.ts$/.test(changedFile)) {
                         return state.readFileAndUpdate(changedFile).then(() => {
                             return state.checkDependencies(resolver, changedFile);
                         });
@@ -147,6 +160,7 @@ function compiler(webpack: WebPack, text: string): void {
 
             return depsFlow;
         })
+        .then(() => state.updateFile(fileName, text, false))
         .then(() => state.checkDependencies(resolver, fileName))
         .then(() => state.emit(fileName))
         .then(output => {
@@ -171,18 +185,8 @@ function compiler(webpack: WebPack, text: string): void {
             state.dependencies.applyChain(fileName, deps);
         })
         .catch(host.ResolutionError, err => {
+            console.error(err)
             callback(err, helpers.codegenErrorReport([err]));
-        })
-        .catch(host.TypeScriptCompilationError, err => {
-            var errors = helpers.formatErrors(err.diagnostics);
-            errors.forEach((<any>webpack).emitError, webpack);
-
-            for (var depDiag in err.depsDiagnostics) {
-                var errors = helpers.formatErrors(err.depsDiagnostics[depDiag]);
-                errors.forEach((<any>webpack).emitError, webpack);
-            }
-
-            callback(null, helpers.codegenErrorReport(errors));
         })
         .catch(callback)
 }

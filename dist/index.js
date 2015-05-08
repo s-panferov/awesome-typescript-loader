@@ -30,6 +30,16 @@ function ensureInstance(webpack, options, instanceName) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    webpack._compiler.plugin("after-compile", function (compilation, callback) {
+        var state = compilation.compiler._tsInstances[instanceName].tsState;
+        var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
+        var emitError = function (err) {
+            compilation.errors.push(new Error(err));
+        };
+        var errors = helpers.formatErrors(diagnostics);
+        errors.forEach(emitError);
+        callback();
+    });
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow: tsFlow,
         tsState: tsState,
@@ -69,7 +79,7 @@ function compiler(webpack, text) {
                 state.validFiles.markFileInvalid(changedFile);
             }
             depsFlow = Promise.all(Object.keys(currentTimes).map(function (changedFile) {
-                if (/\.ts$|\.d\.ts$/.test(changedFile)) {
+                if (/\.d\.ts$/.test(changedFile)) {
                     return state.readFileAndUpdate(changedFile).then(function () {
                         return state.checkDependencies(resolver, changedFile);
                     });
@@ -87,6 +97,7 @@ function compiler(webpack, text) {
         }
         return depsFlow;
     })
+        .then(function () { return state.updateFile(fileName, text, false); })
         .then(function () { return state.checkDependencies(resolver, fileName); })
         .then(function () { return state.emit(fileName); })
         .then(function (output) {
@@ -108,16 +119,8 @@ function compiler(webpack, text) {
         state.dependencies.applyChain(fileName, deps);
     })
         .catch(host.ResolutionError, function (err) {
+        console.error(err);
         callback(err, helpers.codegenErrorReport([err]));
-    })
-        .catch(host.TypeScriptCompilationError, function (err) {
-        var errors = helpers.formatErrors(err.diagnostics);
-        errors.forEach(webpack.emitError, webpack);
-        for (var depDiag in err.depsDiagnostics) {
-            var errors = helpers.formatErrors(err.depsDiagnostics[depDiag]);
-            errors.forEach(webpack.emitError, webpack);
-        }
-        callback(null, helpers.codegenErrorReport(errors));
     })
         .catch(callback);
 }

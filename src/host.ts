@@ -194,12 +194,6 @@ export class State {
             emitSkipped: emitResult.emitSkipped
         };
 
-        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
-
-        if (diagnostics.length) {
-            throw new TypeScriptCompilationError(diagnostics);
-        }
-
         if (!output.emitSkipped) {
             return output;
         } else {
@@ -243,16 +237,10 @@ export class State {
                         this.dependencies.addTypeDeclaration(depFileName);
                         return this.checkDependencies(resolver, depFileName).then(() => result)
                     }
-
                 } else if (isRequiredModule) {
-
                     return Promise.resolve(null);
-
                 } else {
-
-                    this.dependencies.addDependency(fileName, depFileName);
-                    return this.checkDependencies(resolver, depFileName);
-
+                    return Promise.resolve(null);
                 }
 
                 return result;
@@ -268,14 +256,7 @@ export class State {
 
         var result = [];
         var visit = (node: ts.Node) => {
-            if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
-                // we need this check to ensure that we have an external import
-                if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
-                    result.push((<any>node).moduleReference.expression.text);
-                }
-            } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
-                result.push((<any>node).moduleSpecifier.text);
-            } else if (node.kind === ts.SyntaxKind.SourceFile) {
+            if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
                     return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
                 }));

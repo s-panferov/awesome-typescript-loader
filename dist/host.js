@@ -125,10 +125,6 @@ var State = (function () {
             outputFiles: outputFiles,
             emitSkipped: emitResult.emitSkipped
         };
-        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
-        if (diagnostics.length) {
-            throw new TypeScriptCompilationError(diagnostics);
-        }
         if (!output.emitSkipped) {
             return output;
         }
@@ -174,8 +170,7 @@ var State = (function () {
                 return Promise.resolve(null);
             }
             else {
-                _this.dependencies.addDependency(fileName, depFileName);
-                return _this.checkDependencies(resolver, depFileName);
+                return Promise.resolve(null);
             }
             return result;
         }); });
@@ -187,15 +182,7 @@ var State = (function () {
         var isDeclaration = isTypeDeclaration(fileName);
         var result = [];
         var visit = function (node) {
-            if (node.kind === 208) {
-                if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
-                    result.push(node.moduleReference.expression.text);
-                }
-            }
-            else if (!isDeclaration && node.kind === 209) {
-                result.push(node.moduleSpecifier.text);
-            }
-            else if (node.kind === 227) {
+            if (node.kind === 227) {
                 result = result.concat(node.referencedFiles.map(function (f) {
                     return path.resolve(path.dirname(node.fileName), f.fileName);
                 }));
