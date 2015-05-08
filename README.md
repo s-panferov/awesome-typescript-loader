@@ -92,6 +92,10 @@ Allows use of library other than the `target`'s default one. Useful when you wan
 
 Allows to use several TypeScript compilers with different settings in one app. Just override `instanceName` to initialize another instance.
 
+### failOnTypeErrors *(boolean) (default=true)*
+
+If set to false, then only syntax errors and compile flag errors prevent emitting output, all other errors are assumed to be type errors and will only produce a warning.
+
 ## Using with --watch or webpack-dev-server
 
 This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies
