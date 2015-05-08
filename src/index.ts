@@ -94,6 +94,8 @@ function compiler(webpack: WebPack, text: string): void {
 
     var instance = ensureInstance(webpack, options, instanceName);
 
+    var state = instance.tsState;
+
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
     var resolver = <host.Resolver>Promise.promisify(webpack.resolve);
@@ -103,7 +105,6 @@ function compiler(webpack: WebPack, text: string): void {
         clear: webpack.clearDependencies.bind(webpack)
     };
 
-    var state = instance.tsState;
 
     // Here we receive information about what files were changed.
     // The way is hacky, maybe we can find something better.

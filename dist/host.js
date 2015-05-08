@@ -77,7 +77,6 @@ var State = (function () {
             verbose: false
         });
         objectAssign(this.options, options);
-        console.log(options);
         if (this.options.emitRequireType) {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }
@@ -112,12 +111,13 @@ var State = (function () {
                 text: data
             });
         }
-        var source = this.program.getSourceFile(fileName);
+        var normalizedFileName = this.normalizePath(fileName);
+        var source = this.program.getSourceFile(normalizedFileName);
         if (!source) {
             this.updateProgram();
-            source = this.program.getSourceFile(fileName);
+            source = this.program.getSourceFile(normalizedFileName);
             if (!source) {
-                throw new Error("File " + fileName + " was not found in program");
+                throw new Error("File " + normalizedFileName + " was not found in program");
             }
         }
         var emitResult = this.program.emit(source, writeFile);
@@ -142,7 +142,7 @@ var State = (function () {
             return Promise.resolve();
         }
         this.dependencies.clearDependencies(fileName);
-        var flow = (!!this.files[fileName]) ?
+        var flow = this.hasFile(fileName) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
         this.validFiles.markFileValid(fileName);
@@ -230,6 +230,9 @@ var State = (function () {
             version: 0
         };
     };
+    State.prototype.hasFile = function (fileName) {
+        return this.files.hasOwnProperty(fileName);
+    };
     State.prototype.readFile = function (fileName) {
         var readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
         return readFile(fileName).then(function (buf) {
@@ -252,6 +255,9 @@ var State = (function () {
         if (checked === void 0) { checked = false; }
         var text = this.readFileSync(fileName);
         return this.updateFile(fileName, text, checked);
+    };
+    State.prototype.normalizePath = function (path) {
+        return this.ts.normalizePath(path);
     };
     State.prototype.resolve = function (resolver, fileName, defPath) {
         var result;
