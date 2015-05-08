@@ -43,30 +43,27 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptVersion(fileName: string) {
-        return this.state.files[fileName] && this.state.files[fileName].version.toString();
+        if (this.state.files[fileName]) {
+            return this.state.files[fileName].version.toString();
+        } else {
+            return this.state.indirectImportVersions[fileName].toString();
+        }
     }
 
     getScriptSnapshot(fileName) {
         var file = this.state.files[fileName];
 
         if (!file) {
-            return null;
+            try {
+                var rawFile = this.state.indirectImport(fileName);
+                return this.state.ts.ScriptSnapshot.fromString(rawFile);
+            }
+            catch (e) {
+                return;
+            }
         }
 
-        return {
-            getText: function (start, end) {
-                return file.text.substring(start, end);
-            },
-            getLength: function () {
-                return file.text.length;
-            },
-            getLineStartPositions: function () {
-                return [];
-            },
-            getChangeRange: function (oldSnapshot) {
-                return undefined;
-            }
-        };
+        return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
 
     getCurrentDirectory() {
@@ -103,12 +100,11 @@ export class State {
     files: {[fileName: string]: File} = {};
     services: ts.LanguageService;
     options: CompilerOptions;
-    runtimeRead: boolean;
     program: ts.Program;
+    indirectImportVersions: {[key:string]: number} = {};
+    indirectImportCache: {[key:string]: string} = {};
 
     dependencies = new deps.DependencyManager();
-    validFiles = new deps.ValidFilesManager();
-    currentDependenciesLookup: Promise<void> = null;
 
     constructor(
         options: CompilerOptions,
@@ -121,7 +117,6 @@ export class State {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
 
         this.options = {};
-        this.runtimeRead = false;
 
         objectAssign(this.options, {
             target: this.ts.ScriptTarget.ES5,
@@ -143,6 +138,31 @@ export class State {
         }
     }
 
+    indirectImport(fileName: string) {
+        if (this.indirectImportCache.hasOwnProperty(fileName)) {
+            return this.indirectImportCache[fileName]
+        } else {
+            var rawFile = this.readFileSync(fileName);
+            this.addIndirectImport(fileName, rawFile);
+
+            return rawFile;
+        }
+    }
+
+    addIndirectImport(fileName: string, rawFile: string) {
+        this.indirectImportCache[fileName] = rawFile;
+        this.dependencies.addIndirectImport(fileName);
+        if (typeof this.indirectImportVersions[fileName] == 'undefined') {
+            this.indirectImportVersions[fileName] = 0;
+        } else {
+            this.indirectImportVersions[fileName] += 1;
+        }
+    }
+
+    clearIndirectImportCache() {
+        this.indirectImportCache = {}
+    }
+
     resetService() {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
     }
@@ -156,12 +176,6 @@ export class State {
     }
 
     emit(fileName: string): ts.EmitOutput {
-
-        // Check if we need to compiler Webpack runtime definitions.
-        if (!this.runtimeRead) {
-            // this.services.getEmitOutput(RUNTIME.fileName);
-            this.runtimeRead = true;
-        }
 
         if (!this.program) {
             this.program = this.services.getProgram();
@@ -194,12 +208,6 @@ export class State {
             emitSkipped: emitResult.emitSkipped
         };
 
-        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
-
-        if (diagnostics.length) {
-            throw new TypeScriptCompilationError(diagnostics);
-        }
-
         if (!output.emitSkipped) {
             return output;
         } else {
@@ -207,80 +215,39 @@ export class State {
         }
     }
 
-    checkDependencies(resolver: Resolver, fileName: string): Promise<void> {
-        if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
-        }
-
+    checkDeclarations(resolver: Resolver, fileName: string): Promise<void> {
         this.dependencies.clearDependencies(fileName);
 
         var flow = this.hasFile(fileName) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
 
-        this.validFiles.markFileValid(fileName);
-        return flow
-            .then(() => this.checkDependenciesInternal(resolver, fileName))
-            .catch((err) => {
-                this.validFiles.markFileInvalid(fileName);
-                throw err
-            })
+        return flow.then(() => this.checkDeclarationsInternal(resolver, fileName))
     }
 
-    private checkDependenciesInternal(resolver: Resolver, fileName: string): Promise<void> {
-        var dependencies = this.findImportDeclarations(fileName)
+    private checkDeclarationsInternal(resolver: Resolver, fileName: string): Promise<void> {
+        var dependencies = this.findDeclarations(fileName)
             .map(depRelFileName =>
                 this.resolve(resolver, fileName, depRelFileName))
             .map(depFileNamePromise => depFileNamePromise.then(depFileName => {
-
                 var result: Promise<string> = Promise.resolve(depFileName);
-                var isDeclaration = isTypeDeclaration(depFileName);
-                var isRequiredModule = /\.js$/.exec(depFileName);
-
-                if (isDeclaration) {
-                    var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
-                    if (!hasDeclaration) {
-                        this.dependencies.addTypeDeclaration(depFileName);
-                        return this.checkDependencies(resolver, depFileName).then(() => result)
-                    }
-
-                } else if (isRequiredModule) {
-
-                    return Promise.resolve(null);
-
-                } else {
-
-                    this.dependencies.addDependency(fileName, depFileName);
-                    return this.checkDependencies(resolver, depFileName);
-
-                }
-
-                return result;
+                this.dependencies.addTypeDeclaration(depFileName);
+                return this.checkDeclarations(resolver, depFileName).then(() => result)
             }));
 
         return Promise.all(dependencies).then((_) => {});
     }
 
-    private findImportDeclarations(fileName: string) {
+    private findDeclarations(fileName: string) {
         var node = this.services.getSourceFile(fileName);
-
-        var isDeclaration = isTypeDeclaration(fileName);
 
         var result = [];
         var visit = (node: ts.Node) => {
-            if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
-                // we need this check to ensure that we have an external import
-                if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
-                    result.push((<any>node).moduleReference.expression.text);
-                }
-            } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
-                result.push((<any>node).moduleSpecifier.text);
-            } else if (node.kind === ts.SyntaxKind.SourceFile) {
+            if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
                     return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
                 }));
             }
-
             this.ts.forEachChild(node, visit);
         };
         visit(node);
@@ -350,7 +317,6 @@ export class State {
 
     resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
         var result;
-
         if (!path.extname(defPath).length) {
             result = resolver(path.dirname(fileName), defPath + ".ts")
                 .error(function (error) {

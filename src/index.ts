@@ -5,6 +5,7 @@
 import Promise = require("bluebird");
 import path = require('path');
 import fs = require('fs');
+import _ = require('lodash');
 
 var loaderUtils = require('loader-utils');
 
@@ -13,6 +14,7 @@ import deps = require('./deps');
 import helpers = require('./helpers');
 
 import CompilerOptions = host.CompilerOptions;
+import TypeScriptCompilationError = host.TypeScriptCompilationError;
 
 interface WebPack {
     _compiler: {
@@ -71,6 +73,38 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
 
+    var compiler = (<any>webpack._compiler);
+
+    compiler.plugin("watch-run", (watching, callback) => {
+        var resolver = <host.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
+        var state = watching.compiler._tsInstances[instanceName].tsState;
+        var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
+        Promise.all(Object.keys(mtimes).map((changedFile) => {
+            if (/\.d\.ts$/.test(changedFile)) {
+                return state.readFileAndUpdate(changedFile).then(() => {
+                    return state.checkDeclarations(resolver, changedFile);
+                });
+            } else {
+                return Promise.resolve()
+            }
+        }))
+            .then(_ => { state.updateProgram(); callback(); })
+            .catch((err) => console.error(err))
+    });
+
+    compiler.plugin("after-compile", function(compilation, callback) {
+        var state = compilation.compiler._tsInstances[instanceName].tsState;
+        state.clearIndirectImportCache();
+        var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
+        var emitError = (err) => {
+            compilation.errors.push(new Error(err))
+        }
+
+        var errors = helpers.formatErrors(diagnostics);
+        errors.forEach(emitError);
+        callback();
+    });
+
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow,
         tsState,
@@ -105,49 +139,18 @@ function compiler(webpack: WebPack, text: string): void {
         clear: webpack.clearDependencies.bind(webpack)
     };
 
-
-    // Here we receive information about what files were changed.
-    // The way is hacky, maybe we can find something better.
-    var currentTimes = (<any>webpack)._compiler.watchFileSystem.watcher.mtimes;
-    var changedFiles = Object.keys(currentTimes);
+    var applyDeps = _.once(() => {
+        deps.clear();
+        deps.add(fileName);
+        state.dependencies.applyChain(fileName, deps);
+    })
 
     instance.tsFlow = instance.tsFlow
         .then(() => {
-            var depsFlow = Promise.resolve();
-
-            // `mtimes` object doesn't change during compilation, so we will not
-            // do the same thing on the next changed file.
-            if (currentTimes !== instance.lastTimes) {
-                if (instance.showRecompileReason) {
-                    instance.lastDeps = state.dependencies.clone();
-                }
-
-                for (var changedFile in currentTimes) {
-                    state.validFiles.markFileInvalid(changedFile);
-                }
-
-                depsFlow = Promise.all(Object.keys(currentTimes).map((changedFile) => {
-                    if (/\.ts$|\.d\.ts$/.test(changedFile)) {
-                        return state.readFileAndUpdate(changedFile).then(() => {
-                            return state.checkDependencies(resolver, changedFile);
-                        });
-                    } else {
-                        return Promise.resolve()
-                    }
-                }))
-                    .then(_ => state.resetProgram())
-            }
-
-            instance.lastTimes = currentTimes;
-
-            if (instance.showRecompileReason && changedFiles.length) {
-                console.log("Recompile reason:\n    " + fileName + "\n        " +
-                instance.lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
-            }
-
-            return depsFlow;
+            state.updateFile(fileName, text, false);
         })
-        .then(() => state.checkDependencies(resolver, fileName))
+        .then(() => state.checkDeclarations(resolver, fileName))
+        .then(() => state.updateProgram())
         .then(() => state.emit(fileName))
         .then(output => {
             var result = helpers.findResultFor(output, fileName);
@@ -163,28 +166,18 @@ function compiler(webpack: WebPack, text: string): void {
             sourceMap.file = current;
             sourceMap.sourcesContent = [text];
 
+            applyDeps();
+
             callback(null, result.text, sourceMap);
         })
         .finally(() => {
-            deps.clear();
-            deps.add(fileName);
-            state.dependencies.applyChain(fileName, deps);
+            applyDeps();
         })
         .catch(host.ResolutionError, err => {
+            console.error(err)
             callback(err, helpers.codegenErrorReport([err]));
         })
-        .catch(host.TypeScriptCompilationError, err => {
-            var errors = helpers.formatErrors(err.diagnostics);
-            errors.forEach((<any>webpack).emitError, webpack);
-
-            for (var depDiag in err.depsDiagnostics) {
-                var errors = helpers.formatErrors(err.depsDiagnostics[depDiag]);
-                errors.forEach((<any>webpack).emitError, webpack);
-            }
-
-            callback(null, helpers.codegenErrorReport(errors));
-        })
-        .catch(callback)
+        .catch((err) => { console.error(err); callback(err) })
 }
 
 export = loader;

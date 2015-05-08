@@ -1,6 +1,7 @@
 /// <reference path="../node_modules/typescript/bin/typescriptServices.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
 var Promise = require("bluebird");
+var _ = require('lodash');
 var loaderUtils = require('loader-utils');
 var host = require('./host');
 var helpers = require('./helpers');
@@ -30,6 +31,35 @@ function ensureInstance(webpack, options, instanceName) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
     var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    var compiler = webpack._compiler;
+    compiler.plugin("watch-run", function (watching, callback) {
+        var resolver = Promise.promisify(watching.compiler.resolvers.normal.resolve);
+        var state = watching.compiler._tsInstances[instanceName].tsState;
+        var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
+        Promise.all(Object.keys(mtimes).map(function (changedFile) {
+            if (/\.d\.ts$/.test(changedFile)) {
+                return state.readFileAndUpdate(changedFile).then(function () {
+                    return state.checkDeclarations(resolver, changedFile);
+                });
+            }
+            else {
+                return Promise.resolve();
+            }
+        }))
+            .then(function (_) { state.updateProgram(); callback(); })
+            .catch(function (err) { return console.error(err); });
+    });
+    compiler.plugin("after-compile", function (compilation, callback) {
+        var state = compilation.compiler._tsInstances[instanceName].tsState;
+        state.clearIndirectImportCache();
+        var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
+        var emitError = function (err) {
+            compilation.errors.push(new Error(err));
+        };
+        var errors = helpers.formatErrors(diagnostics);
+        errors.forEach(emitError);
+        callback();
+    });
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow: tsFlow,
         tsState: tsState,
@@ -56,38 +86,17 @@ function compiler(webpack, text) {
         add: function (depFileName) { webpack.addDependency(depFileName); },
         clear: webpack.clearDependencies.bind(webpack)
     };
-    var currentTimes = webpack._compiler.watchFileSystem.watcher.mtimes;
-    var changedFiles = Object.keys(currentTimes);
+    var applyDeps = _.once(function () {
+        deps.clear();
+        deps.add(fileName);
+        state.dependencies.applyChain(fileName, deps);
+    });
     instance.tsFlow = instance.tsFlow
         .then(function () {
-        var depsFlow = Promise.resolve();
-        if (currentTimes !== instance.lastTimes) {
-            if (instance.showRecompileReason) {
-                instance.lastDeps = state.dependencies.clone();
-            }
-            for (var changedFile in currentTimes) {
-                state.validFiles.markFileInvalid(changedFile);
-            }
-            depsFlow = Promise.all(Object.keys(currentTimes).map(function (changedFile) {
-                if (/\.ts$|\.d\.ts$/.test(changedFile)) {
-                    return state.readFileAndUpdate(changedFile).then(function () {
-                        return state.checkDependencies(resolver, changedFile);
-                    });
-                }
-                else {
-                    return Promise.resolve();
-                }
-            }))
-                .then(function (_) { return state.resetProgram(); });
-        }
-        instance.lastTimes = currentTimes;
-        if (instance.showRecompileReason && changedFiles.length) {
-            console.log("Recompile reason:\n    " + fileName + "\n        " +
-                instance.lastDeps.recompileReason(fileName, changedFiles).join("\n        "));
-        }
-        return depsFlow;
+        state.updateFile(fileName, text, false);
     })
-        .then(function () { return state.checkDependencies(resolver, fileName); })
+        .then(function () { return state.checkDeclarations(resolver, fileName); })
+        .then(function () { return state.updateProgram(); })
         .then(function () { return state.emit(fileName); })
         .then(function (output) {
         var result = helpers.findResultFor(output, fileName);
@@ -100,26 +109,17 @@ function compiler(webpack, text) {
         sourceMap.sources = [sourceFilename];
         sourceMap.file = current;
         sourceMap.sourcesContent = [text];
+        applyDeps();
         callback(null, result.text, sourceMap);
     })
         .finally(function () {
-        deps.clear();
-        deps.add(fileName);
-        state.dependencies.applyChain(fileName, deps);
+        applyDeps();
     })
         .catch(host.ResolutionError, function (err) {
+        console.error(err);
         callback(err, helpers.codegenErrorReport([err]));
     })
-        .catch(host.TypeScriptCompilationError, function (err) {
-        var errors = helpers.formatErrors(err.diagnostics);
-        errors.forEach(webpack.emitError, webpack);
-        for (var depDiag in err.depsDiagnostics) {
-            var errors = helpers.formatErrors(err.depsDiagnostics[depDiag]);
-            errors.forEach(webpack.emitError, webpack);
-        }
-        callback(null, helpers.codegenErrorReport(errors));
-    })
-        .catch(callback);
+        .catch(function (err) { console.error(err); callback(err); });
 }
 module.exports = loader;
 //# sourceMappingURL=index.js.map
