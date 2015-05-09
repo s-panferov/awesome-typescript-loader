@@ -93,8 +93,8 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     compiler.plugin("after-compile", function(compilation, callback) {
         var state = compilation.compiler._tsInstances[instanceName].tsState;
+        state.clearIndirectImportCache();
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
-
         var emitError = (err) => {
             compilation.errors.push(new Error(err))
         }
@@ -139,7 +139,9 @@ function compiler(webpack: WebPack, text: string): void {
     };
 
     instance.tsFlow = instance.tsFlow
-        .then(() => { state.updateFile(fileName, text, false); })
+        .then(() => {
+            state.updateFile(fileName, text, false);
+        })
         .then(() => state.checkDeclarations(resolver, fileName))
         .then(() => state.updateProgram())
         .then(() => state.emit(fileName))

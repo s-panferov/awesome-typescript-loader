@@ -50,23 +50,16 @@ export class Host implements ts.LanguageServiceHost {
         var file = this.state.files[fileName];
 
         if (!file) {
-            return null;
+            try {
+                var rawFile = this.state.indirectImport(fileName);
+                return this.state.ts.ScriptSnapshot.fromString(rawFile);
+            }
+            catch (e) {
+                return;
+            }
         }
 
-        return {
-            getText: function (start, end) {
-                return file.text.substring(start, end);
-            },
-            getLength: function () {
-                return file.text.length;
-            },
-            getLineStartPositions: function () {
-                return [];
-            },
-            getChangeRange: function (oldSnapshot) {
-                return undefined;
-            }
-        };
+        return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
 
     getCurrentDirectory() {
@@ -104,6 +97,7 @@ export class State {
     services: ts.LanguageService;
     options: CompilerOptions;
     program: ts.Program;
+    indirectImportCache: {[key:string]: string} = {};
 
     dependencies = new deps.DependencyManager();
 
@@ -137,6 +131,26 @@ export class State {
         } else {
             this.addFile(LIB.fileName, LIB.text);
         }
+    }
+
+    indirectImport(fileName: string) {
+        if (this.indirectImportCache.hasOwnProperty(fileName)) {
+            return this.indirectImportCache[fileName]
+        } else {
+            var rawFile = this.readFileSync(fileName);
+            this.addIndirectImport(fileName, rawFile);
+
+            return rawFile;
+        }
+    }
+
+    addIndirectImport(fileName: string, rawFile: string) {
+        this.indirectImportCache[fileName] = rawFile;
+        this.dependencies.addIndirectImport(fileName);
+    }
+
+    clearIndirectImportCache() {
+        this.indirectImportCache = {}
     }
 
     resetService() {

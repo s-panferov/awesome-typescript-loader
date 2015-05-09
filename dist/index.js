@@ -50,6 +50,7 @@ function ensureInstance(webpack, options, instanceName) {
     });
     compiler.plugin("after-compile", function (compilation, callback) {
         var state = compilation.compiler._tsInstances[instanceName].tsState;
+        state.clearIndirectImportCache();
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
         var emitError = function (err) {
             compilation.errors.push(new Error(err));
@@ -85,7 +86,9 @@ function compiler(webpack, text) {
         clear: webpack.clearDependencies.bind(webpack)
     };
     instance.tsFlow = instance.tsFlow
-        .then(function () { state.updateFile(fileName, text, false); })
+        .then(function () {
+        state.updateFile(fileName, text, false);
+    })
         .then(function () { return state.checkDeclarations(resolver, fileName); })
         .then(function () { return state.updateProgram(); })
         .then(function () { return state.emit(fileName); })

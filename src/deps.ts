@@ -12,6 +12,7 @@ export interface Dependency {
 export class DependencyManager {
     dependencies: {[fileName: string]: string[]}
     knownTypeDeclarations: FileSet
+    indirectImports: string[] = []
 
     constructor(dependencies: {[fileName: string]: string[]} = {}, knownTypeDeclarations: FileSet = {}) {
         this.dependencies = dependencies;
@@ -23,6 +24,21 @@ export class DependencyManager {
             _.cloneDeep(this.dependencies),
             _.cloneDeep(this.knownTypeDeclarations)
         )
+    }
+
+    addIndirectImport(fileName: string) {
+        this.indirectImports.push(fileName)
+    }
+
+    clearIndirectImports() {
+        this.indirectImports = []
+    }
+
+    getIndirectImports() {
+        var imports = this.indirectImports;
+        this.clearIndirectImports();
+
+        return imports;
     }
 
     addDependency(fileName: string, depFileName: string): void {
@@ -71,7 +87,7 @@ export class DependencyManager {
             })
         }
 
-        this.getDependencies(fileName).forEach((depFileName) => {
+        this.getDependencies(fileName).concat(this.getIndirectImports()).forEach((depFileName) => {
             if (!appliedDeps.hasOwnProperty(depFileName)) {
                 deps.add(depFileName);
                 appliedDeps[depFileName] = true;

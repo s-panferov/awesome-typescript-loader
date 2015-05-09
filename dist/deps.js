@@ -4,11 +4,23 @@ var DependencyManager = (function () {
     function DependencyManager(dependencies, knownTypeDeclarations) {
         if (dependencies === void 0) { dependencies = {}; }
         if (knownTypeDeclarations === void 0) { knownTypeDeclarations = {}; }
+        this.indirectImports = [];
         this.dependencies = dependencies;
         this.knownTypeDeclarations = knownTypeDeclarations;
     }
     DependencyManager.prototype.clone = function () {
         return new DependencyManager(_.cloneDeep(this.dependencies), _.cloneDeep(this.knownTypeDeclarations));
+    };
+    DependencyManager.prototype.addIndirectImport = function (fileName) {
+        this.indirectImports.push(fileName);
+    };
+    DependencyManager.prototype.clearIndirectImports = function () {
+        this.indirectImports = [];
+    };
+    DependencyManager.prototype.getIndirectImports = function () {
+        var imports = this.indirectImports;
+        this.clearIndirectImports();
+        return imports;
     };
     DependencyManager.prototype.addDependency = function (fileName, depFileName) {
         if (!this.dependencies.hasOwnProperty(fileName)) {
@@ -48,7 +60,7 @@ var DependencyManager = (function () {
                 deps.add(declFileName);
             });
         }
-        this.getDependencies(fileName).forEach(function (depFileName) {
+        this.getDependencies(fileName).concat(this.getIndirectImports()).forEach(function (depFileName) {
             if (!appliedDeps.hasOwnProperty(depFileName)) {
                 deps.add(depFileName);
                 appliedDeps[depFileName] = true;

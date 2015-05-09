@@ -21,22 +21,15 @@ var Host = (function () {
     Host.prototype.getScriptSnapshot = function (fileName) {
         var file = this.state.files[fileName];
         if (!file) {
-            return null;
-        }
-        return {
-            getText: function (start, end) {
-                return file.text.substring(start, end);
-            },
-            getLength: function () {
-                return file.text.length;
-            },
-            getLineStartPositions: function () {
-                return [];
-            },
-            getChangeRange: function (oldSnapshot) {
-                return undefined;
+            try {
+                var rawFile = this.state.indirectImport(fileName);
+                return this.state.ts.ScriptSnapshot.fromString(rawFile);
             }
-        };
+            catch (e) {
+                return;
+            }
+        }
+        return this.state.ts.ScriptSnapshot.fromString(file.text);
     };
     Host.prototype.getCurrentDirectory = function () {
         return process.cwd();
@@ -61,6 +54,7 @@ function isTypeDeclaration(fileName) {
 var State = (function () {
     function State(options, fsImpl, tsImpl) {
         this.files = {};
+        this.indirectImportCache = {};
         this.dependencies = new deps.DependencyManager();
         this.ts = tsImpl || require('typescript');
         this.fs = fsImpl;
@@ -84,6 +78,23 @@ var State = (function () {
             this.addFile(LIB.fileName, LIB.text);
         }
     }
+    State.prototype.indirectImport = function (fileName) {
+        if (this.indirectImportCache.hasOwnProperty(fileName)) {
+            return this.indirectImportCache[fileName];
+        }
+        else {
+            var rawFile = this.readFileSync(fileName);
+            this.addIndirectImport(fileName, rawFile);
+            return rawFile;
+        }
+    };
+    State.prototype.addIndirectImport = function (fileName, rawFile) {
+        this.indirectImportCache[fileName] = rawFile;
+        this.dependencies.addIndirectImport(fileName);
+    };
+    State.prototype.clearIndirectImportCache = function () {
+        this.indirectImportCache = {};
+    };
     State.prototype.resetService = function () {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
     };
