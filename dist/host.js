@@ -16,27 +16,25 @@ var Host = (function () {
         return Object.keys(this.state.files);
     };
     Host.prototype.getScriptVersion = function (fileName) {
-        return this.state.files[fileName] && this.state.files[fileName].version.toString();
+        if (this.state.files[fileName]) {
+            return this.state.files[fileName].version.toString();
+        }
+        else {
+            return this.state.indirectImportVersions[fileName].toString();
+        }
     };
     Host.prototype.getScriptSnapshot = function (fileName) {
         var file = this.state.files[fileName];
         if (!file) {
-            return null;
-        }
-        return {
-            getText: function (start, end) {
-                return file.text.substring(start, end);
-            },
-            getLength: function () {
-                return file.text.length;
-            },
-            getLineStartPositions: function () {
-                return [];
-            },
-            getChangeRange: function (oldSnapshot) {
-                return undefined;
+            try {
+                var rawFile = this.state.indirectImport(fileName);
+                return this.state.ts.ScriptSnapshot.fromString(rawFile);
             }
-        };
+            catch (e) {
+                return;
+            }
+        }
+        return this.state.ts.ScriptSnapshot.fromString(file.text);
     };
     Host.prototype.getCurrentDirectory = function () {
         return process.cwd();
@@ -61,15 +59,14 @@ function isTypeDeclaration(fileName) {
 var State = (function () {
     function State(options, fsImpl, tsImpl) {
         this.files = {};
+        this.indirectImportVersions = {};
+        this.indirectImportCache = {};
         this.dependencies = new deps.DependencyManager();
-        this.validFiles = new deps.ValidFilesManager();
-        this.currentDependenciesLookup = null;
         this.ts = tsImpl || require('typescript');
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.options = {};
-        this.runtimeRead = false;
         objectAssign(this.options, {
             target: 1,
             module: 1,
@@ -87,6 +84,29 @@ var State = (function () {
             this.addFile(LIB.fileName, LIB.text);
         }
     }
+    State.prototype.indirectImport = function (fileName) {
+        if (this.indirectImportCache.hasOwnProperty(fileName)) {
+            return this.indirectImportCache[fileName];
+        }
+        else {
+            var rawFile = this.readFileSync(fileName);
+            this.addIndirectImport(fileName, rawFile);
+            return rawFile;
+        }
+    };
+    State.prototype.addIndirectImport = function (fileName, rawFile) {
+        this.indirectImportCache[fileName] = rawFile;
+        this.dependencies.addIndirectImport(fileName);
+        if (typeof this.indirectImportVersions[fileName] == 'undefined') {
+            this.indirectImportVersions[fileName] = 0;
+        }
+        else {
+            this.indirectImportVersions[fileName] += 1;
+        }
+    };
+    State.prototype.clearIndirectImportCache = function () {
+        this.indirectImportCache = {};
+    };
     State.prototype.resetService = function () {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
     };
@@ -97,9 +117,6 @@ var State = (function () {
         this.program = this.services.getProgram();
     };
     State.prototype.emit = function (fileName) {
-        if (!this.runtimeRead) {
-            this.runtimeRead = true;
-        }
         if (!this.program) {
             this.program = this.services.getProgram();
         }
@@ -125,10 +142,6 @@ var State = (function () {
             outputFiles: outputFiles,
             emitSkipped: emitResult.emitSkipped
         };
-        var diagnostics = this.ts.getPreEmitDiagnostics(this.program);
-        if (diagnostics.length) {
-            throw new TypeScriptCompilationError(diagnostics);
-        }
         if (!output.emitSkipped) {
             return output;
         }
@@ -136,66 +149,33 @@ var State = (function () {
             throw new Error("Emit skipped");
         }
     };
-    State.prototype.checkDependencies = function (resolver, fileName) {
+    State.prototype.checkDeclarations = function (resolver, fileName) {
         var _this = this;
-        if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
-        }
         this.dependencies.clearDependencies(fileName);
         var flow = this.hasFile(fileName) ?
             Promise.resolve(false) :
             this.readFileAndUpdate(fileName);
-        this.validFiles.markFileValid(fileName);
-        return flow
-            .then(function () { return _this.checkDependenciesInternal(resolver, fileName); })
-            .catch(function (err) {
-            _this.validFiles.markFileInvalid(fileName);
-            throw err;
-        });
+        return flow.then(function () { return _this.checkDeclarationsInternal(resolver, fileName); });
     };
-    State.prototype.checkDependenciesInternal = function (resolver, fileName) {
+    State.prototype.checkDeclarationsInternal = function (resolver, fileName) {
         var _this = this;
-        var dependencies = this.findImportDeclarations(fileName)
+        var dependencies = this.findDeclarations(fileName)
             .map(function (depRelFileName) {
             return _this.resolve(resolver, fileName, depRelFileName);
         })
             .map(function (depFileNamePromise) { return depFileNamePromise.then(function (depFileName) {
             var result = Promise.resolve(depFileName);
-            var isDeclaration = isTypeDeclaration(depFileName);
-            var isRequiredModule = /\.js$/.exec(depFileName);
-            if (isDeclaration) {
-                var hasDeclaration = _this.dependencies.hasTypeDeclaration(depFileName);
-                if (!hasDeclaration) {
-                    _this.dependencies.addTypeDeclaration(depFileName);
-                    return _this.checkDependencies(resolver, depFileName).then(function () { return result; });
-                }
-            }
-            else if (isRequiredModule) {
-                return Promise.resolve(null);
-            }
-            else {
-                _this.dependencies.addDependency(fileName, depFileName);
-                return _this.checkDependencies(resolver, depFileName);
-            }
-            return result;
+            _this.dependencies.addTypeDeclaration(depFileName);
+            return _this.checkDeclarations(resolver, depFileName).then(function () { return result; });
         }); });
         return Promise.all(dependencies).then(function (_) { });
     };
-    State.prototype.findImportDeclarations = function (fileName) {
+    State.prototype.findDeclarations = function (fileName) {
         var _this = this;
         var node = this.services.getSourceFile(fileName);
-        var isDeclaration = isTypeDeclaration(fileName);
         var result = [];
         var visit = function (node) {
-            if (node.kind === 208) {
-                if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
-                    result.push(node.moduleReference.expression.text);
-                }
-            }
-            else if (!isDeclaration && node.kind === 209) {
-                result.push(node.moduleSpecifier.text);
-            }
-            else if (node.kind === 227) {
+            if (node.kind === 227) {
                 result = result.concat(node.referencedFiles.map(function (f) {
                     return path.resolve(path.dirname(node.fileName), f.fileName);
                 }));

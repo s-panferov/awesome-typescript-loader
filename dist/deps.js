@@ -4,11 +4,23 @@ var DependencyManager = (function () {
     function DependencyManager(dependencies, knownTypeDeclarations) {
         if (dependencies === void 0) { dependencies = {}; }
         if (knownTypeDeclarations === void 0) { knownTypeDeclarations = {}; }
+        this.indirectImports = [];
         this.dependencies = dependencies;
         this.knownTypeDeclarations = knownTypeDeclarations;
     }
     DependencyManager.prototype.clone = function () {
         return new DependencyManager(_.cloneDeep(this.dependencies), _.cloneDeep(this.knownTypeDeclarations));
+    };
+    DependencyManager.prototype.addIndirectImport = function (fileName) {
+        this.indirectImports.push(fileName);
+    };
+    DependencyManager.prototype.clearIndirectImports = function () {
+        this.indirectImports = [];
+    };
+    DependencyManager.prototype.getIndirectImports = function () {
+        var imports = this.indirectImports;
+        this.clearIndirectImports();
+        return imports;
     };
     DependencyManager.prototype.addDependency = function (fileName, depFileName) {
         if (!this.dependencies.hasOwnProperty(fileName)) {
@@ -48,7 +60,7 @@ var DependencyManager = (function () {
                 deps.add(declFileName);
             });
         }
-        this.getDependencies(fileName).forEach(function (depFileName) {
+        this.getDependencies(fileName).concat(this.getIndirectImports()).forEach(function (depFileName) {
             if (!appliedDeps.hasOwnProperty(depFileName)) {
                 deps.add(depFileName);
                 appliedDeps[depFileName] = true;
@@ -58,49 +70,7 @@ var DependencyManager = (function () {
             }
         });
     };
-    DependencyManager.prototype.recompileReason = function (fileName, changedFiles) {
-        var changedFilesSet = {};
-        changedFiles.forEach(function (fileName) { return changedFilesSet[fileName] = true; });
-        return this.recompileReasonInternal(fileName, changedFilesSet, {});
-    };
-    DependencyManager.prototype.recompileReasonInternal = function (fileName, changedFilesSet, visitedFiles) {
-        var fileDeps = this.getDependencies(fileName);
-        var currentVisitedFiles = objectAssign({}, visitedFiles);
-        currentVisitedFiles[fileName] = true;
-        for (var i = 0; i < fileDeps.length; i++) {
-            var depFileName = fileDeps[i];
-            if (changedFilesSet.hasOwnProperty(depFileName)) {
-                return [depFileName];
-            }
-            else {
-                if (currentVisitedFiles.hasOwnProperty(depFileName)) {
-                    continue;
-                }
-                var internal = this.recompileReasonInternal(depFileName, changedFilesSet, currentVisitedFiles);
-                if (internal.length) {
-                    return [depFileName].concat(internal);
-                }
-            }
-        }
-        return [];
-    };
     return DependencyManager;
 })();
 exports.DependencyManager = DependencyManager;
-var ValidFilesManager = (function () {
-    function ValidFilesManager() {
-        this.files = {};
-    }
-    ValidFilesManager.prototype.isFileValid = function (fileName) {
-        return !!this.files[fileName];
-    };
-    ValidFilesManager.prototype.markFileValid = function (fileName) {
-        this.files[fileName] = true;
-    };
-    ValidFilesManager.prototype.markFileInvalid = function (fileName) {
-        this.files[fileName] = false;
-    };
-    return ValidFilesManager;
-})();
-exports.ValidFilesManager = ValidFilesManager;
 //# sourceMappingURL=deps.js.map

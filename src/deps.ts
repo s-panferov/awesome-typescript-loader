@@ -12,6 +12,7 @@ export interface Dependency {
 export class DependencyManager {
     dependencies: {[fileName: string]: string[]}
     knownTypeDeclarations: FileSet
+    indirectImports: string[] = []
 
     constructor(dependencies: {[fileName: string]: string[]} = {}, knownTypeDeclarations: FileSet = {}) {
         this.dependencies = dependencies;
@@ -23,6 +24,21 @@ export class DependencyManager {
             _.cloneDeep(this.dependencies),
             _.cloneDeep(this.knownTypeDeclarations)
         )
+    }
+
+    addIndirectImport(fileName: string) {
+        this.indirectImports.push(fileName)
+    }
+
+    clearIndirectImports() {
+        this.indirectImports = []
+    }
+
+    getIndirectImports() {
+        var imports = this.indirectImports;
+        this.clearIndirectImports();
+
+        return imports;
     }
 
     addDependency(fileName: string, depFileName: string): void {
@@ -71,7 +87,7 @@ export class DependencyManager {
             })
         }
 
-        this.getDependencies(fileName).forEach((depFileName) => {
+        this.getDependencies(fileName).concat(this.getIndirectImports()).forEach((depFileName) => {
             if (!appliedDeps.hasOwnProperty(depFileName)) {
                 deps.add(depFileName);
                 appliedDeps[depFileName] = true;
@@ -81,52 +97,5 @@ export class DependencyManager {
                 this.applyChain(depFileName, deps, appliedChains, appliedDeps);
             }
         })
-    }
-
-    recompileReason(fileName: string, changedFiles: string[]): string[] {
-        var changedFilesSet: FileSet = {};
-        changedFiles.forEach(fileName => changedFilesSet[fileName] = true);
-        return this.recompileReasonInternal(fileName, changedFilesSet, {});
-    }
-
-    private recompileReasonInternal(fileName: string, changedFilesSet: FileSet, visitedFiles: FileSet): string[] {
-        var fileDeps = this.getDependencies(fileName);
-
-        var currentVisitedFiles = objectAssign({}, visitedFiles);
-        currentVisitedFiles[fileName] = true;
-
-        for (var i = 0; i < fileDeps.length; i++) {
-            var depFileName = fileDeps[i];
-
-            if (changedFilesSet.hasOwnProperty(depFileName)) {
-                return [depFileName];
-            } else {
-                if (currentVisitedFiles.hasOwnProperty(depFileName)) {
-                    continue;
-                }
-                var internal = this.recompileReasonInternal(depFileName, changedFilesSet, currentVisitedFiles);
-                if (internal.length) {
-                    return [depFileName].concat(internal)
-                }
-            }
-        }
-
-        return [];
-    }
-}
-
-export class ValidFilesManager {
-    files: {[fileName: string]: boolean} = {};
-
-    isFileValid(fileName: string): boolean {
-        return !!this.files[fileName]
-    }
-
-    markFileValid(fileName: string) {
-        this.files[fileName] = true;
-    }
-
-    markFileInvalid(fileName: string) {
-        this.files[fileName] = false;
     }
 }
