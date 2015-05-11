@@ -1,3 +1,4 @@
 .tscache
 node_modules
 dist
+!/dist
