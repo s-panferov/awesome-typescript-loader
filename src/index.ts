@@ -150,7 +150,6 @@ function compiler(webpack: WebPack, text: string): void {
             state.updateFile(fileName, text, false);
         })
         .then(() => state.checkDeclarations(resolver, fileName))
-        .then(() => state.updateProgram())
         .then(() => state.emit(fileName))
         .then(output => {
             var result = helpers.findResultFor(output, fileName);

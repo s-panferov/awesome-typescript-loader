@@ -96,7 +96,6 @@ function compiler(webpack, text) {
         state.updateFile(fileName, text, false);
     })
         .then(function () { return state.checkDeclarations(resolver, fileName); })
-        .then(function () { return state.updateProgram(); })
         .then(function () { return state.emit(fileName); })
         .then(function (output) {
         var result = helpers.findResultFor(output, fileName);

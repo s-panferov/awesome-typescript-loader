@@ -20,17 +20,21 @@ var Host = (function () {
             return this.state.files[fileName].version.toString();
         }
         else {
-            return this.state.indirectImportVersions[fileName].toString();
+            var version = this.state.indirectImportVersions[fileName];
+            return version != null ? version.toString() : null;
         }
     };
     Host.prototype.getScriptSnapshot = function (fileName) {
         var file = this.state.files[fileName];
+        if (this.state.indirectImportFailures[fileName]) {
+            return;
+        }
         if (!file) {
             try {
-                var rawFile = this.state.indirectImport(fileName);
-                return this.state.ts.ScriptSnapshot.fromString(rawFile);
+                return this.state.indirectImport(fileName);
             }
             catch (e) {
+                this.state.indirectImportFailures[fileName] = true;
                 return;
             }
         }
@@ -61,6 +65,7 @@ var State = (function () {
         this.files = {};
         this.indirectImportVersions = {};
         this.indirectImportCache = {};
+        this.indirectImportFailures = {};
         this.dependencies = new deps.DependencyManager();
         this.ts = tsImpl || require('typescript');
         this.fs = fsImpl;
@@ -85,17 +90,18 @@ var State = (function () {
         }
     }
     State.prototype.indirectImport = function (fileName) {
-        if (this.indirectImportCache.hasOwnProperty(fileName)) {
+        if (this.indirectImportCache[fileName]) {
             return this.indirectImportCache[fileName];
         }
         else {
             var rawFile = this.readFileSync(fileName);
-            this.addIndirectImport(fileName, rawFile);
-            return rawFile;
+            var snapshot = this.ts.ScriptSnapshot.fromString(rawFile);
+            this.addIndirectImport(fileName, snapshot);
+            return snapshot;
         }
     };
-    State.prototype.addIndirectImport = function (fileName, rawFile) {
-        this.indirectImportCache[fileName] = rawFile;
+    State.prototype.addIndirectImport = function (fileName, snapshot) {
+        this.indirectImportCache[fileName] = snapshot;
         this.dependencies.addIndirectImport(fileName);
         if (typeof this.indirectImportVersions[fileName] == 'undefined') {
             this.indirectImportVersions[fileName] = 0;
@@ -106,6 +112,7 @@ var State = (function () {
     };
     State.prototype.clearIndirectImportCache = function () {
         this.indirectImportCache = {};
+        this.indirectImportFailures = {};
     };
     State.prototype.resetService = function () {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());

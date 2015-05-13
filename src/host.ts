@@ -46,19 +46,24 @@ export class Host implements ts.LanguageServiceHost {
         if (this.state.files[fileName]) {
             return this.state.files[fileName].version.toString();
         } else {
-            return this.state.indirectImportVersions[fileName].toString();
+            var version = this.state.indirectImportVersions[fileName];
+            return version != null ? version.toString() : null;
         }
     }
 
     getScriptSnapshot(fileName) {
         var file = this.state.files[fileName];
 
+        if (this.state.indirectImportFailures[fileName]) {
+            return
+        }
+
         if (!file) {
             try {
-                var rawFile = this.state.indirectImport(fileName);
-                return this.state.ts.ScriptSnapshot.fromString(rawFile);
+                return this.state.indirectImport(fileName);
             }
             catch (e) {
+                this.state.indirectImportFailures[fileName] = true;
                 return;
             }
         }
@@ -102,7 +107,8 @@ export class State {
     options: CompilerOptions;
     program: ts.Program;
     indirectImportVersions: {[key:string]: number} = {};
-    indirectImportCache: {[key:string]: string} = {};
+    indirectImportCache: {[key:string]: ts.IScriptSnapshot} = {};
+    indirectImportFailures: {[key:string]: boolean} = {};
 
     dependencies = new deps.DependencyManager();
 
@@ -138,19 +144,19 @@ export class State {
         }
     }
 
-    indirectImport(fileName: string) {
-        if (this.indirectImportCache.hasOwnProperty(fileName)) {
+    indirectImport(fileName: string): ts.IScriptSnapshot {
+        if (this.indirectImportCache[fileName]) {
             return this.indirectImportCache[fileName]
         } else {
             var rawFile = this.readFileSync(fileName);
-            this.addIndirectImport(fileName, rawFile);
-
-            return rawFile;
+            var snapshot = this.ts.ScriptSnapshot.fromString(rawFile)
+            this.addIndirectImport(fileName, snapshot);
+            return snapshot;
         }
     }
 
-    addIndirectImport(fileName: string, rawFile: string) {
-        this.indirectImportCache[fileName] = rawFile;
+    addIndirectImport(fileName: string, snapshot: ts.IScriptSnapshot) {
+        this.indirectImportCache[fileName] = snapshot;
         this.dependencies.addIndirectImport(fileName);
         if (typeof this.indirectImportVersions[fileName] == 'undefined') {
             this.indirectImportVersions[fileName] = 0;
@@ -161,6 +167,7 @@ export class State {
 
     clearIndirectImportCache() {
         this.indirectImportCache = {}
+        this.indirectImportFailures = {}
     }
 
     resetService() {
