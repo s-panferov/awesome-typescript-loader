@@ -20,7 +20,6 @@ function ensureInstance(webpack, options, instanceName) {
     else {
         tsImpl = require('typescript');
     }
-    var showRecompileReason = !!options.showRecompileReason;
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
     }
@@ -34,12 +33,17 @@ function ensureInstance(webpack, options, instanceName) {
     var compiler = webpack._compiler;
     compiler.plugin("watch-run", function (watching, callback) {
         var resolver = Promise.promisify(watching.compiler.resolvers.normal.resolve);
-        var state = watching.compiler._tsInstances[instanceName].tsState;
+        var instance = watching.compiler._tsInstances[instanceName];
+        var state = instance.tsState;
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
-        Promise.all(Object.keys(mtimes).map(function (changedFile) {
-            if (/\.d\.ts$/.test(changedFile)) {
+        var changedFiles = Object.keys(mtimes);
+        changedFiles.forEach(function (changedFile) {
+            state.validFiles.markFileInvalid(changedFile);
+        });
+        Promise.all(changedFiles.map(function (changedFile) {
+            if (/\.ts$|\.d\.ts$/.test(changedFile)) {
                 return state.readFileAndUpdate(changedFile).then(function () {
-                    return state.checkDeclarations(resolver, changedFile);
+                    return state.checkDependencies(resolver, changedFile);
                 });
             }
             else {
@@ -50,12 +54,21 @@ function ensureInstance(webpack, options, instanceName) {
             .catch(function (err) { return console.error(err); });
     });
     compiler.plugin("after-compile", function (compilation, callback) {
-        var state = compilation.compiler._tsInstances[instanceName].tsState;
-        state.clearIndirectImportCache();
+        var instance = compilation.compiler._tsInstances[instanceName];
+        var state = instance.tsState;
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
         var emitError = function (err) {
             compilation.errors.push(new Error(err));
         };
+        var phantomImports = [];
+        Object.keys(state.files).forEach(function (fileName) {
+            if (!instance.compiledFiles[fileName]) {
+                phantomImports.push(fileName);
+            }
+        });
+        instance.compiledFiles = {};
+        compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
+        compilation.fileDependencies = _.uniq(compilation.fileDependencies);
         var errors = helpers.formatErrors(diagnostics);
         errors.forEach(emitError);
         callback();
@@ -63,9 +76,7 @@ function ensureInstance(webpack, options, instanceName) {
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow: tsFlow,
         tsState: tsState,
-        showRecompileReason: showRecompileReason,
-        lastTimes: {},
-        lastDeps: null
+        compiledFiles: {}
     };
 }
 function loader(text) {
@@ -92,11 +103,11 @@ function compiler(webpack, text) {
         state.dependencies.applyChain(fileName, deps);
     });
     instance.tsFlow = instance.tsFlow
+        .then(function () { return state.checkDependencies(resolver, fileName); })
         .then(function () {
-        state.updateFile(fileName, text, false);
+        instance.compiledFiles[fileName] = true;
+        return state.emit(fileName);
     })
-        .then(function () { return state.checkDeclarations(resolver, fileName); })
-        .then(function () { return state.emit(fileName); })
         .then(function (output) {
         var result = helpers.findResultFor(output, fileName);
         if (result.text === undefined) {
