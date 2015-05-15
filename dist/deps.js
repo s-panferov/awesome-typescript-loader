@@ -35,22 +35,12 @@ var DependencyManager = (function () {
         return objectAssign({}, this.knownTypeDeclarations);
     };
     DependencyManager.prototype.applyChain = function (fileName, deps, appliedChains, appliedDeps) {
-        var _this = this;
         if (appliedChains === void 0) { appliedChains = {}; }
         if (appliedDeps === void 0) { appliedDeps = {}; }
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
         appliedChains[fileName] = true;
-        this.getDependencies(fileName).forEach(function (depFileName) {
-            if (!appliedDeps.hasOwnProperty(depFileName)) {
-                deps.add(depFileName);
-                appliedDeps[depFileName] = true;
-            }
-            if (!appliedChains[depFileName]) {
-                _this.applyChain(depFileName, deps, appliedChains, appliedDeps);
-            }
-        });
     };
     return DependencyManager;
 })();
