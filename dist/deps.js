@@ -4,23 +4,11 @@ var DependencyManager = (function () {
     function DependencyManager(dependencies, knownTypeDeclarations) {
         if (dependencies === void 0) { dependencies = {}; }
         if (knownTypeDeclarations === void 0) { knownTypeDeclarations = {}; }
-        this.indirectImports = [];
         this.dependencies = dependencies;
         this.knownTypeDeclarations = knownTypeDeclarations;
     }
     DependencyManager.prototype.clone = function () {
         return new DependencyManager(_.cloneDeep(this.dependencies), _.cloneDeep(this.knownTypeDeclarations));
-    };
-    DependencyManager.prototype.addIndirectImport = function (fileName) {
-        this.indirectImports.push(fileName);
-    };
-    DependencyManager.prototype.clearIndirectImports = function () {
-        this.indirectImports = [];
-    };
-    DependencyManager.prototype.getIndirectImports = function () {
-        var imports = this.indirectImports;
-        this.clearIndirectImports();
-        return imports;
     };
     DependencyManager.prototype.addDependency = function (fileName, depFileName) {
         if (!this.dependencies.hasOwnProperty(fileName)) {
@@ -54,13 +42,7 @@ var DependencyManager = (function () {
             this.clearDependencies(fileName);
         }
         appliedChains[fileName] = true;
-        if (!appliedChains.hasOwnProperty(".d.ts")) {
-            appliedChains[".d.ts"] = true;
-            Object.keys(this.knownTypeDeclarations).forEach(function (declFileName) {
-                deps.add(declFileName);
-            });
-        }
-        this.getDependencies(fileName).concat(this.getIndirectImports()).forEach(function (depFileName) {
+        this.getDependencies(fileName).forEach(function (depFileName) {
             if (!appliedDeps.hasOwnProperty(depFileName)) {
                 deps.add(depFileName);
                 appliedDeps[depFileName] = true;
@@ -73,4 +55,20 @@ var DependencyManager = (function () {
     return DependencyManager;
 })();
 exports.DependencyManager = DependencyManager;
+var ValidFilesManager = (function () {
+    function ValidFilesManager() {
+        this.files = {};
+    }
+    ValidFilesManager.prototype.isFileValid = function (fileName) {
+        return !!this.files[fileName];
+    };
+    ValidFilesManager.prototype.markFileValid = function (fileName) {
+        this.files[fileName] = true;
+    };
+    ValidFilesManager.prototype.markFileInvalid = function (fileName) {
+        this.files[fileName] = false;
+    };
+    return ValidFilesManager;
+})();
+exports.ValidFilesManager = ValidFilesManager;
 //# sourceMappingURL=deps.js.map

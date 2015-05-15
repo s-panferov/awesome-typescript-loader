@@ -33,9 +33,7 @@ interface WebPack {
 interface CompilerInstance {
     tsFlow: Promise<any>;
     tsState: host.State;
-    lastTimes: {};
-    lastDeps: deps.DependencyManager;
-    showRecompileReason: boolean;
+    compiledFiles: {[key:string]: boolean};
 }
 
 /**
@@ -59,8 +57,6 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         tsImpl = require('typescript');
     }
 
-    var showRecompileReason = !!options.showRecompileReason;
-
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
     } else {
@@ -77,12 +73,19 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     compiler.plugin("watch-run", (watching, callback) => {
         var resolver = <host.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
-        var state = watching.compiler._tsInstances[instanceName].tsState;
+        var instance = watching.compiler._tsInstances[instanceName];
+        var state = instance.tsState;
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
-        Promise.all(Object.keys(mtimes).map((changedFile) => {
-            if (/\.d\.ts$/.test(changedFile)) {
+        var changedFiles = Object.keys(mtimes);
+
+        changedFiles.forEach((changedFile) => {
+            state.validFiles.markFileInvalid(changedFile);
+        });
+
+        Promise.all(changedFiles.map((changedFile) => {
+            if (/\.ts$|\.d\.ts$/.test(changedFile)) {
                 return state.readFileAndUpdate(changedFile).then(() => {
-                    return state.checkDeclarations(resolver, changedFile);
+                    return state.checkDependencies(resolver, changedFile);
                 });
             } else {
                 return Promise.resolve()
@@ -93,12 +96,23 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     });
 
     compiler.plugin("after-compile", function(compilation, callback) {
-        var state = compilation.compiler._tsInstances[instanceName].tsState;
-        state.clearIndirectImportCache();
+        var instance = compilation.compiler._tsInstances[instanceName];
+        var state = instance.tsState;
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
         var emitError = (err) => {
             compilation.errors.push(new Error(err))
-        }
+        };
+
+        var phantomImports = [];
+        Object.keys(state.files).forEach((fileName) => {
+            if (!instance.compiledFiles[fileName]) {
+                phantomImports.push(fileName)
+            }
+        });
+
+        instance.compiledFiles = {};
+        compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
+        compilation.fileDependencies = _.uniq(compilation.fileDependencies);
 
         var errors = helpers.formatErrors(diagnostics);
         errors.forEach(emitError);
@@ -108,9 +122,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow,
         tsState,
-        showRecompileReason,
-        lastTimes: {},
-        lastDeps: null
+        compiledFiles: {}
     }
 }
 
@@ -143,15 +155,14 @@ function compiler(webpack: WebPack, text: string): void {
         deps.clear();
         deps.add(fileName);
         state.dependencies.applyChain(fileName, deps);
-    })
+    });
 
     instance.tsFlow = instance.tsFlow
+        .then(() => state.checkDependencies(resolver, fileName))
         .then(() => {
-            state.updateFile(fileName, text, false);
+            instance.compiledFiles[fileName] = true;
+            return state.emit(fileName)
         })
-        .then(() => state.checkDeclarations(resolver, fileName))
-        .then(() => state.updateProgram())
-        .then(() => state.emit(fileName))
         .then(output => {
             var result = helpers.findResultFor(output, fileName);
 
@@ -174,7 +185,7 @@ function compiler(webpack: WebPack, text: string): void {
             applyDeps();
         })
         .catch(host.ResolutionError, err => {
-            console.error(err)
+            console.error(err);
             callback(err, helpers.codegenErrorReport([err]));
         })
         .catch((err) => { console.error(err); callback(err) })

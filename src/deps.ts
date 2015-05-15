@@ -10,9 +10,8 @@ export interface Dependency {
 }
 
 export class DependencyManager {
-    dependencies: {[fileName: string]: string[]}
-    knownTypeDeclarations: FileSet
-    indirectImports: string[] = []
+    dependencies: {[fileName: string]: string[]};
+    knownTypeDeclarations: FileSet;
 
     constructor(dependencies: {[fileName: string]: string[]} = {}, knownTypeDeclarations: FileSet = {}) {
         this.dependencies = dependencies;
@@ -24,21 +23,6 @@ export class DependencyManager {
             _.cloneDeep(this.dependencies),
             _.cloneDeep(this.knownTypeDeclarations)
         )
-    }
-
-    addIndirectImport(fileName: string) {
-        this.indirectImports.push(fileName)
-    }
-
-    clearIndirectImports() {
-        this.indirectImports = []
-    }
-
-    getIndirectImports() {
-        var imports = this.indirectImports;
-        this.clearIndirectImports();
-
-        return imports;
     }
 
     addDependency(fileName: string, depFileName: string): void {
@@ -80,22 +64,31 @@ export class DependencyManager {
 
         appliedChains[fileName] = true;
 
-        if (!appliedChains.hasOwnProperty(".d.ts")) {
-            appliedChains[".d.ts"] = true;
-            Object.keys(this.knownTypeDeclarations).forEach((declFileName) => {
-                deps.add(declFileName)
-            })
-        }
+        //this.getDependencies(fileName).forEach((depFileName) => {
+        //    if (!appliedDeps.hasOwnProperty(depFileName)) {
+        //        deps.add(depFileName);
+        //        appliedDeps[depFileName] = true;
+        //    }
+        //
+        //    if (!appliedChains[depFileName]) {
+        //        this.applyChain(depFileName, deps, appliedChains, appliedDeps);
+        //    }
+        //})
+    }
+}
 
-        this.getDependencies(fileName).concat(this.getIndirectImports()).forEach((depFileName) => {
-            if (!appliedDeps.hasOwnProperty(depFileName)) {
-                deps.add(depFileName);
-                appliedDeps[depFileName] = true;
-            }
+export class ValidFilesManager {
+    files: {[fileName: string]: boolean} = {};
 
-            if (!appliedChains[depFileName]) {
-                this.applyChain(depFileName, deps, appliedChains, appliedDeps);
-            }
-        })
+    isFileValid(fileName: string): boolean {
+        return !!this.files[fileName]
+    }
+
+    markFileValid(fileName: string) {
+        this.files[fileName] = true;
+    }
+
+    markFileInvalid(fileName: string) {
+        this.files[fileName] = false;
     }
 }
