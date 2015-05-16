@@ -10,7 +10,7 @@ Also there are a lot of problems in other TypeScript loaders that were fixed her
 
 ## Unstable TypeScript warning
 
-Right now this library works only with the **TypeScript 1.5-alpha** compiler.
+Right now this library works only with the **TypeScript 1.5-beta** compiler.
 
 ## Installation
 
@@ -91,6 +91,10 @@ Allows use of library other than the `target`'s default one. Useful when you wan
 ### instanceName *(string) (default='default')*
 
 Allows to use several TypeScript compilers with different settings in one app. Just override `instanceName` to initialize another instance.
+
+### reEmitDependentFiles *(string) (default=false')*
+
+Collect files dependency graph and re-emit all dependent files along with changed file.
 
 ## Using with --watch or webpack-dev-server
 

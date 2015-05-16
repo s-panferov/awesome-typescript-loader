@@ -1,6 +1,5 @@
 var fs = require('fs');
 var util = require('util');
-var path = require('path');
 var Promise = require('bluebird');
 var helpers = require('./helpers');
 var deps = require('./deps');
@@ -43,19 +42,14 @@ var Host = (function () {
     return Host;
 })();
 exports.Host = Host;
-function isTypeDeclaration(fileName) {
-    return /\.d.ts$/.test(fileName);
-}
 var State = (function () {
     function State(options, fsImpl, tsImpl) {
         this.files = {};
-        this.dependencies = new deps.DependencyManager();
-        this.validFiles = new deps.ValidFilesManager();
-        this.currentDependenciesLookup = null;
         this.ts = tsImpl || require('typescript');
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
+        this.fileAnalyzer = new deps.FileAnalyzer(this);
         this.options = {};
         objectAssign(this.options, {
             target: 1,
@@ -116,75 +110,6 @@ var State = (function () {
             throw new Error("Emit skipped");
         }
     };
-    State.prototype.checkDependencies = function (resolver, fileName) {
-        var _this = this;
-        if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
-        }
-        this.dependencies.clearDependencies(fileName);
-        var flow = this.hasFile(fileName) ?
-            Promise.resolve(false) :
-            this.readFileAndUpdate(fileName);
-        this.validFiles.markFileValid(fileName);
-        return flow
-            .then(function () { return _this.checkDependenciesInternal(resolver, fileName); })
-            .catch(function (err) {
-            _this.validFiles.markFileInvalid(fileName);
-            throw err;
-        });
-    };
-    State.prototype.checkDependenciesInternal = function (resolver, fileName) {
-        var _this = this;
-        var dependencies = this.findImportDeclarations(fileName)
-            .map(function (depRelFileName) {
-            return _this.resolve(resolver, fileName, depRelFileName);
-        })
-            .map(function (depFileNamePromise) { return depFileNamePromise.then(function (depFileName) {
-            var result = Promise.resolve(depFileName);
-            var isDeclaration = isTypeDeclaration(depFileName);
-            var isRequiredJs = /\.js$/.exec(depFileName);
-            if (isDeclaration) {
-                var hasDeclaration = _this.dependencies.hasTypeDeclaration(depFileName);
-                if (!hasDeclaration) {
-                    _this.dependencies.addTypeDeclaration(depFileName);
-                    return _this.checkDependencies(resolver, depFileName).then(function () { return result; });
-                }
-            }
-            else if (isRequiredJs) {
-                return Promise.resolve(null);
-            }
-            else {
-                _this.dependencies.addDependency(fileName, depFileName);
-                return _this.checkDependencies(resolver, depFileName);
-            }
-            return result;
-        }); });
-        return Promise.all(dependencies).then(function (_) { });
-    };
-    State.prototype.findImportDeclarations = function (fileName) {
-        var _this = this;
-        var node = this.services.getSourceFile(fileName);
-        var isDeclaration = isTypeDeclaration(fileName);
-        var result = [];
-        var visit = function (node) {
-            if (node.kind === 208) {
-                if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
-                    result.push(node.moduleReference.expression.text);
-                }
-            }
-            else if (!isDeclaration && node.kind === 209) {
-                result.push(node.moduleSpecifier.text);
-            }
-            else if (node.kind === 227) {
-                result = result.concat(node.referencedFiles.map(function (f) {
-                    return path.resolve(path.dirname(node.fileName), f.fileName);
-                }));
-            }
-            _this.ts.forEachChild(node, visit);
-        };
-        visit(node);
-        return result;
-    };
     State.prototype.updateFile = function (fileName, text, checked) {
         if (checked === void 0) { checked = false; }
         var prevFile = this.files[fileName];
@@ -239,34 +164,6 @@ var State = (function () {
     State.prototype.normalizePath = function (path) {
         return this.ts.normalizePath(path);
     };
-    State.prototype.resolve = function (resolver, fileName, defPath) {
-        var result;
-        if (!path.extname(defPath).length) {
-            result = resolver(path.dirname(fileName), defPath + ".ts")
-                .error(function (error) {
-                return resolver(path.dirname(fileName), defPath + ".d.ts");
-            })
-                .error(function (error) {
-                return resolver(path.dirname(fileName), defPath);
-            });
-        }
-        else {
-            if (/\.d\.ts$/.test(defPath)) {
-                result = Promise.resolve(defPath);
-            }
-            else {
-                result = resolver(path.dirname(fileName), defPath);
-            }
-        }
-        return result
-            .error(function (error) {
-            var detailedError = new ResolutionError();
-            detailedError.message = error.message + "\n    Required in " + fileName;
-            detailedError.cause = error;
-            detailedError.fileName = fileName;
-            throw detailedError;
-        });
-    };
     return State;
 })();
 exports.State = State;
@@ -275,11 +172,4 @@ function TypeScriptCompilationError(diagnostics) {
 }
 exports.TypeScriptCompilationError = TypeScriptCompilationError;
 util.inherits(TypeScriptCompilationError, Error);
-var ResolutionError = (function () {
-    function ResolutionError() {
-    }
-    return ResolutionError;
-})();
-exports.ResolutionError = ResolutionError;
-util.inherits(ResolutionError, Error);
 //# sourceMappingURL=host.js.map

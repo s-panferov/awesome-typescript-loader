@@ -60,7 +60,13 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
     } else {
-        options.emitRequireType = (<any>options.emitRequireType == 'true' ? true : false);
+        options.emitRequireType = (<any>options.emitRequireType == 'true');
+    }
+
+    if (typeof options.reEmitDependentFiles === 'undefined') {
+        options.reEmitDependentFiles = false;
+    } else {
+        options.reEmitDependentFiles = (<any>options.reEmitDependentFiles == 'true');
     }
 
     if (options.target) {
@@ -72,20 +78,20 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     var compiler = (<any>webpack._compiler);
 
     compiler.plugin("watch-run", (watching, callback) => {
-        var resolver = <host.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
-        var instance = watching.compiler._tsInstances[instanceName];
+        var resolver = <deps.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
+        var instance: CompilerInstance = watching.compiler._tsInstances[instanceName];
         var state = instance.tsState;
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         var changedFiles = Object.keys(mtimes);
 
         changedFiles.forEach((changedFile) => {
-            state.validFiles.markFileInvalid(changedFile);
+            state.fileAnalyzer.validFiles.markFileInvalid(changedFile);
         });
 
         Promise.all(changedFiles.map((changedFile) => {
             if (/\.ts$|\.d\.ts$/.test(changedFile)) {
                 return state.readFileAndUpdate(changedFile).then(() => {
-                    return state.checkDependencies(resolver, changedFile);
+                    return state.fileAnalyzer.checkDependencies(resolver, changedFile);
                 });
             } else {
                 return Promise.resolve()
@@ -96,7 +102,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     });
 
     compiler.plugin("after-compile", function(compilation, callback) {
-        var instance = compilation.compiler._tsInstances[instanceName];
+        var instance: CompilerInstance = compilation.compiler._tsInstances[instanceName];
         var state = instance.tsState;
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
         var emitError = (err) => {
@@ -144,21 +150,23 @@ function compiler(webpack: WebPack, text: string): void {
 
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
-    var resolver = <host.Resolver>Promise.promisify(webpack.resolve);
+    var resolver = <deps.Resolver>Promise.promisify(webpack.resolve);
 
-    var deps = {
+    var depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
         clear: webpack.clearDependencies.bind(webpack)
     };
 
     var applyDeps = _.once(() => {
-        deps.clear();
-        deps.add(fileName);
-        state.dependencies.applyChain(fileName, deps);
+        depsInjector.clear();
+        depsInjector.add(fileName);
+        if (state.options.reEmitDependentFiles) {
+            state.fileAnalyzer.dependencies.applyChain(fileName, depsInjector);
+        }
     });
 
     instance.tsFlow = instance.tsFlow
-        .then(() => state.checkDependencies(resolver, fileName))
+        .then(() => state.fileAnalyzer.checkDependencies(resolver, fileName))
         .then(() => {
             instance.compiledFiles[fileName] = true;
             return state.emit(fileName)
@@ -184,7 +192,7 @@ function compiler(webpack: WebPack, text: string): void {
         .finally(() => {
             applyDeps();
         })
-        .catch(host.ResolutionError, err => {
+        .catch(deps.ResolutionError, err => {
             console.error(err);
             callback(err, helpers.codegenErrorReport([err]));
         })
