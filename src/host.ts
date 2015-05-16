@@ -13,10 +13,6 @@ var RUNTIME = helpers.loadLib('./runtime.d.ts');
 var LIB = helpers.loadLib('typescript/bin/lib.d.ts');
 var LIB6 = helpers.loadLib('typescript/bin/lib.es6.d.ts');
 
-export interface Resolver {
-    (base: string, dep: string): Promise<String>
-}
-
 export interface File {
     text: string;
     version: number;
@@ -28,6 +24,7 @@ export interface CompilerOptions extends ts.CompilerOptions {
     compiler?: string;
     emitRequireType?: boolean;
     library?: string;
+    reEmitDependentFiles?: boolean;
 }
 
 export class Host implements ts.LanguageServiceHost {
@@ -78,10 +75,6 @@ export class Host implements ts.LanguageServiceHost {
 
 }
 
-function isTypeDeclaration(fileName: string): boolean {
-    return /\.d.ts$/.test(fileName);
-}
-
 export class State {
 
     ts: typeof ts;
@@ -91,10 +84,7 @@ export class State {
     services: ts.LanguageService;
     options: CompilerOptions;
     program: ts.Program;
-
-    dependencies = new deps.DependencyManager();
-    validFiles = new deps.ValidFilesManager();
-    currentDependenciesLookup: Promise<void> = null;
+    fileAnalyzer: deps.FileAnalyzer;
 
     constructor(
         options: CompilerOptions,
@@ -105,6 +95,7 @@ export class State {
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
+        this.fileAnalyzer = new deps.FileAnalyzer(this);
 
         this.options = {};
 
@@ -180,82 +171,6 @@ export class State {
         }
     }
 
-    checkDependencies(resolver: Resolver, fileName: string): Promise<void> {
-        if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
-        }
-
-        this.dependencies.clearDependencies(fileName);
-
-        var flow = this.hasFile(fileName) ?
-            Promise.resolve(false) :
-            this.readFileAndUpdate(fileName);
-
-        this.validFiles.markFileValid(fileName);
-
-        return flow
-            .then(() => this.checkDependenciesInternal(resolver, fileName))
-            .catch((err) => {
-                this.validFiles.markFileInvalid(fileName);
-                throw err
-            });
-    }
-
-    private checkDependenciesInternal(resolver: Resolver, fileName: string): Promise<void> {
-        var dependencies = this.findImportDeclarations(fileName)
-            .map(depRelFileName =>
-                this.resolve(resolver, fileName, depRelFileName))
-            .map(depFileNamePromise => depFileNamePromise.then(depFileName => {
-
-                var result: Promise<string> = Promise.resolve(depFileName);
-                var isDeclaration = isTypeDeclaration(depFileName);
-                var isRequiredJs = /\.js$/.exec(depFileName);
-
-                if (isDeclaration) {
-                    var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
-                    if (!hasDeclaration) {
-                        this.dependencies.addTypeDeclaration(depFileName);
-                        return this.checkDependencies(resolver, depFileName).then(() => result)
-                    }
-                } else if (isRequiredJs) {
-                    return Promise.resolve(null);
-                } else {
-                    this.dependencies.addDependency(fileName, depFileName);
-                    return this.checkDependencies(resolver, depFileName);
-                }
-
-                return result;
-            }));
-
-        return Promise.all(dependencies).then((_) => {});
-    }
-
-    private findImportDeclarations(fileName: string) {
-        var node = this.services.getSourceFile(fileName);
-
-        var isDeclaration = isTypeDeclaration(fileName);
-
-        var result = [];
-        var visit = (node: ts.Node) => {
-            if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
-                // we need this check to ensure that we have an external import
-                if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
-                    result.push((<any>node).moduleReference.expression.text);
-                }
-            } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
-                result.push((<any>node).moduleSpecifier.text);
-            } else if (node.kind === ts.SyntaxKind.SourceFile) {
-                result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
-                    return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
-                }));
-            }
-
-            this.ts.forEachChild(node, visit);
-        };
-        visit(node);
-        return result;
-    }
-
     updateFile(fileName: string, text: string, checked: boolean = false): boolean {
         var prevFile = this.files[fileName];
         var version = 0;
@@ -316,38 +231,6 @@ export class State {
     normalizePath(path: string): string {
         return (<any>this.ts).normalizePath(path)
     }
-
-    resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
-        var result;
-        if (!path.extname(defPath).length) {
-            result = resolver(path.dirname(fileName), defPath + ".ts")
-                .error(function (error) {
-                    return resolver(path.dirname(fileName), defPath + ".d.ts")
-                })
-                .error(function (error) {
-                    return resolver(path.dirname(fileName), defPath)
-                })
-        } else {
-            // We don't need to resolve .d.ts here because they are already
-            // absolute at this step.
-            if (/\.d\.ts$/.test(defPath)) {
-                result = Promise.resolve(defPath)
-            } else {
-                result = resolver(path.dirname(fileName), defPath)
-            }
-        }
-
-        return result
-            .error(function (error) {
-                var detailedError: any = new ResolutionError();
-                detailedError.message = error.message + "\n    Required in " + fileName;
-                detailedError.cause = error;
-                detailedError.fileName = fileName;
-
-                throw detailedError;
-            })
-    }
-
 }
 
 
@@ -360,12 +243,3 @@ export function TypeScriptCompilationError(diagnostics) {
 util.inherits(TypeScriptCompilationError, Error);
 
 
-/**
- * Emit compilation result for a specified fileName.
- */
-export class ResolutionError {
-    message: string;
-    fileName: string;
-    cause: Error;
-}
-util.inherits(ResolutionError, Error);

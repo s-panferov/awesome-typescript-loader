@@ -4,6 +4,7 @@ var Promise = require("bluebird");
 var _ = require('lodash');
 var loaderUtils = require('loader-utils');
 var host = require('./host');
+var deps = require('./deps');
 var helpers = require('./helpers');
 function ensureInstance(webpack, options, instanceName) {
     if (typeof webpack._compiler._tsInstances === 'undefined') {
@@ -24,7 +25,13 @@ function ensureInstance(webpack, options, instanceName) {
         options.emitRequireType = true;
     }
     else {
-        options.emitRequireType = (options.emitRequireType == 'true' ? true : false);
+        options.emitRequireType = (options.emitRequireType == 'true');
+    }
+    if (typeof options.reEmitDependentFiles === 'undefined') {
+        options.reEmitDependentFiles = false;
+    }
+    else {
+        options.reEmitDependentFiles = (options.reEmitDependentFiles == 'true');
     }
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
@@ -38,12 +45,12 @@ function ensureInstance(webpack, options, instanceName) {
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         var changedFiles = Object.keys(mtimes);
         changedFiles.forEach(function (changedFile) {
-            state.validFiles.markFileInvalid(changedFile);
+            state.fileAnalyzer.validFiles.markFileInvalid(changedFile);
         });
         Promise.all(changedFiles.map(function (changedFile) {
             if (/\.ts$|\.d\.ts$/.test(changedFile)) {
                 return state.readFileAndUpdate(changedFile).then(function () {
-                    return state.checkDependencies(resolver, changedFile);
+                    return state.fileAnalyzer.checkDependencies(resolver, changedFile);
                 });
             }
             else {
@@ -93,17 +100,19 @@ function compiler(webpack, text) {
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
     var resolver = Promise.promisify(webpack.resolve);
-    var deps = {
+    var depsInjector = {
         add: function (depFileName) { webpack.addDependency(depFileName); },
         clear: webpack.clearDependencies.bind(webpack)
     };
     var applyDeps = _.once(function () {
-        deps.clear();
-        deps.add(fileName);
-        state.dependencies.applyChain(fileName, deps);
+        depsInjector.clear();
+        depsInjector.add(fileName);
+        if (state.options.reEmitDependentFiles) {
+            state.fileAnalyzer.dependencies.applyChain(fileName, depsInjector);
+        }
     });
     instance.tsFlow = instance.tsFlow
-        .then(function () { return state.checkDependencies(resolver, fileName); })
+        .then(function () { return state.fileAnalyzer.checkDependencies(resolver, fileName); })
         .then(function () {
         instance.compiledFiles[fileName] = true;
         return state.emit(fileName);
@@ -125,7 +134,7 @@ function compiler(webpack, text) {
         .finally(function () {
         applyDeps();
     })
-        .catch(host.ResolutionError, function (err) {
+        .catch(deps.ResolutionError, function (err) {
         console.error(err);
         callback(err, helpers.codegenErrorReport([err]));
     })
