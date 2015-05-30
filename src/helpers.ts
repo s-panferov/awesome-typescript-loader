@@ -79,7 +79,7 @@ export function formatMessageChain(chain: ts.DiagnosticMessageChain) {
 }
 
 export function formatLineChar(lineChar) {
-    return ':' + lineChar.line + ':' + lineChar.character;
+    return ':' + (lineChar.line + 1) + ':' + lineChar.character;
 }
 
 export function loadLib(moduleId) {
