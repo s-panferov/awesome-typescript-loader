@@ -1,3 +1,14 @@
+<a name"0.4.0"></a>
+## 0.4.0 (2015-05-30)
+
+
+#### Features
+
+* ***:**
+  * add tsconfig support and return ts-jsx-loader back ([c03c73e1](https://github.com/s-panferov/awesome-typescript-loader/commit/c03c73e1))
+  * refactor and impl separate file analyzer ([8964d3d7](https://github.com/s-panferov/awesome-typescript-loader/commit/8964d3d7))
+
+
 <a name"0.3.1"></a>
 ### 0.3.1 (2015-05-11)
 
