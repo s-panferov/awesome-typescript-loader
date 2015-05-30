@@ -1,3 +1,12 @@
+<a name"0.5.1"></a>
+### 0.5.1 (2015-05-30)
+
+
+#### Features
+
+* **helpers:** add +1 to line because they are zero-based in TS ([76efd423](https://github.com/s-panferov/awesome-typescript-loader/commit/76efd423))
+
+
 <a name"0.5.0"></a>
 ## 0.5.0 (2015-05-30)
 
