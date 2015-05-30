@@ -23,15 +23,15 @@ export function findResultFor(output: ts.EmitOutput, filename: string) {
     };
 }
 
-export function parseOptionTarget(target: string, ts: typeof ts): ts.ScriptTarget {
+export function parseOptionTarget(target: string, tsInst: typeof ts): ts.ScriptTarget {
     target = target.toLowerCase();
     switch (target) {
         case 'es3':
-            return ts.ScriptTarget.ES3;
+            return tsInst.ScriptTarget.ES3;
         case 'es5':
-            return ts.ScriptTarget.ES5;
+            return tsInst.ScriptTarget.ES5;
         case 'es6':
-            return ts.ScriptTarget.ES6;
+            return tsInst.ScriptTarget.ES6;
     }
 }
 

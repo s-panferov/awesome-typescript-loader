@@ -31,7 +31,7 @@
     "loader-utils": "^0.2.6",
     "lodash": "^3.3.0",
     "object-assign": "^2.0.0",
-    "typescript": "^1.5.0-alfa"
+    "typescript": "git+https://github.com/Microsoft/TypeScript.git#release-1.5"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

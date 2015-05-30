@@ -63,15 +63,15 @@ var FileAnalyzer = (function () {
         var isDeclaration = isTypeDeclaration(fileName);
         var result = [];
         var visit = function (node) {
-            if (node.kind === 208) {
+            if (node.kind === 209) {
                 if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
                     result.push(node.moduleReference.expression.text);
                 }
             }
-            else if (!isDeclaration && node.kind === 209) {
+            else if (!isDeclaration && node.kind === 210) {
                 result.push(node.moduleSpecifier.text);
             }
-            else if (node.kind === 227) {
+            else if (node.kind === 228) {
                 result = result.concat(node.referencedFiles.map(function (f) {
                     return path.resolve(path.dirname(node.fileName), f.fileName);
                 }));

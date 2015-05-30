@@ -21,15 +21,15 @@ function findResultFor(output, filename) {
     };
 }
 exports.findResultFor = findResultFor;
-function parseOptionTarget(target, ts) {
+function parseOptionTarget(target, tsInst) {
     target = target.toLowerCase();
     switch (target) {
         case 'es3':
-            return ts.ScriptTarget.ES3;
+            return 0;
         case 'es5':
-            return ts.ScriptTarget.ES5;
+            return 1;
         case 'es6':
-            return ts.ScriptTarget.ES6;
+            return 2;
     }
 }
 exports.parseOptionTarget = parseOptionTarget;

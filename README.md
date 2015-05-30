@@ -50,30 +50,28 @@ module.exports = {
 
 After that, you would be able to build TypeScript files with webpack.
 
-## Options
+## TS defaults
 
-### target
+* target = 'es5'
+* module = 'commonjs'
 
-Specify the TypeScript output target.
+## tsconfig.json
 
-- ES3
-- **ES5 (default)**
-- ES6
+You can use .tsconfig.json file to configure your compiler and loader:
 
-### module
+```
+{
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "removeComments": true,
+    },
+    "awesomeTypescriptLoaderOptions": {
+        /* ... */
+    }
+}
+```
 
-Specify the type of modules that TypeScript emits.
-
-- **CommonJS (default)**
-- AMD
-
-### sourceMap *(boolean) (default=false)*
-
-Specify whether or not TypeScript emits source maps.
-
-### noImplicitAny *(boolean) (default=false)*
-
-Specify whether or not TypeScript will allow inferring the `any` type.
+## Loader Options
 
 ### compiler *(string) (default='typescript')*
 
@@ -95,6 +93,14 @@ Allows to use several TypeScript compilers with different settings in one app. J
 ### reEmitDependentFiles *(string) (default=false')*
 
 Collect files dependency graph and re-emit all dependent files along with changed file.
+
+### tsconfig *(string) (default='tsconfig.json')*
+
+Specify path to a TS config file. Useful when you have multiple config files. This setting is useless *inside* TS config file.
+
+### useWebpackText *(string) (default=false)*
+
+Use this setting to force loader to use webpack's way to load files. Useful only with ts-jsx-loader. Builds may become slower.
 
 ## Using with --watch or webpack-dev-server
 

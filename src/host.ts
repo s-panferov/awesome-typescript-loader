@@ -25,6 +25,8 @@ export interface CompilerOptions extends ts.CompilerOptions {
     emitRequireType?: boolean;
     library?: string;
     reEmitDependentFiles?: boolean;
+    tsconfig?: string;
+    useWebpackText?: boolean;
 }
 
 export class Host implements ts.LanguageServiceHost {

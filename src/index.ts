@@ -1,7 +1,6 @@
 /// <reference path="../node_modules/typescript/bin/typescriptServices.d.ts" />
 /// <reference path="../typings/tsd.d.ts" />
 
-
 import Promise = require("bluebird");
 import path = require('path');
 import fs = require('fs');
@@ -34,6 +33,7 @@ interface CompilerInstance {
     tsFlow: Promise<any>;
     tsState: host.State;
     compiledFiles: {[key:string]: boolean};
+    options: CompilerOptions;
 }
 
 /**
@@ -57,16 +57,40 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         tsImpl = require('typescript');
     }
 
+    var configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
+    var configFile = null;
+    if (configFileName) {
+        configFile = tsImpl.readConfigFile(configFileName);
+        if (configFile.error) {
+            throw configFile.error;
+        }
+
+        _.extend(options, configFile.config.compilerOptions);
+        _.extend(options, configFile.config.awesomeTypescriptLoaderOptions);
+    }
+
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
     } else {
-        options.emitRequireType = (<any>options.emitRequireType == 'true');
+        if (typeof options.emitRequireType === 'string') {
+            options.emitRequireType = (<any>options.emitRequireType) === 'true'
+        }
     }
 
     if (typeof options.reEmitDependentFiles === 'undefined') {
         options.reEmitDependentFiles = false;
     } else {
-        options.reEmitDependentFiles = (<any>options.reEmitDependentFiles == 'true');
+        if (typeof options.reEmitDependentFiles === 'string') {
+            options.reEmitDependentFiles = (<any>options.reEmitDependentFiles) === 'true'
+        }
+    }
+
+    if (typeof options.useWebpackText === 'undefined') {
+        options.useWebpackText = false;
+    } else {
+        if (typeof options.useWebpackText === 'string') {
+            options.useWebpackText = (<any>options.useWebpackText) === 'true'
+        }
     }
 
     if (options.target) {
@@ -128,7 +152,8 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow,
         tsState,
-        compiledFiles: {}
+        compiledFiles: {},
+        options
     }
 }
 
@@ -169,6 +194,11 @@ function compiler(webpack: WebPack, text: string): void {
         .then(() => state.fileAnalyzer.checkDependencies(resolver, fileName))
         .then(() => {
             instance.compiledFiles[fileName] = true;
+            if (instance.options.useWebpackText) {
+                if(state.updateFile(fileName, text, true)) {
+                    state.updateProgram();
+                }
+            }
             return state.emit(fileName)
         })
         .then(output => {

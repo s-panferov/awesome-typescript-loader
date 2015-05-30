@@ -6,7 +6,7 @@ module.exports = {
     module: {
         loaders: [{
             test: /\.ts$/,
-            loader: 'awesome-typescript-loader!ts-jsx-loader'
+            loader: 'awesome-typescript-loader?useWebpackText=true!ts-jsx-loader'
         }]
     },
     entry: {

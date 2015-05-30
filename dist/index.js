@@ -21,17 +21,39 @@ function ensureInstance(webpack, options, instanceName) {
     else {
         tsImpl = require('typescript');
     }
+    var configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
+    var configFile = null;
+    if (configFileName) {
+        configFile = tsImpl.readConfigFile(configFileName);
+        if (configFile.error) {
+            throw configFile.error;
+        }
+        _.extend(options, configFile.config.compilerOptions);
+        _.extend(options, configFile.config.awesomeTypescriptLoaderOptions);
+    }
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
     }
     else {
-        options.emitRequireType = (options.emitRequireType == 'true');
+        if (typeof options.emitRequireType === 'string') {
+            options.emitRequireType = options.emitRequireType === 'true';
+        }
     }
     if (typeof options.reEmitDependentFiles === 'undefined') {
         options.reEmitDependentFiles = false;
     }
     else {
-        options.reEmitDependentFiles = (options.reEmitDependentFiles == 'true');
+        if (typeof options.reEmitDependentFiles === 'string') {
+            options.reEmitDependentFiles = options.reEmitDependentFiles === 'true';
+        }
+    }
+    if (typeof options.useWebpackText === 'undefined') {
+        options.useWebpackText = false;
+    }
+    else {
+        if (typeof options.useWebpackText === 'string') {
+            options.useWebpackText = options.useWebpackText === 'true';
+        }
     }
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
@@ -83,7 +105,8 @@ function ensureInstance(webpack, options, instanceName) {
     return webpack._compiler._tsInstances[instanceName] = {
         tsFlow: tsFlow,
         tsState: tsState,
-        compiledFiles: {}
+        compiledFiles: {},
+        options: options
     };
 }
 function loader(text) {
@@ -115,6 +138,11 @@ function compiler(webpack, text) {
         .then(function () { return state.fileAnalyzer.checkDependencies(resolver, fileName); })
         .then(function () {
         instance.compiledFiles[fileName] = true;
+        if (instance.options.useWebpackText) {
+            if (state.updateFile(fileName, text, true)) {
+                state.updateProgram();
+            }
+        }
         return state.emit(fileName);
     })
         .then(function (output) {
