@@ -1,3 +1,12 @@
+<a name"0.5.0"></a>
+## 0.5.0 (2015-05-30)
+
+
+#### Features
+
+* ***:** play well with ExtractTextPlugin ([33807f1b](https://github.com/s-panferov/awesome-typescript-loader/commit/33807f1b))
+
+
 <a name"0.4.0"></a>
 ## 0.4.0 (2015-05-30)
 
