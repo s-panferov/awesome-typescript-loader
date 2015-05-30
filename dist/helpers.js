@@ -71,7 +71,7 @@ function formatMessageChain(chain) {
 }
 exports.formatMessageChain = formatMessageChain;
 function formatLineChar(lineChar) {
-    return ':' + lineChar.line + ':' + lineChar.character;
+    return ':' + (lineChar.line + 1) + ':' + lineChar.character;
 }
 exports.formatLineChar = formatLineChar;
 function loadLib(moduleId) {
