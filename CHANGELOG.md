@@ -1,3 +1,12 @@
+<a name"0.5.2"></a>
+### 0.5.2 (2015-05-30)
+
+
+#### Features
+
+* **helpers:** recompile files ([78b13a14](https://github.com/s-panferov/awesome-typescript-loader/commit/78b13a14))
+
+
 <a name"0.5.1"></a>
 ### 0.5.1 (2015-05-30)
 
