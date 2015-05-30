@@ -1,7 +1,7 @@
-/// <reference path="../node_modules/typescript/bin/typescriptServices.d.ts" />
-/// <reference path="../typings/tsd.d.ts" />
+/// <reference path='../node_modules/typescript/bin/typescriptServices.d.ts' />
+/// <reference path='../typings/tsd.d.ts' />
 
-import Promise = require("bluebird");
+import Promise = require('bluebird');
 import path = require('path');
 import fs = require('fs');
 import _ = require('lodash');
@@ -36,16 +36,40 @@ interface CompilerInstance {
     options: CompilerOptions;
 }
 
+function getRootCompiler(compiler) {
+    if (compiler.parentCompilation) {
+        return getRootCompiler(compiler.parentCompilation.compiler)
+    } else {
+        return compiler;
+    }
+}
+
+function getInstanceStore(compiler): {[key:string]: CompilerInstance} {
+    var store = getRootCompiler(compiler)._tsInstances;
+    if (store) {
+        return store
+    } else {
+        throw new Error('Can not resolve instance store')
+    }
+}
+
+function ensureInstanceStore(compiler) {
+    getRootCompiler(compiler)._tsInstances = {};
+}
+
+function resolveInstance(compiler, instanceName) {
+    return getInstanceStore(compiler)[instanceName];
+}
+
 /**
  * Creates compiler instance
  */
 function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName: string): CompilerInstance {
-    if (typeof webpack._compiler._tsInstances === 'undefined') {
-        webpack._compiler._tsInstances = {};
-    }
+    ensureInstanceStore(webpack._compiler);
 
-    if (typeof webpack._compiler._tsInstances[instanceName] !== "undefined") {
-        return webpack._compiler._tsInstances[instanceName];
+    var exInstance = resolveInstance(webpack._compiler, instanceName);
+    if (exInstance) {
+        return exInstance
     }
 
     var tsFlow = Promise.resolve();
@@ -101,9 +125,9 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     var compiler = (<any>webpack._compiler);
 
-    compiler.plugin("watch-run", (watching, callback) => {
+    compiler.plugin('watch-run', (watching, callback) => {
         var resolver = <deps.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
-        var instance: CompilerInstance = watching.compiler._tsInstances[instanceName];
+        var instance: CompilerInstance = resolveInstance(watching.compiler, instanceName);
         var state = instance.tsState;
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         var changedFiles = Object.keys(mtimes);
@@ -125,8 +149,8 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
             .catch((err) => console.error(err))
     });
 
-    compiler.plugin("after-compile", function(compilation, callback) {
-        var instance: CompilerInstance = compilation.compiler._tsInstances[instanceName];
+    compiler.plugin('after-compile', function(compilation, callback) {
+        var instance: CompilerInstance = resolveInstance(compilation.compiler, instanceName);
         var state = instance.tsState;
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
         var emitError = (err) => {
@@ -149,7 +173,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         callback();
     });
 
-    return webpack._compiler._tsInstances[instanceName] = {
+    return getInstanceStore(webpack._compiler)[instanceName] = {
         tsFlow,
         tsState,
         compiledFiles: {},
