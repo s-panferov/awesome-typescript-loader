@@ -24,7 +24,10 @@ function getInstanceStore(compiler) {
     }
 }
 function ensureInstanceStore(compiler) {
-    getRootCompiler(compiler)._tsInstances = {};
+    var rootCompiler = getRootCompiler(compiler);
+    if (!rootCompiler._tsInstances) {
+        rootCompiler._tsInstances = {};
+    }
 }
 function resolveInstance(compiler, instanceName) {
     return getInstanceStore(compiler)[instanceName];

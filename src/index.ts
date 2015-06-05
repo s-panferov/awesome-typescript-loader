@@ -54,7 +54,10 @@ function getInstanceStore(compiler): {[key:string]: CompilerInstance} {
 }
 
 function ensureInstanceStore(compiler) {
-    getRootCompiler(compiler)._tsInstances = {};
+    var rootCompiler = getRootCompiler(compiler);
+    if (!rootCompiler._tsInstances) {
+        rootCompiler._tsInstances = {};
+    }
 }
 
 function resolveInstance(compiler, instanceName) {
@@ -150,6 +153,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     });
 
     compiler.plugin('after-compile', function(compilation, callback) {
+
         var instance: CompilerInstance = resolveInstance(compilation.compiler, instanceName);
         var state = instance.tsState;
         var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
