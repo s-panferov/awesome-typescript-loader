@@ -1,3 +1,12 @@
+<a name"0.5.3"></a>
+### 0.5.3 (2015-06-05)
+
+
+#### Features
+
+* ***:** propper instance init ([d681689d](https://github.com/s-panferov/awesome-typescript-loader/commit/d681689d))
+
+
 <a name"0.5.2"></a>
 ### 0.5.2 (2015-05-30)
 
