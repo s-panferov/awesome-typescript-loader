@@ -53,8 +53,8 @@ function ensureInstance(webpack, options, instanceName) {
         if (configFile.error) {
             throw configFile.error;
         }
-        _.extend(options, configFile.config.compilerOptions);
-        _.extend(options, configFile.config.awesomeTypescriptLoaderOptions);
+        _.extend(options, configFile.compilerOptions);
+        _.extend(options, configFile.awesomeTypescriptLoaderOptions);
     }
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
