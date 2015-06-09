@@ -20,7 +20,7 @@
     "react": "^0.13.3"
   },
   "devDependencies": {
-    "awesome-typescript-loader": "^0.4.0-rc.2",
+    "awesome-typescript-loader": "^0.5.3",
     "file-loader": "^0.8.4",
     "react-hot-loader": "^1.2.7",
     "webpack": "^1.7.3",
