@@ -120,6 +120,10 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         }
     }
 
+    if (typeof options.rewriteImports == 'undefined') {
+        options.rewriteImports = '';
+    }
+
     if (options.target) {
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
@@ -219,14 +223,22 @@ function compiler(webpack: WebPack, text: string): void {
     });
 
     instance.tsFlow = instance.tsFlow
-        .then(() => state.fileAnalyzer.checkDependencies(resolver, fileName))
         .then(() => {
             instance.compiledFiles[fileName] = true;
+            let doUpdate = false;
             if (instance.options.useWebpackText) {
                 if(state.updateFile(fileName, text, true)) {
-                    state.updateProgram();
+                    doUpdate = true;
                 }
             }
+
+            return state.fileAnalyzer.checkDependencies(resolver, fileName).then((wasChanged) => {
+                if (doUpdate || wasChanged) {
+                    state.updateProgram();
+                }
+            });
+        })
+        .then(() => {
             return state.emit(fileName)
         })
         .then(output => {

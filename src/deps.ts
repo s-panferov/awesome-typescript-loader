@@ -22,6 +22,22 @@ function isTypeDeclaration(fileName: string): boolean {
     return /\.d.ts$/.test(fileName);
 }
 
+function pathWithoutExt(fileName) {
+    let extension = path.extname(fileName);
+    return path.join(
+        path.dirname(fileName),
+        path.basename(fileName, extension)
+    );
+}
+
+function needRewrite(rewriteImports, importPath): boolean {
+    return rewriteImports && _.any(rewriteImports.split(','), (i) => importPath.indexOf(i) !== -1)
+}
+
+function updateText(text, pos, end, newText): string {
+    return text.slice(0, pos) + ` '${newText}'` + text.slice(end, text.length);
+}
+
 export class FileAnalyzer {
     dependencies = new DependencyManager();
     validFiles = new ValidFilesManager();
@@ -31,12 +47,13 @@ export class FileAnalyzer {
         this.state = state;
     }
 
-    checkDependencies(resolver: Resolver, fileName: string): Promise<void> {
+    checkDependencies(resolver: Resolver, fileName: string): Promise<boolean> {
         if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
+            return Promise.resolve(false);
         }
 
         this.dependencies.clearDependencies(fileName);
+
 
         var flow = this.state.hasFile(fileName) ?
             Promise.resolve(false) :
@@ -44,67 +61,93 @@ export class FileAnalyzer {
 
         this.validFiles.markFileValid(fileName);
 
+        let wasChanged = false;
         return flow
-            .then(() => this.checkDependenciesInternal(resolver, fileName))
+            .then((changed) => {
+                wasChanged = changed;
+                return this.checkDependenciesInternal(resolver, fileName) })
             .catch((err) => {
                 this.validFiles.markFileInvalid(fileName);
                 throw err
-            });
+            })
+            .then(() => wasChanged);
     }
 
     private checkDependenciesInternal(resolver: Resolver, fileName: string): Promise<void> {
-        var dependencies = this.findImportDeclarations(fileName)
-            .map(depRelFileName =>
-                this.resolve(resolver, fileName, depRelFileName))
-            .map(depFileNamePromise => depFileNamePromise.then(depFileName => {
+        var dependencies = this.findImportDeclarations(resolver, fileName)
+            .then((deps) => {
+                return deps.map(depFileName => {
 
-                var result: Promise<string> = Promise.resolve(depFileName);
-                var isDeclaration = isTypeDeclaration(depFileName);
-                var isRequiredJs = /\.js$/.exec(depFileName);
+                    var result: Promise<string> = Promise.resolve(depFileName);
+                    var isDeclaration = isTypeDeclaration(depFileName);
+                    var isRequiredJs = /\.js$/.exec(depFileName);
 
-                if (isDeclaration) {
-                    var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
-                    if (!hasDeclaration) {
-                        this.dependencies.addTypeDeclaration(depFileName);
-                        return this.checkDependencies(resolver, depFileName).then(() => result)
+                    if (isDeclaration) {
+                        var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
+                        if (!hasDeclaration) {
+                            this.dependencies.addTypeDeclaration(depFileName);
+                            return this.checkDependencies(resolver, depFileName).then(() => result)
+                        }
+                    } else if (isRequiredJs) {
+                        return Promise.resolve(null);
+                    } else {
+                        this.dependencies.addDependency(fileName, depFileName);
+                        return this.checkDependencies(resolver, depFileName);
                     }
-                } else if (isRequiredJs) {
-                    return Promise.resolve(null);
-                } else {
-                    this.dependencies.addDependency(fileName, depFileName);
-                    return this.checkDependencies(resolver, depFileName);
-                }
 
-                return result;
-            }));
+                    return result;
+                });
+            });
 
         return Promise.all(dependencies).then((_) => {});
     }
 
-    private findImportDeclarations(fileName: string) {
-        var node = this.state.services.getSourceFile(fileName);
+    private findImportDeclarations(resolver: Resolver, fileName: string): Promise<string[]> {
+        var sourceFile = this.state.services.getSourceFile(fileName);
+        let scriptSnapshot = (<any>sourceFile).scriptSnapshot.text;
 
         var isDeclaration = isTypeDeclaration(fileName);
+
+        var visits: (() => Promise<void>)[] = [];
 
         var result = [];
         var visit = (node: ts.Node) => {
             if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
                 // we need this check to ensure that we have an external import
                 if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
-                    result.push((<any>node).moduleReference.expression.text);
+                    let importPath = (<any>node).moduleReference.expression.text;
+                    visits.push(() => this.resolve(resolver, fileName, importPath).then((absolutePath) => {
+                        if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                            let module = pathWithoutExt(absolutePath);
+                            let { pos, end } = (<any>node).moduleReference.expression;
+                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
+                        }
+                        result.push(absolutePath);
+                    }));
                 }
             } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
-                result.push((<any>node).moduleSpecifier.text);
+                let importPath = (<any>node).moduleSpecifier.text;
+                visits.push(() => this.resolve(resolver, fileName, importPath).then((absolutePath) => {
+                    if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                        let module = pathWithoutExt(absolutePath);
+                        let { pos, end } = (<any>node).moduleSpecifier;
+                        scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
+                    }
+                    result.push(absolutePath);
+                }));
             } else if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
                     return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
                 }));
             }
-
             this.state.ts.forEachChild(node, visit);
         };
-        visit(node);
-        return result;
+
+        visit(sourceFile);
+        return Promise.all(visits.reverse().map((executor) => executor())).then(() => {
+            this.state.updateFile(fileName, scriptSnapshot);
+            return result;
+        });
     }
 
     resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {

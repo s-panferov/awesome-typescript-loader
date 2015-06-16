@@ -80,6 +80,9 @@ function ensureInstance(webpack, options, instanceName) {
             options.useWebpackText = options.useWebpackText === 'true';
         }
     }
+    if (typeof options.rewriteImports == 'undefined') {
+        options.rewriteImports = '';
+    }
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
@@ -160,14 +163,21 @@ function compiler(webpack, text) {
         }
     });
     instance.tsFlow = instance.tsFlow
-        .then(function () { return state.fileAnalyzer.checkDependencies(resolver, fileName); })
         .then(function () {
         instance.compiledFiles[fileName] = true;
+        var doUpdate = false;
         if (instance.options.useWebpackText) {
             if (state.updateFile(fileName, text, true)) {
-                state.updateProgram();
+                doUpdate = true;
             }
         }
+        return state.fileAnalyzer.checkDependencies(resolver, fileName).then(function (wasChanged) {
+            if (doUpdate || wasChanged) {
+                state.updateProgram();
+            }
+        });
+    })
+        .then(function () {
         return state.emit(fileName);
     })
         .then(function (output) {

@@ -27,6 +27,7 @@ export interface CompilerOptions extends ts.CompilerOptions {
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
     useWebpackText?: boolean;
+    rewriteImports?: string;
 }
 
 export class Host implements ts.LanguageServiceHost {
@@ -49,7 +50,6 @@ export class Host implements ts.LanguageServiceHost {
 
     getScriptSnapshot(fileName) {
         var file = this.state.files[fileName];
-
         if (file) {
             return this.state.ts.ScriptSnapshot.fromString(file.text);
         }
@@ -119,6 +119,8 @@ export class State {
         } else {
             this.addFile(LIB.fileName, LIB.text);
         }
+
+        this.updateProgram();
     }
 
     resetService() {

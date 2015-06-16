@@ -67,6 +67,7 @@ var State = (function () {
         else {
             this.addFile(LIB.fileName, LIB.text);
         }
+        this.updateProgram();
     }
     State.prototype.resetService = function () {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());

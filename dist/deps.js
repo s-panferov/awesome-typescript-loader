@@ -6,6 +6,16 @@ var objectAssign = require('object-assign');
 function isTypeDeclaration(fileName) {
     return /\.d.ts$/.test(fileName);
 }
+function pathWithoutExt(fileName) {
+    var extension = path.extname(fileName);
+    return path.join(path.dirname(fileName), path.basename(fileName, extension));
+}
+function needRewrite(rewriteImports, importPath) {
+    return rewriteImports && _.any(rewriteImports.split(','), function (i) { return importPath.indexOf(i) !== -1; });
+}
+function updateText(text, pos, end, newText) {
+    return text.slice(0, pos) + (" '" + newText + "'") + text.slice(end, text.length);
+}
 var FileAnalyzer = (function () {
     function FileAnalyzer(state) {
         this.dependencies = new DependencyManager();
@@ -15,71 +25,96 @@ var FileAnalyzer = (function () {
     FileAnalyzer.prototype.checkDependencies = function (resolver, fileName) {
         var _this = this;
         if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve();
+            return Promise.resolve(false);
         }
         this.dependencies.clearDependencies(fileName);
         var flow = this.state.hasFile(fileName) ?
             Promise.resolve(false) :
             this.state.readFileAndUpdate(fileName);
         this.validFiles.markFileValid(fileName);
+        var wasChanged = false;
         return flow
-            .then(function () { return _this.checkDependenciesInternal(resolver, fileName); })
+            .then(function (changed) {
+            wasChanged = changed;
+            return _this.checkDependenciesInternal(resolver, fileName);
+        })
             .catch(function (err) {
             _this.validFiles.markFileInvalid(fileName);
             throw err;
-        });
+        })
+            .then(function () { return wasChanged; });
     };
     FileAnalyzer.prototype.checkDependenciesInternal = function (resolver, fileName) {
         var _this = this;
-        var dependencies = this.findImportDeclarations(fileName)
-            .map(function (depRelFileName) {
-            return _this.resolve(resolver, fileName, depRelFileName);
-        })
-            .map(function (depFileNamePromise) { return depFileNamePromise.then(function (depFileName) {
-            var result = Promise.resolve(depFileName);
-            var isDeclaration = isTypeDeclaration(depFileName);
-            var isRequiredJs = /\.js$/.exec(depFileName);
-            if (isDeclaration) {
-                var hasDeclaration = _this.dependencies.hasTypeDeclaration(depFileName);
-                if (!hasDeclaration) {
-                    _this.dependencies.addTypeDeclaration(depFileName);
-                    return _this.checkDependencies(resolver, depFileName).then(function () { return result; });
+        var dependencies = this.findImportDeclarations(resolver, fileName)
+            .then(function (deps) {
+            return deps.map(function (depFileName) {
+                var result = Promise.resolve(depFileName);
+                var isDeclaration = isTypeDeclaration(depFileName);
+                var isRequiredJs = /\.js$/.exec(depFileName);
+                if (isDeclaration) {
+                    var hasDeclaration = _this.dependencies.hasTypeDeclaration(depFileName);
+                    if (!hasDeclaration) {
+                        _this.dependencies.addTypeDeclaration(depFileName);
+                        return _this.checkDependencies(resolver, depFileName).then(function () { return result; });
+                    }
                 }
-            }
-            else if (isRequiredJs) {
-                return Promise.resolve(null);
-            }
-            else {
-                _this.dependencies.addDependency(fileName, depFileName);
-                return _this.checkDependencies(resolver, depFileName);
-            }
-            return result;
-        }); });
+                else if (isRequiredJs) {
+                    return Promise.resolve(null);
+                }
+                else {
+                    _this.dependencies.addDependency(fileName, depFileName);
+                    return _this.checkDependencies(resolver, depFileName);
+                }
+                return result;
+            });
+        });
         return Promise.all(dependencies).then(function (_) { });
     };
-    FileAnalyzer.prototype.findImportDeclarations = function (fileName) {
+    FileAnalyzer.prototype.findImportDeclarations = function (resolver, fileName) {
         var _this = this;
-        var node = this.state.services.getSourceFile(fileName);
+        var sourceFile = this.state.services.getSourceFile(fileName);
+        var scriptSnapshot = sourceFile.scriptSnapshot.text;
         var isDeclaration = isTypeDeclaration(fileName);
+        var visits = [];
         var result = [];
         var visit = function (node) {
-            if (node.kind === 208) {
+            if (node.kind === 209) {
                 if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
-                    result.push(node.moduleReference.expression.text);
+                    var importPath = node.moduleReference.expression.text;
+                    visits.push(function () { return _this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
+                        if (needRewrite(_this.state.options.rewriteImports, importPath)) {
+                            var module_1 = pathWithoutExt(absolutePath);
+                            var _a = node.moduleReference.expression, pos = _a.pos, end = _a.end;
+                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module_1);
+                        }
+                        result.push(absolutePath);
+                    }); });
                 }
             }
-            else if (!isDeclaration && node.kind === 209) {
-                result.push(node.moduleSpecifier.text);
+            else if (!isDeclaration && node.kind === 210) {
+                var importPath = node.moduleSpecifier.text;
+                visits.push(function () { return _this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
+                    if (needRewrite(_this.state.options.rewriteImports, importPath)) {
+                        var module_2 = pathWithoutExt(absolutePath);
+                        var _a = node.moduleSpecifier, pos = _a.pos, end = _a.end;
+                        scriptSnapshot = updateText(scriptSnapshot, pos, end, module_2);
+                    }
+                    result.push(absolutePath);
+                }); });
             }
-            else if (node.kind === 227) {
+            else if (node.kind === 228) {
                 result = result.concat(node.referencedFiles.map(function (f) {
                     return path.resolve(path.dirname(node.fileName), f.fileName);
                 }));
             }
             _this.state.ts.forEachChild(node, visit);
         };
-        visit(node);
-        return result;
+        visit(sourceFile);
+        return Promise.all(visits.reverse().map(function (executor) { return executor(); })).then(function () {
+            _this.state.updateFile(fileName, scriptSnapshot);
+            return result;
+        });
     };
     FileAnalyzer.prototype.resolve = function (resolver, fileName, defPath) {
         var result;
