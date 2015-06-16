@@ -79,7 +79,7 @@ var FileAnalyzer = (function () {
         var visits = [];
         var result = [];
         var visit = function (node) {
-            if (node.kind === 209) {
+            if (node.kind === 208) {
                 if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
                     var importPath = node.moduleReference.expression.text;
                     visits.push(function () { return _this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
@@ -92,7 +92,7 @@ var FileAnalyzer = (function () {
                     }); });
                 }
             }
-            else if (!isDeclaration && node.kind === 210) {
+            else if (!isDeclaration && node.kind === 209) {
                 var importPath = node.moduleSpecifier.text;
                 visits.push(function () { return _this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
                     if (needRewrite(_this.state.options.rewriteImports, importPath)) {
@@ -103,7 +103,7 @@ var FileAnalyzer = (function () {
                     result.push(absolutePath);
                 }); });
             }
-            else if (node.kind === 228) {
+            else if (node.kind === 227) {
                 result = result.concat(node.referencedFiles.map(function (f) {
                     return path.resolve(path.dirname(node.fileName), f.fileName);
                 }));
