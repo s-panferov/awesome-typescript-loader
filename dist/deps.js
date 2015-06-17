@@ -76,32 +76,37 @@ var FileAnalyzer = (function () {
         var sourceFile = this.state.services.getSourceFile(fileName);
         var scriptSnapshot = sourceFile.scriptSnapshot.text;
         var isDeclaration = isTypeDeclaration(fileName);
-        var visits = [];
+        var rewrites = [];
+        var resolves = [];
         var result = [];
         var visit = function (node) {
             if (node.kind === 208) {
                 if (!isDeclaration && node.moduleReference.hasOwnProperty("expression")) {
                     var importPath = node.moduleReference.expression.text;
-                    visits.push(function () { return _this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
-                        if (needRewrite(_this.state.options.rewriteImports, importPath)) {
-                            var module_1 = pathWithoutExt(absolutePath);
-                            var _a = node.moduleReference.expression, pos = _a.pos, end = _a.end;
-                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module_1);
-                        }
-                        result.push(absolutePath);
-                    }); });
+                    resolves.push(_this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
+                        rewrites.push(function () {
+                            if (needRewrite(_this.state.options.rewriteImports, importPath)) {
+                                var module_1 = pathWithoutExt(absolutePath);
+                                var _a = node.moduleReference.expression, pos = _a.pos, end = _a.end;
+                                scriptSnapshot = updateText(scriptSnapshot, pos, end, module_1);
+                            }
+                            result.push(absolutePath);
+                        });
+                    }));
                 }
             }
             else if (!isDeclaration && node.kind === 209) {
                 var importPath = node.moduleSpecifier.text;
-                visits.push(function () { return _this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
-                    if (needRewrite(_this.state.options.rewriteImports, importPath)) {
-                        var module_2 = pathWithoutExt(absolutePath);
-                        var _a = node.moduleSpecifier, pos = _a.pos, end = _a.end;
-                        scriptSnapshot = updateText(scriptSnapshot, pos, end, module_2);
-                    }
-                    result.push(absolutePath);
-                }); });
+                resolves.push(_this.resolve(resolver, fileName, importPath).then(function (absolutePath) {
+                    rewrites.push(function () {
+                        if (needRewrite(_this.state.options.rewriteImports, importPath)) {
+                            var module_2 = pathWithoutExt(absolutePath);
+                            var _a = node.moduleSpecifier, pos = _a.pos, end = _a.end;
+                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module_2);
+                        }
+                        result.push(absolutePath);
+                    });
+                }));
             }
             else if (node.kind === 227) {
                 result = result.concat(node.referencedFiles.map(function (f) {
@@ -111,7 +116,8 @@ var FileAnalyzer = (function () {
             _this.state.ts.forEachChild(node, visit);
         };
         visit(sourceFile);
-        return Promise.all(visits.reverse().map(function (executor) { return executor(); })).then(function () {
+        return Promise.all(resolves).then(function () {
+            rewrites.reverse().forEach(function (executor) { return executor(); });
             _this.state.updateFile(fileName, scriptSnapshot);
             return result;
         });

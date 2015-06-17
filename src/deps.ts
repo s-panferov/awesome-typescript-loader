@@ -108,7 +108,8 @@ export class FileAnalyzer {
 
         var isDeclaration = isTypeDeclaration(fileName);
 
-        var visits: (() => Promise<void>)[] = [];
+        var rewrites: (() => void)[] = [];
+        var resolves: Promise<void>[] = [];
 
         var result = [];
         var visit = (node: ts.Node) => {
@@ -116,24 +117,28 @@ export class FileAnalyzer {
                 // we need this check to ensure that we have an external import
                 if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
                     let importPath = (<any>node).moduleReference.expression.text;
-                    visits.push(() => this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                        if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                            let module = pathWithoutExt(absolutePath);
-                            let { pos, end } = (<any>node).moduleReference.expression;
-                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
-                        }
-                        result.push(absolutePath);
+                    resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
+                        rewrites.push(() => {
+                            if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                                let module = pathWithoutExt(absolutePath);
+                                let { pos, end } = (<any>node).moduleReference.expression;
+                                scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
+                            }
+                            result.push(absolutePath);
+                        });
                     }));
                 }
             } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
                 let importPath = (<any>node).moduleSpecifier.text;
-                visits.push(() => this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                    if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                        let module = pathWithoutExt(absolutePath);
-                        let { pos, end } = (<any>node).moduleSpecifier;
-                        scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
-                    }
-                    result.push(absolutePath);
+                resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
+                    rewrites.push(() => {
+                        if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                            let module = pathWithoutExt(absolutePath);
+                            let { pos, end } = (<any>node).moduleSpecifier;
+                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
+                        }
+                        result.push(absolutePath);
+                    });
                 }));
             } else if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
@@ -144,7 +149,8 @@ export class FileAnalyzer {
         };
 
         visit(sourceFile);
-        return Promise.all(visits.reverse().map((executor) => executor())).then(() => {
+        return Promise.all(resolves).then(() => {
+            rewrites.reverse().forEach((executor) => executor());
             this.state.updateFile(fileName, scriptSnapshot);
             return result;
         });
