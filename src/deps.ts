@@ -3,7 +3,7 @@ import * as util from 'util';
 import * as path from 'path';
 import * as Promise from 'bluebird';
 
-import {State} from './host';
+import { State } from './host';
 
 var objectAssign = require('object-assign');
 

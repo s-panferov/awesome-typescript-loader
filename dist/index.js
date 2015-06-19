@@ -2,10 +2,10 @@
 /// <reference path='../typings/tsd.d.ts' />
 var Promise = require('bluebird');
 var _ = require('lodash');
-var loaderUtils = require('loader-utils');
-var host = require('./host');
-var deps = require('./deps');
+var host_1 = require('./host');
+var deps_1 = require('./deps');
 var helpers = require('./helpers');
+var loaderUtils = require('loader-utils');
 function getRootCompiler(compiler) {
     if (compiler.parentCompilation) {
         return getRootCompiler(compiler.parentCompilation.compiler);
@@ -86,7 +86,7 @@ function ensureInstance(webpack, options, instanceName) {
     if (options.target) {
         options.target = helpers.parseOptionTarget(options.target, tsImpl);
     }
-    var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    var tsState = new host_1.State(options, webpack._compiler.inputFileSystem, tsImpl);
     var compiler = webpack._compiler;
     compiler.plugin('watch-run', function (watching, callback) {
         var resolver = Promise.promisify(watching.compiler.resolvers.normal.resolve);
@@ -197,7 +197,7 @@ function compiler(webpack, text) {
         .finally(function () {
         applyDeps();
     })
-        .catch(deps.ResolutionError, function (err) {
+        .catch(deps_1.ResolutionError, function (err) {
         console.error(err);
         callback(err, helpers.codegenErrorReport([err]));
     })

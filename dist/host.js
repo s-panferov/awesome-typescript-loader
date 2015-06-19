@@ -1,12 +1,12 @@
 var fs = require('fs');
 var util = require('util');
 var Promise = require('bluebird');
-var helpers = require('./helpers');
-var deps = require('./deps');
+var helpers_1 = require('./helpers');
+var deps_1 = require('./deps');
 var objectAssign = require('object-assign');
-var RUNTIME = helpers.loadLib('./runtime.d.ts');
-var LIB = helpers.loadLib('typescript/bin/lib.d.ts');
-var LIB6 = helpers.loadLib('typescript/bin/lib.es6.d.ts');
+var RUNTIME = helpers_1.loadLib('./runtime.d.ts');
+var LIB = helpers_1.loadLib('typescript/bin/lib.d.ts');
+var LIB6 = helpers_1.loadLib('typescript/bin/lib.es6.d.ts');
 var Host = (function () {
     function Host(state) {
         this.state = state;
@@ -49,7 +49,7 @@ var State = (function () {
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
-        this.fileAnalyzer = new deps.FileAnalyzer(this);
+        this.fileAnalyzer = new deps_1.FileAnalyzer(this);
         this.options = {};
         objectAssign(this.options, {
             target: 1,

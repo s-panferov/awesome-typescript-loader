@@ -1,17 +1,17 @@
-import fs = require('fs');
-import util = require('util');
-import path = require('path');
-import Promise = require('bluebird');
-import _ = require('lodash');
+import * as fs from 'fs';
+import * as util from 'util';
+import * as path from 'path';
+import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 
-import helpers = require('./helpers');
-import deps = require('./deps');
+import { loadLib } from './helpers';
+import { FileAnalyzer } from './deps';
 
 var objectAssign = require('object-assign');
 
-var RUNTIME = helpers.loadLib('./runtime.d.ts');
-var LIB = helpers.loadLib('typescript/bin/lib.d.ts');
-var LIB6 = helpers.loadLib('typescript/bin/lib.es6.d.ts');
+var RUNTIME = loadLib('./runtime.d.ts');
+var LIB = loadLib('typescript/bin/lib.d.ts');
+var LIB6 = loadLib('typescript/bin/lib.es6.d.ts');
 
 export interface File {
     text: string;
@@ -86,7 +86,7 @@ export class State {
     services: ts.LanguageService;
     options: CompilerOptions;
     program: ts.Program;
-    fileAnalyzer: deps.FileAnalyzer;
+    fileAnalyzer: FileAnalyzer;
 
     constructor(
         options: CompilerOptions,
@@ -97,7 +97,7 @@ export class State {
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
-        this.fileAnalyzer = new deps.FileAnalyzer(this);
+        this.fileAnalyzer = new FileAnalyzer(this);
 
         this.options = {};
 

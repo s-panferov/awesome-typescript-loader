@@ -1,19 +1,16 @@
 /// <reference path='../node_modules/typescript/bin/typescriptServices.d.ts' />
 /// <reference path='../typings/tsd.d.ts' />
 
-import Promise = require('bluebird');
-import path = require('path');
-import fs = require('fs');
-import _ = require('lodash');
+import * as Promise from 'bluebird';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as _ from 'lodash';
+
+import { CompilerOptions, TypeScriptCompilationError, State } from './host';
+import { Resolver, ResolutionError } from './deps';
+import * as helpers from './helpers';
 
 var loaderUtils = require('loader-utils');
-
-import host = require('./host');
-import deps = require('./deps');
-import helpers = require('./helpers');
-
-import CompilerOptions = host.CompilerOptions;
-import TypeScriptCompilationError = host.TypeScriptCompilationError;
 
 interface WebPack {
     _compiler: {
@@ -31,7 +28,7 @@ interface WebPack {
 
 interface CompilerInstance {
     tsFlow: Promise<any>;
-    tsState: host.State;
+    tsState: State;
     compiledFiles: {[key:string]: boolean};
     options: CompilerOptions;
 }
@@ -128,12 +125,12 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
 
-    var tsState = new host.State(options, webpack._compiler.inputFileSystem, tsImpl);
+    var tsState = new State(options, webpack._compiler.inputFileSystem, tsImpl);
 
     var compiler = (<any>webpack._compiler);
 
     compiler.plugin('watch-run', (watching, callback) => {
-        var resolver = <deps.Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
+        var resolver = <Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
         var instance: CompilerInstance = resolveInstance(watching.compiler, instanceName);
         var state = instance.tsState;
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
@@ -207,7 +204,7 @@ function compiler(webpack: WebPack, text: string): void {
 
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
-    var resolver = <deps.Resolver>Promise.promisify(webpack.resolve);
+    var resolver = <Resolver>Promise.promisify(webpack.resolve);
 
     var depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
@@ -262,7 +259,7 @@ function compiler(webpack: WebPack, text: string): void {
         .finally(() => {
             applyDeps();
         })
-        .catch(deps.ResolutionError, err => {
+        .catch(ResolutionError, err => {
             console.error(err);
             callback(err, helpers.codegenErrorReport([err]));
         })
