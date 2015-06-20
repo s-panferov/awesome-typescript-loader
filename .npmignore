@@ -1,4 +1,6 @@
 .tscache
 node_modules
 dist
+!/dist
 tscommand
+
