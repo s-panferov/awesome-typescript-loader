@@ -108,7 +108,7 @@ export class FileAnalyzer {
 
         var isDeclaration = isTypeDeclaration(fileName);
 
-        var rewrites: (() => void)[] = [];
+        var rewrites: {pos: number, end: number, module: string}[] = [];
         var resolves: Promise<void>[] = [];
 
         var result = [];
@@ -118,27 +118,23 @@ export class FileAnalyzer {
                 if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
                     let importPath = (<any>node).moduleReference.expression.text;
                     resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                        rewrites.push(() => {
-                            if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                                let module = pathWithoutExt(absolutePath);
-                                let { pos, end } = (<any>node).moduleReference.expression;
-                                scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
-                            }
-                            result.push(absolutePath);
-                        });
+                        if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                            let { pos, end } = (<any>node).moduleReference.expression;
+                            let module = pathWithoutExt(absolutePath);
+                            rewrites.push({ pos, end, module });
+                        }
+                        result.push(absolutePath);
                     }));
                 }
             } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
                 let importPath = (<any>node).moduleSpecifier.text;
                 resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                    rewrites.push(() => {
-                        if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                            let module = pathWithoutExt(absolutePath);
-                            let { pos, end } = (<any>node).moduleSpecifier;
-                            scriptSnapshot = updateText(scriptSnapshot, pos, end, module);
-                        }
-                        result.push(absolutePath);
-                    });
+                    if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                        let module = pathWithoutExt(absolutePath);
+                        let { pos, end } = (<any>node).moduleSpecifier;
+                        rewrites.push({ pos, end, module });
+                    }
+                    result.push(absolutePath);
                 }));
             } else if (node.kind === ts.SyntaxKind.SourceFile) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
@@ -150,7 +146,10 @@ export class FileAnalyzer {
 
         visit(sourceFile);
         return Promise.all(resolves).then(() => {
-            rewrites.reverse().forEach((executor) => executor());
+            let orderedRewrites = (<any>_).sortByAll(rewrites, 'pos', 'end').reverse();
+            orderedRewrites.forEach(({ pos, end, module }) => {
+                scriptSnapshot = updateText(scriptSnapshot, pos, end, module)
+            });
             this.state.updateFile(fileName, scriptSnapshot);
             return result;
         });
