@@ -80,7 +80,8 @@ export class FileAnalyzer {
 
                     var result: Promise<string> = Promise.resolve(depFileName);
                     var isDeclaration = isTypeDeclaration(depFileName);
-                    var isRequiredJs = /\.js$/.exec(depFileName);
+
+                    var isRequiredJs = /\.js$/.exec(depFileName) || depFileName.indexOf('.') === -1;
 
                     if (isDeclaration) {
                         var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
@@ -157,6 +158,7 @@ export class FileAnalyzer {
 
     resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
         var result;
+
         if (!path.extname(defPath).length) {
             result = resolver(path.dirname(fileName), defPath + ".ts")
                 .error(function (error) {
@@ -164,6 +166,14 @@ export class FileAnalyzer {
                 })
                 .error(function (error) {
                     return resolver(path.dirname(fileName), defPath)
+                })
+                .error(function (error) {
+                    // Node builtin modules
+                    if (require.resolve(defPath) == defPath) {
+                        return defPath;
+                    } else {
+                        throw error;
+                    }
                 })
         } else {
             // We don't need to resolve .d.ts here because they are already

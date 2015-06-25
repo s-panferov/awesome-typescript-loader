@@ -31,6 +31,7 @@ interface CompilerInstance {
     tsState: State;
     compiledFiles: {[key:string]: boolean};
     options: CompilerOptions;
+    externalsInvoked: boolean;
 }
 
 function getRootCompiler(compiler) {
@@ -182,7 +183,8 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         tsFlow,
         tsState,
         compiledFiles: {},
-        options
+        options,
+        externalsInvoked: false
     }
 }
 
@@ -205,7 +207,6 @@ function compiler(webpack: WebPack, text: string): void {
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
     var resolver = <Resolver>Promise.promisify(webpack.resolve);
-
     var depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
         clear: webpack.clearDependencies.bind(webpack)
@@ -218,6 +219,15 @@ function compiler(webpack: WebPack, text: string): void {
             state.fileAnalyzer.dependencies.applyChain(fileName, depsInjector);
         }
     });
+
+    if (options.externals && !instance.externalsInvoked) {
+        instance.externalsInvoked = true;
+        instance.tsFlow = instance.tsFlow.then(
+            <any>Promise.all(options.externals.split(',').map(external => {
+                return state.fileAnalyzer.checkDependencies(resolver, external);
+            }))
+        );
+    }
 
     instance.tsFlow = instance.tsFlow
         .then(() => {

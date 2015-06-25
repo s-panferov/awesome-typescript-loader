@@ -28,6 +28,7 @@ export interface CompilerOptions extends ts.CompilerOptions {
     tsconfig?: string;
     useWebpackText?: boolean;
     rewriteImports?: string;
+    externals?: string
 }
 
 export class Host implements ts.LanguageServiceHost {
