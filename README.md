@@ -102,6 +102,15 @@ Specify path to a TS config file. Useful when you have multiple config files. Th
 
 Use this setting to force loader to use webpack's way to load files. Useful only with ts-jsx-loader. Builds may become slower.
 
+### rewriteImports *(string)*
+
+Common-separated list of modules that must be processed by webpack in imports. Useful if you want to use `some-lib`
+with pure TS files inside your app.
+
+### externals *(string)*
+
+Common-separated list of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
+
 ## Using with --watch or webpack-dev-server
 
 This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies
