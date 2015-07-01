@@ -127,7 +127,9 @@ export class FileAnalyzer {
                         result.push(absolutePath);
                     }));
                 }
-            } else if (!isDeclaration && node.kind === ts.SyntaxKind.ImportDeclaration) {
+            } else if (!isDeclaration &&
+                (node.kind === ts.SyntaxKind.ImportDeclaration
+                 || node.kind === ts.SyntaxKind.ExportDeclaration)) {
                 let importPath = (<any>node).moduleSpecifier.text;
                 resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
                     if (needRewrite(this.state.options.rewriteImports, importPath)) {
@@ -169,9 +171,13 @@ export class FileAnalyzer {
                 })
                 .error(function (error) {
                     // Node builtin modules
-                    if (require.resolve(defPath) == defPath) {
-                        return defPath;
-                    } else {
+                    try {
+                        if (require.resolve(defPath) == defPath) {
+                            return defPath;
+                        } else {
+                            throw error;
+                        }
+                    } catch (e) {
                         throw error;
                     }
                 })

@@ -9,7 +9,7 @@ import { FileAnalyzer } from './deps';
 
 var objectAssign = require('object-assign');
 
-var RUNTIME = loadLib('./runtime.d.ts');
+var RUNTIME = loadLib('../lib/runtime.d.ts');
 var LIB = loadLib('typescript/bin/lib.d.ts');
 var LIB6 = loadLib('typescript/bin/lib.es6.d.ts');
 
@@ -246,5 +246,3 @@ export function TypeScriptCompilationError(diagnostics) {
     this.diagnostics = diagnostics;
 }
 util.inherits(TypeScriptCompilationError, Error);
-
-

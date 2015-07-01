@@ -151,7 +151,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
             }
         }))
             .then(_ => { state.updateProgram(); callback(); })
-            .catch((err) => console.error(err))
+            .catch((err) => callback(err))
     });
 
     compiler.plugin('after-compile', function(compilation, callback) {
@@ -270,10 +270,9 @@ function compiler(webpack: WebPack, text: string): void {
             applyDeps();
         })
         .catch(ResolutionError, err => {
-            console.error(err);
             callback(err, helpers.codegenErrorReport([err]));
         })
-        .catch((err) => { console.error(err); callback(err) })
+        .catch((err) => { callback(err) })
 }
 
 export = loader;
