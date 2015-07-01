@@ -6,15 +6,17 @@ module.exports = function(grunt) {
         ts: {
             default : {
                 options: {
-                    module: "commonjs"
+                    module: "commonjs",
+                    fast: 'never',
                 },
-                src: 'src/index.ts',
+                src: 'src/**/*.ts',
+                watch: 'src/',
                 outDir: 'dist'
             }
         },
         copy: {
             main: {
-                src: './src/runtime.d.ts',
+                src: './lib/runtime.d.ts',
                 dest: './dist/runtime.d.ts'
             }
         },
