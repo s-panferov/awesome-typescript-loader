@@ -1,5 +1,3 @@
-/// <reference path="../node_modules/typescript/bin/typescriptServices.d.ts" />
-
 import * as fs from 'fs';
 import * as path from 'path';
 

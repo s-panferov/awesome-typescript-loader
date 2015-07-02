@@ -6,9 +6,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 
-import { CompilerOptions, TypeScriptCompilationError, State } from './host';
+import { CompilerOptions, TypeScriptCompilationError, State, CompilerInfo } from './host';
 import { Resolver, ResolutionError } from './deps';
 import * as helpers from './helpers';
+import { loadLib } from './helpers';
 
 var loaderUtils = require('loader-utils');
 
@@ -74,12 +75,20 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     }
 
     var tsFlow = Promise.resolve();
-    var tsImpl: typeof ts;
 
-    if (options.compiler) {
-        tsImpl = require(options.compiler);
-    } else {
-        tsImpl = require('typescript');
+    let compilerName = options.compiler || 'typescript';
+    let compilerPath = path.dirname(compilerName);
+    if (compilerPath == '.') {
+        compilerPath = compilerName
+    }
+
+    let tsImpl: typeof ts = require(compilerName);
+
+    let compilerInfo: CompilerInfo = {
+        compilerName,
+        tsImpl,
+        lib5: loadLib(path.join(compilerPath, 'bin', 'lib.d.ts')),
+        lib6: loadLib(path.join(compilerPath, 'bin', 'lib.es6.d.ts'))
     }
 
     var configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
@@ -126,7 +135,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
 
-    var tsState = new State(options, webpack._compiler.inputFileSystem, tsImpl);
+    var tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
 
     var compiler = (<any>webpack._compiler);
 

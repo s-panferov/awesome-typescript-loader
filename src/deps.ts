@@ -38,6 +38,19 @@ function updateText(text, pos, end, newText): string {
     return text.slice(0, pos) + ` '${newText}'` + text.slice(end, text.length);
 }
 
+function isImportOrExportDeclaration(node: ts.Node) {
+    return (!!(<any>node).exportClause || !!(<any>node).importClause)
+        && (<any>node).moduleSpecifier;
+}
+
+function isImportEqualsDeclaration(node: ts.Node) {
+    return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression')
+}
+
+function isSourceFileDeclaration(node: ts.Node) {
+    return !!(<any>node).referencedFiles
+}
+
 export class FileAnalyzer {
     dependencies = new DependencyManager();
     validFiles = new ValidFilesManager();
@@ -114,22 +127,18 @@ export class FileAnalyzer {
 
         var result = [];
         var visit = (node: ts.Node) => {
-            if (node.kind === ts.SyntaxKind.ImportEqualsDeclaration) {
+            if (!isDeclaration && isImportEqualsDeclaration(node)) {
                 // we need this check to ensure that we have an external import
-                if (!isDeclaration && (<ts.ImportEqualsDeclaration>node).moduleReference.hasOwnProperty("expression")) {
-                    let importPath = (<any>node).moduleReference.expression.text;
-                    resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                        if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                            let { pos, end } = (<any>node).moduleReference.expression;
-                            let module = pathWithoutExt(absolutePath);
-                            rewrites.push({ pos, end, module });
-                        }
-                        result.push(absolutePath);
-                    }));
-                }
-            } else if (!isDeclaration &&
-                (node.kind === ts.SyntaxKind.ImportDeclaration
-                 || node.kind === ts.SyntaxKind.ExportDeclaration)) {
+                let importPath = (<any>node).moduleReference.expression.text;
+                resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
+                    if (needRewrite(this.state.options.rewriteImports, importPath)) {
+                        let { pos, end } = (<any>node).moduleReference.expression;
+                        let module = pathWithoutExt(absolutePath);
+                        rewrites.push({ pos, end, module });
+                    }
+                    result.push(absolutePath);
+                }));
+            } else if (!isDeclaration && isImportOrExportDeclaration(node)) {
                 let importPath = (<any>node).moduleSpecifier.text;
                 resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
                     if (needRewrite(this.state.options.rewriteImports, importPath)) {
@@ -139,7 +148,7 @@ export class FileAnalyzer {
                     }
                     result.push(absolutePath);
                 }));
-            } else if (node.kind === ts.SyntaxKind.SourceFile) {
+            } else if (isSourceFileDeclaration(node)) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
                     return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
                 }));

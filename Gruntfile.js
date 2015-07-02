@@ -6,8 +6,10 @@ module.exports = function(grunt) {
         ts: {
             default : {
                 options: {
+                    compiler: './node_modules/ntypescript/bin/tsc',
                     module: "commonjs",
                     fast: 'never',
+                    preserveConstEnums: true
                 },
                 src: 'src/**/*.ts',
                 watch: 'src/',

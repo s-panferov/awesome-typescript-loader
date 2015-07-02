@@ -4,18 +4,23 @@ import * as path from 'path';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 
-import { loadLib } from './helpers';
 import { FileAnalyzer } from './deps';
+import { loadLib } from './helpers';
 
 var objectAssign = require('object-assign');
 
 var RUNTIME = loadLib('../lib/runtime.d.ts');
-var LIB = loadLib('typescript/bin/lib.d.ts');
-var LIB6 = loadLib('typescript/bin/lib.es6.d.ts');
 
 export interface File {
     text: string;
     version: number;
+}
+
+export interface CompilerInfo {
+    compilerName: string;
+    tsImpl: typeof ts;
+    lib5: { fileName: string, text: string };
+    lib6: { fileName: string, text: string };
 }
 
 export interface CompilerOptions extends ts.CompilerOptions {
@@ -69,7 +74,9 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getDefaultLibFileName(options) {
-        return options.target === ts.ScriptTarget.ES6 ? LIB6.fileName : LIB.fileName;
+        return options.target === ts.ScriptTarget.ES6 ?
+            this.state.compilerInfo.lib6.fileName :
+            this.state.compilerInfo.lib5.fileName;
     }
 
     log(message) {
@@ -82,6 +89,7 @@ export class State {
 
     ts: typeof ts;
     fs: typeof fs;
+    compilerInfo: CompilerInfo;
     host: Host;
     files: {[fileName: string]: File} = {};
     services: ts.LanguageService;
@@ -92,9 +100,10 @@ export class State {
     constructor(
         options: CompilerOptions,
         fsImpl: typeof fs,
-        tsImpl: typeof ts
+        compilerInfo: CompilerInfo
     ) {
-        this.ts = tsImpl || require('typescript');
+        this.ts = compilerInfo.tsImpl;
+        this.compilerInfo = compilerInfo;
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
@@ -116,9 +125,9 @@ export class State {
         }
 
         if (this.options.target === ts.ScriptTarget.ES6 || this.options.library === 'es6') {
-            this.addFile(LIB6.fileName, LIB6.text);
+            this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
         } else {
-            this.addFile(LIB.fileName, LIB.text);
+            this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
         }
 
         this.updateProgram();
