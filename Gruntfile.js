@@ -12,6 +12,16 @@ module.exports = function(grunt) {
                     preserveConstEnums: true
                 },
                 src: 'src/**/*.ts',
+                outDir: 'dist'
+            },
+            watch : {
+                options: {
+                    compiler: './node_modules/ntypescript/bin/tsc',
+                    module: "commonjs",
+                    fast: 'never',
+                    preserveConstEnums: true
+                },
+                src: 'src/**/*.ts',
                 watch: 'src/',
                 outDir: 'dist'
             }
@@ -58,5 +68,5 @@ module.exports = function(grunt) {
         return grunt.task.run("bump-only:" + target, "changelog", "shell:addChangelog", "bump-commit");
     });
 
-    grunt.registerTask('default', ['ts', 'copy']);
+    grunt.registerTask('default', ['ts:default', 'copy']);
 };
