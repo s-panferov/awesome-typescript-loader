@@ -10,7 +10,7 @@ Also there are a lot of problems in other TypeScript loaders that were fixed her
 
 ## Unstable TypeScript warning
 
-Right now this library works only with the **TypeScript 1.5-beta** compiler.
+Right now this library works only with the **TypeScript 1.5-beta** compiler or with *ntypescript*.
 
 ## Installation
 
@@ -76,7 +76,7 @@ You can use .tsconfig.json file to configure your compiler and loader:
 ### compiler *(string) (default='typescript')*
 
 Allows use of TypeScript compilers other than the official one. Should be
-set to the NPM name of the compiler.
+set to the NPM name of the compiler, e.g. *ntypescript* or path to a `tsc` file.
 
 ### emitRequireType *(boolean) (default=true)*
 
