@@ -113,7 +113,6 @@ export class State {
 
         objectAssign(this.options, {
             target: this.ts.ScriptTarget.ES5,
-            module: this.ts.ModuleKind.CommonJS,
             sourceMap: true,
             verbose: false
         });
