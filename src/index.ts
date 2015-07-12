@@ -73,7 +73,7 @@ function createResolver(webpack: WebPack): Resolver {
     let resolver = <Resolver>Promise.promisify(webpack.resolve);
 
     function resolve(base: string, dep: string): Promise<string> {
-        if (externals.hasOwnProperty(dep)) {
+        if (externals && externals.hasOwnProperty(dep)) {
             return Promise.resolve<string>('%%ignore')
         } else {
             return resolver(base, dep)
