@@ -24,6 +24,7 @@ export interface CompilerInfo {
 }
 
 export interface CompilerOptions extends ts.CompilerOptions {
+    noLib?: boolean;
     instanceName?: string;
     showRecompileReason?: boolean;
     compiler?: string;
@@ -123,10 +124,12 @@ export class State {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }
 
-        if (this.options.target === ts.ScriptTarget.ES6 || this.options.library === 'es6') {
-            this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
-        } else {
-            this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
+        if (!this.options.noLib) {
+            if (this.options.target === ts.ScriptTarget.ES6 || this.options.library === 'es6') {
+                this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
+            } else {
+                this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
+            }
         }
 
         this.updateProgram();

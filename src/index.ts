@@ -17,6 +17,11 @@ interface WebPack {
     _compiler: {
         inputFileSystem: typeof fs;
         _tsInstances: {[key:string]: CompilerInstance};
+        options: {
+            externals: {
+                [ key: string ]: string
+            }
+        }
     };
     cacheable: () => void;
     query: string;
@@ -61,6 +66,21 @@ function ensureInstanceStore(compiler) {
 
 function resolveInstance(compiler, instanceName) {
     return getInstanceStore(compiler)[instanceName];
+}
+
+function createResolver(webpack: WebPack): Resolver {
+    let externals = webpack._compiler.options.externals;
+    let resolver = <Resolver>Promise.promisify(webpack.resolve);
+
+    function resolve(base: string, dep: string): Promise<string> {
+        if (externals.hasOwnProperty(dep)) {
+            return Promise.resolve<string>('%%ignore')
+        } else {
+            return resolver(base, dep)
+        }
+    }
+
+    return resolve;
 }
 
 /**
@@ -136,7 +156,6 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     }
 
     var tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
-
     var compiler = (<any>webpack._compiler);
 
     compiler.plugin('watch-run', (watching, callback) => {
@@ -215,7 +234,9 @@ function compiler(webpack: WebPack, text: string): void {
 
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
-    var resolver = <Resolver>Promise.promisify(webpack.resolve);
+
+    var resolver = createResolver(webpack);
+
     var depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
         clear: webpack.clearDependencies.bind(webpack)

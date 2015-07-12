@@ -10,7 +10,7 @@ var objectAssign = require('object-assign');
 type FileSet = {[fileName: string]: boolean};
 
 export interface Resolver {
-    (base: string, dep: string): Promise<String>
+    (base: string, dep: string): Promise<string>
 }
 
 export interface Dependency {
@@ -49,6 +49,10 @@ function isImportEqualsDeclaration(node: ts.Node) {
 
 function isSourceFileDeclaration(node: ts.Node) {
     return !!(<any>node).referencedFiles
+}
+
+function isIgnoreDependency(absulutePath: string) {
+    return absulutePath == '%%ignore';
 }
 
 export class FileAnalyzer {
@@ -136,7 +140,9 @@ export class FileAnalyzer {
                         let module = pathWithoutExt(absolutePath);
                         rewrites.push({ pos, end, module });
                     }
-                    result.push(absolutePath);
+                    if (!isIgnoreDependency(absolutePath)) {
+                        result.push(absolutePath);
+                    }
                 }));
             } else if (!isDeclaration && isImportOrExportDeclaration(node)) {
                 let importPath = (<any>node).moduleSpecifier.text;
@@ -146,7 +152,9 @@ export class FileAnalyzer {
                         let { pos, end } = (<any>node).moduleSpecifier;
                         rewrites.push({ pos, end, module });
                     }
-                    result.push(absolutePath);
+                    if (!isIgnoreDependency(absolutePath)) {
+                        result.push(absolutePath);
+                    }
                 }));
             } else if (isSourceFileDeclaration(node)) {
                 result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
