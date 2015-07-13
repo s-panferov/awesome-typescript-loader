@@ -13,16 +13,18 @@ import { loadLib } from './helpers';
 
 var loaderUtils = require('loader-utils');
 
-interface WebPack {
-    _compiler: {
-        inputFileSystem: typeof fs;
-        _tsInstances: {[key:string]: CompilerInstance};
-        options: {
-            externals: {
-                [ key: string ]: string
-            }
+interface ICompiler {
+    inputFileSystem: typeof fs;
+    _tsInstances: {[key:string]: CompilerInstance};
+    options: {
+        externals: {
+            [ key: string ]: string
         }
-    };
+    }
+}
+
+interface WebPack {
+    _compiler: ICompiler;
     cacheable: () => void;
     query: string;
     async: () => (err: Error, source?: string, map?: string) => void;
@@ -68,9 +70,9 @@ function resolveInstance(compiler, instanceName) {
     return getInstanceStore(compiler)[instanceName];
 }
 
-function createResolver(webpack: WebPack): Resolver {
-    let externals = webpack._compiler.options.externals;
-    let resolver = <Resolver>Promise.promisify(webpack.resolve);
+function createResolver(compiler: ICompiler, webpackResolver: any): Resolver {
+    let externals = compiler.options.externals;
+    let resolver = <Resolver>Promise.promisify(webpackResolver);
 
     function resolve(base: string, dep: string): Promise<string> {
         if (externals && externals.hasOwnProperty(dep)) {
@@ -159,7 +161,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     var compiler = (<any>webpack._compiler);
 
     compiler.plugin('watch-run', (watching, callback) => {
-        var resolver = <Resolver>Promise.promisify(watching.compiler.resolvers.normal.resolve);
+        var resolver = createResolver(watching.compiler, watching.compiler.resolvers.normal.resolve);
         var instance: CompilerInstance = resolveInstance(watching.compiler, instanceName);
         var state = instance.tsState;
         var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
@@ -235,7 +237,7 @@ function compiler(webpack: WebPack, text: string): void {
     var callback = webpack.async();
     var fileName = webpack.resourcePath;
 
-    var resolver = createResolver(webpack);
+    var resolver = createResolver(webpack._compiler, webpack.resolve);
 
     var depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
