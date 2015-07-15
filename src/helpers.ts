@@ -1,17 +1,27 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export function findResultFor(output: ts.EmitOutput, filename: string) {
+function isFileEmit(fileName, outputFileName)  {
+    return (outputFileName.replace(/\.js$/, '.ts') === fileName) ||
+           (outputFileName.replace(/\.js$/, '.tsx') === fileName);
+}
+
+function isSourceMapEmit(fileName, outputFileName)  {
+    return (outputFileName.replace(/\.js\.map$/, '.ts') === fileName) ||
+           (outputFileName.replace(/\.js\.map$/, '.tsx') === fileName);
+}
+
+export function findResultFor(output: ts.EmitOutput, fileName: string) {
     var text;
     var sourceMap;
-    filename = path.normalize(filename);
+    fileName = path.normalize(fileName);
     for (var i = 0; i < output.outputFiles.length; i++) {
         var o = output.outputFiles[i];
         var outputFileName = path.normalize(o.name);
-        if (outputFileName.replace(/\.js$/, '.ts') === filename) {
+        if (isFileEmit(fileName, outputFileName)) {
             text = o.text;
         }
-        if (outputFileName.replace(/\.js.map$/, '.ts') === filename) {
+        if (isSourceMapEmit(fileName, outputFileName)) {
             sourceMap = o.text;
         }
     }
@@ -81,10 +91,10 @@ export function formatLineChar(lineChar) {
 }
 
 export function loadLib(moduleId) {
-    var filename = require.resolve(moduleId);
-    var text = fs.readFileSync(filename, 'utf8');
+    var fileName = require.resolve(moduleId);
+    var text = fs.readFileSync(fileName, 'utf8');
     return {
-        fileName: filename,
+        fileName: fileName,
         text: text
     };
 }

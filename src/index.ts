@@ -287,12 +287,10 @@ function compiler(webpack: WebPack, text: string): void {
                 throw new Error('no output found for ' + fileName);
             }
 
-            var sourceFilename = loaderUtils.getRemainingRequest(webpack);
-            var current = loaderUtils.getCurrentRequest(webpack);
             var sourceMap = JSON.parse(result.sourceMap);
-            sourceMap.sources = [sourceFilename];
-            sourceMap.file = current;
-            sourceMap.sourcesContent = [text];
+            sourceMap.sources = [ fileName ];
+            sourceMap.file = fileName;
+            sourceMap.sourcesContent = [ text ];
 
             applyDeps();
 
