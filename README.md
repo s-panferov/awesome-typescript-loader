@@ -111,6 +111,14 @@ with pure TS files inside your app.
 
 Common-separated list of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
 
+### doTypeCheck *(string) (default=true)*
+
+Use this setting to disable type checking if you want.
+
+### forkChecker *experimental!* *(string) (default=false)*
+
+Do type checking in a separate process, so webpack don't need to wait. **Significantly** development workflow.
+
 ## Using with --watch or webpack-dev-server
 
 This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies

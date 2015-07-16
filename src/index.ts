@@ -5,6 +5,7 @@ import * as Promise from 'bluebird';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
+import * as childProcess from 'child_process';
 
 import { CompilerOptions, TypeScriptCompilationError, State, CompilerInfo } from './host';
 import { Resolver, ResolutionError } from './deps';
@@ -40,6 +41,7 @@ interface CompilerInstance {
     compiledFiles: {[key:string]: boolean};
     options: CompilerOptions;
     externalsInvoked: boolean;
+    checker: any;
 }
 
 function getRootCompiler(compiler) {
@@ -85,6 +87,20 @@ function createResolver(compiler: ICompiler, webpackResolver: any): Resolver {
     return resolve;
 }
 
+function createChecker(compilerInfo: CompilerInfo, compilerOptions: CompilerOptions) {
+    var checker = childProcess.fork(path.join(__dirname, 'checker.js'));
+
+    checker.send({
+        messageType: 'init',
+        payload: {
+            compilerInfo: _.omit(compilerInfo, 'tsImpl'),
+            compilerOptions
+        }
+    }, null)
+
+    return checker;
+}
+
 /**
  * Creates compiler instance
  */
@@ -108,6 +124,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     let compilerInfo: CompilerInfo = {
         compilerName,
+        compilerPath,
         tsImpl,
         lib5: loadLib(path.join(compilerPath, 'bin', 'lib.d.ts')),
         lib6: loadLib(path.join(compilerPath, 'bin', 'lib.es6.d.ts'))
@@ -138,6 +155,22 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
     } else {
         if (typeof options.reEmitDependentFiles === 'string') {
             options.reEmitDependentFiles = (<any>options.reEmitDependentFiles) === 'true'
+        }
+    }
+
+    if (typeof options.doTypeCheck === 'undefined') {
+        options.doTypeCheck = true;
+    } else {
+        if (typeof options.doTypeCheck === 'string') {
+            options.doTypeCheck = (<any>options.doTypeCheck) === 'true'
+        }
+    }
+
+    if (typeof options.forkChecker === 'undefined') {
+        options.forkChecker = false;
+    } else {
+        if (typeof options.forkChecker === 'string') {
+            options.forkChecker = (<any>options.forkChecker) === 'true'
         }
     }
 
@@ -184,37 +217,60 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
             .catch((err) => callback(err))
     });
 
-    compiler.plugin('after-compile', function(compilation, callback) {
+    if (options.doTypeCheck) {
+        compiler.plugin('after-compile', function(compilation, callback) {
+            let instance: CompilerInstance = resolveInstance(compilation.compiler, instanceName);
+            let state = instance.tsState;
 
-        var instance: CompilerInstance = resolveInstance(compilation.compiler, instanceName);
-        var state = instance.tsState;
-        var diagnostics = state.ts.getPreEmitDiagnostics(state.program);
-        var emitError = (err) => {
-            compilation.errors.push(new Error(err))
-        };
+            if (options.forkChecker) {
+                let payload = {
+                    files: state.files
+                };
 
-        var phantomImports = [];
-        Object.keys(state.files).forEach((fileName) => {
-            if (!instance.compiledFiles[fileName]) {
-                phantomImports.push(fileName)
+                console.time('\nSending files to the checker');
+                instance.checker.send({
+                    messageType: 'compile',
+                    payload
+                })
+                console.timeEnd('\nSending files to the checker');
+            } else {
+                let diagnostics = state.ts.getPreEmitDiagnostics(state.program);
+                let emitError = (err) => {
+                    if (compilation.bail) {
+                        console.error('Error in bail mode:', err);
+                        process.exit(1);
+                    }
+                    compilation.errors.push(new Error(err))
+                };
+
+                var errors = helpers.formatErrors(diagnostics);
+                errors.forEach(emitError);
+                callback();
             }
+
+            let phantomImports = [];
+            Object.keys(state.files).forEach((fileName) => {
+                if (!instance.compiledFiles[fileName]) {
+                    phantomImports.push(fileName)
+                }
+            });
+
+            instance.compiledFiles = {};
+            compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
+            compilation.fileDependencies = _.uniq(compilation.fileDependencies);
+            callback();
         });
-
-        instance.compiledFiles = {};
-        compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
-        compilation.fileDependencies = _.uniq(compilation.fileDependencies);
-
-        var errors = helpers.formatErrors(diagnostics);
-        errors.forEach(emitError);
-        callback();
-    });
+    }
 
     return getInstanceStore(webpack._compiler)[instanceName] = {
         tsFlow,
         tsState,
         compiledFiles: {},
         options,
-        externalsInvoked: false
+        externalsInvoked: false,
+        checker: options.forkChecker
+            ? createChecker(compilerInfo, options)
+            : null
     }
 }
 
@@ -294,7 +350,12 @@ function compiler(webpack: WebPack, text: string): void {
 
             applyDeps();
 
-            callback(null, result.text, sourceMap);
+            try {
+                callback(null, result.text, sourceMap);
+            } catch (e) {
+                console.error('Error in bail mode:', e);
+                process.exit(1);
+            }
         })
         .finally(() => {
             applyDeps();

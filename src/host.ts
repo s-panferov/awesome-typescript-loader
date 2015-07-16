@@ -18,6 +18,7 @@ export interface File {
 
 export interface CompilerInfo {
     compilerName: string;
+    compilerPath: string;
     tsImpl: typeof ts;
     lib5: { fileName: string, text: string };
     lib6: { fileName: string, text: string };
@@ -34,7 +35,9 @@ export interface CompilerOptions extends ts.CompilerOptions {
     tsconfig?: string;
     useWebpackText?: boolean;
     rewriteImports?: string;
-    externals?: string
+    externals?: string;
+    doTypeCheck?: boolean;
+    forkChecker?: boolean;
 }
 
 export class Host implements ts.LanguageServiceHost {
