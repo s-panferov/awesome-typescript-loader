@@ -205,7 +205,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         });
 
         Promise.all(changedFiles.map((changedFile) => {
-            if (/\.ts$|\.d\.ts$/.test(changedFile)) {
+            if (/\.ts$|\.d\.ts|\.tsx$/.test(changedFile)) {
                 return state.readFileAndUpdate(changedFile).then(() => {
                     return state.fileAnalyzer.checkDependencies(resolver, changedFile);
                 });
