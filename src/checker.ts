@@ -90,9 +90,15 @@ function processCompile(payload: ICompilePayload) {
     if (allDiagnostics.length) {
         console.error(colors.yellow('Checker diagnostics:'))
         allDiagnostics.forEach(diagnostic => {
-            var { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
             var message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-            console.error(`${colors.cyan(diagnostic.file.fileName)} (${line + 1},${character + 1}):\n    ${colors.red(message)}`);
+
+            if (diagnostic.file) {
+                var { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+                console.error(`${colors.cyan(diagnostic.file.fileName)} (${line + 1},${character + 1}):\n    ${colors.red(message)}`);
+            } else {
+                console.error(colors.red(message));
+            }
+
         });
     } else {
         console.error(colors.green('Your program is fine!'))

@@ -214,7 +214,11 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
             }
         }))
             .then(_ => { state.updateProgram(); callback(); })
-            .catch((err) => callback(err))
+            .catch(ResolutionError, err => {
+                console.error(err.message);
+                callback();
+            })
+            .catch((err) => { console.log(err); callback() })
     });
 
     if (options.doTypeCheck) {
