@@ -1,3 +1,12 @@
+<a name"0.7.1"></a>
+### 0.7.1 (2015-07-18)
+
+
+#### Bug Fixes
+
+* ***:** fix unrecoverable error during watch ([6f7ad270](https://github.com/s-panferov/awesome-typescript-loader/commit/6f7ad270))
+
+
 <a name"0.7.0"></a>
 ## 0.7.0 (2015-07-18)
 
