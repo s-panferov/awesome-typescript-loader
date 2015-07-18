@@ -7,16 +7,16 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as childProcess from 'child_process';
 
-import { CompilerOptions, TypeScriptCompilationError, State, CompilerInfo } from './host';
-import { Resolver, ResolutionError } from './deps';
+import { ICompilerOptions, TypeScriptCompilationError, State, ICompilerInfo } from './host';
+import { IResolver, ResolutionError } from './deps';
 import * as helpers from './helpers';
 import { loadLib } from './helpers';
 
-var loaderUtils = require('loader-utils');
+let loaderUtils = require('loader-utils');
 
 interface ICompiler {
     inputFileSystem: typeof fs;
-    _tsInstances: {[key:string]: CompilerInstance};
+    _tsInstances: {[key:string]: ICompilerInstance};
     options: {
         externals: {
             [ key: string ]: string
@@ -24,7 +24,7 @@ interface ICompiler {
     }
 }
 
-interface WebPack {
+interface IWebPack {
     _compiler: ICompiler;
     cacheable: () => void;
     query: string;
@@ -35,11 +35,11 @@ interface WebPack {
     clearDependencies: () => void;
 }
 
-interface CompilerInstance {
+interface ICompilerInstance {
     tsFlow: Promise<any>;
     tsState: State;
     compiledFiles: {[key:string]: boolean};
-    options: CompilerOptions;
+    options: ICompilerOptions;
     externalsInvoked: boolean;
     checker: any;
 }
@@ -52,8 +52,8 @@ function getRootCompiler(compiler) {
     }
 }
 
-function getInstanceStore(compiler): {[key:string]: CompilerInstance} {
-    var store = getRootCompiler(compiler)._tsInstances;
+function getInstanceStore(compiler): {[key:string]: ICompilerInstance} {
+    let store = getRootCompiler(compiler)._tsInstances;
     if (store) {
         return store
     } else {
@@ -62,7 +62,7 @@ function getInstanceStore(compiler): {[key:string]: CompilerInstance} {
 }
 
 function ensureInstanceStore(compiler) {
-    var rootCompiler = getRootCompiler(compiler);
+    let rootCompiler = getRootCompiler(compiler);
     if (!rootCompiler._tsInstances) {
         rootCompiler._tsInstances = {};
     }
@@ -72,9 +72,9 @@ function resolveInstance(compiler, instanceName) {
     return getInstanceStore(compiler)[instanceName];
 }
 
-function createResolver(compiler: ICompiler, webpackResolver: any): Resolver {
+function createResolver(compiler: ICompiler, webpackResolver: any): IResolver {
     let externals = compiler.options.externals;
-    let resolver = <Resolver>Promise.promisify(webpackResolver);
+    let resolver = <IResolver>Promise.promisify(webpackResolver);
 
     function resolve(base: string, dep: string): Promise<string> {
         if (externals && externals.hasOwnProperty(dep)) {
@@ -87,8 +87,8 @@ function createResolver(compiler: ICompiler, webpackResolver: any): Resolver {
     return resolve;
 }
 
-function createChecker(compilerInfo: CompilerInfo, compilerOptions: CompilerOptions) {
-    var checker = childProcess.fork(path.join(__dirname, 'checker.js'));
+function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOptions) {
+    let checker = childProcess.fork(path.join(__dirname, 'checker.js'));
 
     checker.send({
         messageType: 'init',
@@ -104,15 +104,15 @@ function createChecker(compilerInfo: CompilerInfo, compilerOptions: CompilerOpti
 /**
  * Creates compiler instance
  */
-function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName: string): CompilerInstance {
+function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceName: string): ICompilerInstance {
     ensureInstanceStore(webpack._compiler);
 
-    var exInstance = resolveInstance(webpack._compiler, instanceName);
+    let exInstance = resolveInstance(webpack._compiler, instanceName);
     if (exInstance) {
         return exInstance
     }
 
-    var tsFlow = Promise.resolve();
+    let tsFlow = Promise.resolve();
 
     let compilerName = options.compiler || 'typescript';
     let compilerPath = path.dirname(compilerName);
@@ -122,7 +122,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     let tsImpl: typeof ts = require(compilerName);
 
-    let compilerInfo: CompilerInfo = {
+    let compilerInfo: ICompilerInfo = {
         compilerName,
         compilerPath,
         tsImpl,
@@ -130,8 +130,8 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         lib6: loadLib(path.join(compilerPath, 'bin', 'lib.es6.d.ts'))
     }
 
-    var configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
-    var configFile = null;
+    let configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
+    let configFile = null;
     if (configFileName) {
         configFile = tsImpl.readConfigFile(configFileName);
         if (configFile.error) {
@@ -190,15 +190,15 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
 
-    var tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
-    var compiler = (<any>webpack._compiler);
+    let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
+    let compiler = (<any>webpack._compiler);
 
     compiler.plugin('watch-run', (watching, callback) => {
-        var resolver = createResolver(watching.compiler, watching.compiler.resolvers.normal.resolve);
-        var instance: CompilerInstance = resolveInstance(watching.compiler, instanceName);
-        var state = instance.tsState;
-        var mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
-        var changedFiles = Object.keys(mtimes);
+        let resolver = createResolver(watching.compiler, watching.compiler.resolvers.normal.resolve);
+        let instance: ICompilerInstance = resolveInstance(watching.compiler, instanceName);
+        let state = instance.tsState;
+        let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
+        let changedFiles = Object.keys(mtimes);
 
         changedFiles.forEach((changedFile) => {
             state.fileAnalyzer.validFiles.markFileInvalid(changedFile);
@@ -223,7 +223,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
 
     if (options.doTypeCheck) {
         compiler.plugin('after-compile', function(compilation, callback) {
-            let instance: CompilerInstance = resolveInstance(compilation.compiler, instanceName);
+            let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
             let state = instance.tsState;
 
             if (options.forkChecker) {
@@ -247,7 +247,7 @@ function ensureInstance(webpack: WebPack, options: CompilerOptions, instanceName
                     compilation.errors.push(new Error(err))
                 };
 
-                var errors = helpers.formatErrors(diagnostics);
+                let errors = helpers.formatErrors(diagnostics);
                 errors.forEach(emitError);
                 callback();
             }
@@ -282,29 +282,29 @@ function loader(text) {
     compiler.call(undefined, this, text)
 }
 
-function compiler(webpack: WebPack, text: string): void {
+function compiler(webpack: IWebPack, text: string): void {
     if (webpack.cacheable) {
         webpack.cacheable();
     }
 
-    var options = <CompilerOptions>loaderUtils.parseQuery(webpack.query);
-    var instanceName = options.instanceName || 'default';
+    let options = <ICompilerOptions>loaderUtils.parseQuery(webpack.query);
+    let instanceName = options.instanceName || 'default';
 
-    var instance = ensureInstance(webpack, options, instanceName);
+    let instance = ensureInstance(webpack, options, instanceName);
 
-    var state = instance.tsState;
+    let state = instance.tsState;
 
-    var callback = webpack.async();
-    var fileName = webpack.resourcePath;
+    let callback = webpack.async();
+    let fileName = webpack.resourcePath;
 
-    var resolver = createResolver(webpack._compiler, webpack.resolve);
+    let resolver = createResolver(webpack._compiler, webpack.resolve);
 
-    var depsInjector = {
+    let depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
         clear: webpack.clearDependencies.bind(webpack)
     };
 
-    var applyDeps = _.once(() => {
+    let applyDeps = _.once(() => {
         depsInjector.clear();
         depsInjector.add(fileName);
         if (state.options.reEmitDependentFiles) {
@@ -341,13 +341,13 @@ function compiler(webpack: WebPack, text: string): void {
             return state.emit(fileName)
         })
         .then(output => {
-            var result = helpers.findResultFor(output, fileName);
+            let result = helpers.findResultFor(output, fileName);
 
             if (result.text === undefined) {
                 throw new Error('no output found for ' + fileName);
             }
 
-            var sourceMap = JSON.parse(result.sourceMap);
+            let sourceMap = JSON.parse(result.sourceMap);
             sourceMap.sources = [ fileName ];
             sourceMap.file = fileName;
             sourceMap.sourcesContent = [ text ];

@@ -12,12 +12,12 @@ function isSourceMapEmit(fileName, outputFileName)  {
 }
 
 export function findResultFor(output: ts.EmitOutput, fileName: string) {
-    var text;
-    var sourceMap;
+    let text;
+    let sourceMap;
     fileName = path.normalize(fileName);
-    for (var i = 0; i < output.outputFiles.length; i++) {
-        var o = output.outputFiles[i];
-        var outputFileName = path.normalize(o.name);
+    for (let i = 0; i < output.outputFiles.length; i++) {
+        let o = output.outputFiles[i];
+        let outputFileName = path.normalize(o.name);
         if (isFileEmit(fileName, outputFileName)) {
             text = o.text;
         }
@@ -53,7 +53,7 @@ export function codegenErrorReport(errors) {
 
 export function formatErrors(errors: ts.Diagnostic[]) {
     return errors.map(function (diagnostic) {
-        var lineChar;
+        let lineChar;
         if (diagnostic.file) {
             lineChar = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
         }
@@ -68,9 +68,9 @@ export function formatErrors(errors: ts.Diagnostic[]) {
 }
 
 export function formatMessageChain(chain: ts.DiagnosticMessageChain) {
-    var result = "";
-    var separator = "\n  ";
-    var current = chain;
+    let result = "";
+    let separator = "\n  ";
+    let current = chain;
 
     while (current) {
         result += current.messageText;
@@ -91,8 +91,8 @@ export function formatLineChar(lineChar) {
 }
 
 export function loadLib(moduleId) {
-    var fileName = require.resolve(moduleId);
-    var text = fs.readFileSync(fileName, 'utf8');
+    let fileName = require.resolve(moduleId);
+    let text = fs.readFileSync(fileName, 'utf8');
     return {
         fileName: fileName,
         text: text

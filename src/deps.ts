@@ -5,15 +5,15 @@ import * as Promise from 'bluebird';
 
 import { State } from './host';
 
-var objectAssign = require('object-assign');
+let objectAssign = require('object-assign');
 
 type FileSet = {[fileName: string]: boolean};
 
-export interface Resolver {
+export interface IResolver {
     (base: string, dep: string): Promise<string>
 }
 
-export interface Dependency {
+export interface IDependency {
     add(fileName: string): void;
     clear(): void
 }
@@ -64,7 +64,7 @@ export class FileAnalyzer {
         this.state = state;
     }
 
-    checkDependencies(resolver: Resolver, fileName: string): Promise<boolean> {
+    checkDependencies(resolver: IResolver, fileName: string): Promise<boolean> {
         if (this.validFiles.isFileValid(fileName)) {
             return Promise.resolve(false);
         }
@@ -72,7 +72,7 @@ export class FileAnalyzer {
         this.dependencies.clearDependencies(fileName);
 
 
-        var flow = this.state.hasFile(fileName) ?
+        let flow = this.state.hasFile(fileName) ?
             Promise.resolve(false) :
             this.state.readFileAndUpdate(fileName);
 
@@ -90,18 +90,18 @@ export class FileAnalyzer {
             .then(() => wasChanged);
     }
 
-    private checkDependenciesInternal(resolver: Resolver, fileName: string): Promise<void> {
-        var dependencies = this.findImportDeclarations(resolver, fileName)
+    private checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
+        let dependencies = this.findImportDeclarations(resolver, fileName)
             .then((deps) => {
                 return deps.map(depFileName => {
 
-                    var result: Promise<string> = Promise.resolve(depFileName);
-                    var isDeclaration = isTypeDeclaration(depFileName);
+                    let result: Promise<string> = Promise.resolve(depFileName);
+                    let isDeclaration = isTypeDeclaration(depFileName);
 
-                    var isRequiredJs = /\.js$/.exec(depFileName) || depFileName.indexOf('.') === -1;
+                    let isRequiredJs = /\.js$/.exec(depFileName) || depFileName.indexOf('.') === -1;
 
                     if (isDeclaration) {
-                        var hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
+                        let hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
                         if (!hasDeclaration) {
                             this.dependencies.addTypeDeclaration(depFileName);
                             return this.checkDependencies(resolver, depFileName).then(() => result)
@@ -120,17 +120,17 @@ export class FileAnalyzer {
         return Promise.all(dependencies).then((_) => {});
     }
 
-    private findImportDeclarations(resolver: Resolver, fileName: string): Promise<string[]> {
-        var sourceFile = this.state.services.getSourceFile(fileName);
+    private findImportDeclarations(resolver: IResolver, fileName: string): Promise<string[]> {
+        let sourceFile = this.state.services.getSourceFile(fileName);
         let scriptSnapshot = (<any>sourceFile).scriptSnapshot.text;
 
-        var isDeclaration = isTypeDeclaration(fileName);
+        let isDeclaration = isTypeDeclaration(fileName);
 
-        var rewrites: {pos: number, end: number, module: string}[] = [];
-        var resolves: Promise<void>[] = [];
+        let rewrites: {pos: number, end: number, module: string}[] = [];
+        let resolves: Promise<void>[] = [];
 
-        var result = [];
-        var visit = (node: ts.Node) => {
+        let result = [];
+        let visit = (node: ts.Node) => {
             if (!isDeclaration && isImportEqualsDeclaration(node)) {
                 // we need this check to ensure that we have an external import
                 let importPath = (<any>node).moduleReference.expression.text;
@@ -175,8 +175,8 @@ export class FileAnalyzer {
         });
     }
 
-    resolve(resolver: Resolver, fileName: string, defPath: string): Promise<string> {
-        var result;
+    resolve(resolver: IResolver, fileName: string, defPath: string): Promise<string> {
+        let result;
 
         if (!path.extname(defPath).length) {
             result = resolver(path.dirname(fileName), defPath + ".ts")
@@ -210,7 +210,7 @@ export class FileAnalyzer {
 
         return result
             .error(function (error) {
-                var detailedError: any = new ResolutionError();
+                let detailedError: any = new ResolutionError();
                 detailedError.message = error.message + "\n    Required in " + fileName;
                 detailedError.cause = error;
                 detailedError.fileName = fileName;
@@ -220,9 +220,9 @@ export class FileAnalyzer {
     }
 }
 
-export interface DependencyGraphItem {
+export interface IDependencyGraphItem {
     fileName: string;
-    dependencies: DependencyGraphItem[]
+    dependencies: IDependencyGraphItem[]
 }
 
 export class DependencyManager {
@@ -273,16 +273,16 @@ export class DependencyManager {
         return objectAssign({}, this.knownTypeDeclarations);
     }
 
-    getDependencyGraph(fileName: string): DependencyGraphItem {
-        var appliedDeps: {[fileName: string]: boolean} = {};
-        var result: DependencyGraphItem = {
+    getDependencyGraph(fileName: string): IDependencyGraphItem {
+        let appliedDeps: {[fileName: string]: boolean} = {};
+        let result: IDependencyGraphItem = {
             fileName,
             dependencies: []
         };
 
-        var walk = (fileName: string, context: DependencyGraphItem) => {
+        let walk = (fileName: string, context: IDependencyGraphItem) => {
             this.getDependencies(fileName).forEach((depFileName) => {
-                var depContext = {
+                let depContext = {
                     fileName: depFileName,
                     dependencies: []
                 };
@@ -299,12 +299,12 @@ export class DependencyManager {
         return result;
     }
 
-    formatDependencyGraph(item: DependencyGraphItem): string {
-        var result = {
+    formatDependencyGraph(item: IDependencyGraphItem): string {
+        let result = {
             buf: 'DEPENDENCY GRAPH FOR: ' + path.relative(process.cwd(), item.fileName)
         };
-        var walk = (item: DependencyGraphItem, level: number, buf: typeof result) => {
-            for (var i = 0; i < level; i++) { buf.buf = buf.buf + "  " }
+        let walk = (item: IDependencyGraphItem, level: number, buf: typeof result) => {
+            for (let i = 0; i < level; i++) { buf.buf = buf.buf + "  " }
             buf.buf = buf.buf + path.relative(process.cwd(), item.fileName);
             buf.buf = buf.buf + "\n";
 
@@ -315,16 +315,16 @@ export class DependencyManager {
         return result.buf += '\n\n';
     }
 
-    applyChain(fileName: string, deps: Dependency) {
+    applyChain(fileName: string, deps: IDependency) {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
 
-        var appliedDeps: FileSet = {};
-        var graph = this.getDependencyGraph(fileName);
+        let appliedDeps: FileSet = {};
+        let graph = this.getDependencyGraph(fileName);
 
-        var walk = (item: DependencyGraphItem) => {
-            var itemFileName = item.fileName;
+        let walk = (item: IDependencyGraphItem) => {
+            let itemFileName = item.fileName;
             if (!appliedDeps[itemFileName]) {
                 appliedDeps[itemFileName] = true;
                 deps.add(itemFileName)

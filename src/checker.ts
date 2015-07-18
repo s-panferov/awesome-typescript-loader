@@ -1,4 +1,4 @@
-import { CompilerOptions, CompilerInfo, File } from './host';
+import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import * as colors from 'colors';
 
 export enum MessageType {
@@ -12,20 +12,20 @@ export interface IMessage {
 }
 
 export interface IInitPayload {
-    compilerOptions: CompilerOptions;
-    compilerInfo: CompilerInfo
+    compilerOptions: ICompilerOptions;
+    compilerInfo: ICompilerInfo
 }
 
 export interface ICompilePayload {
-    files: {[fileName: string]: File};
+    files: {[fileName: string]: IFile};
 }
 
 export interface IEnv {
-    options?: CompilerOptions;
+    options?: ICompilerOptions;
     compiler?: typeof ts;
-    compilerInfo?: CompilerInfo;
+    compilerInfo?: ICompilerInfo;
     host?: Host;
-    files?: {[fileName: string]: File};
+    files?: {[fileName: string]: IFile};
     program?: ts.Program;
     service?: ts.LanguageService;
 }
@@ -45,7 +45,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptSnapshot(fileName) {
-        var file = env.files[fileName];
+        let file = env.files[fileName];
         if (file) {
             return env.compiler.ScriptSnapshot.fromString(file.text);
         }
@@ -86,14 +86,14 @@ function processInit(payload: IInitPayload) {
 function processCompile(payload: ICompilePayload) {
     env.files = payload.files;
     let program = env.program = env.service.getProgram();
-    var allDiagnostics = env.compiler.getPreEmitDiagnostics(program);
+    let allDiagnostics = env.compiler.getPreEmitDiagnostics(program);
     if (allDiagnostics.length) {
         console.error(colors.yellow('Checker diagnostics:'))
         allDiagnostics.forEach(diagnostic => {
-            var message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+            let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
 
             if (diagnostic.file) {
-                var { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+                let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
                 console.error(`${colors.cyan(diagnostic.file.fileName)} (${line + 1},${character + 1}):\n    ${colors.red(message)}`);
             } else {
                 console.error(colors.red(message));

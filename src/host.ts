@@ -7,16 +7,16 @@ import * as _ from 'lodash';
 import { FileAnalyzer } from './deps';
 import { loadLib } from './helpers';
 
-var objectAssign = require('object-assign');
+let objectAssign = require('object-assign');
 
-var RUNTIME = loadLib('../lib/runtime.d.ts');
+let RUNTIME = loadLib('../lib/runtime.d.ts');
 
-export interface File {
+export interface IFile {
     text: string;
     version: number;
 }
 
-export interface CompilerInfo {
+export interface ICompilerInfo {
     compilerName: string;
     compilerPath: string;
     tsImpl: typeof ts;
@@ -24,7 +24,7 @@ export interface CompilerInfo {
     lib6: { fileName: string, text: string };
 }
 
-export interface CompilerOptions extends ts.CompilerOptions {
+export interface ICompilerOptions extends ts.CompilerOptions {
     noLib?: boolean;
     instanceName?: string;
     showRecompileReason?: boolean;
@@ -59,7 +59,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptSnapshot(fileName) {
-        var file = this.state.files[fileName];
+        let file = this.state.files[fileName];
         if (file) {
             return this.state.ts.ScriptSnapshot.fromString(file.text);
         }
@@ -93,18 +93,18 @@ export class State {
 
     ts: typeof ts;
     fs: typeof fs;
-    compilerInfo: CompilerInfo;
+    compilerInfo: ICompilerInfo;
     host: Host;
-    files: {[fileName: string]: File} = {};
+    files: {[fileName: string]: IFile} = {};
     services: ts.LanguageService;
-    options: CompilerOptions;
+    options: ICompilerOptions;
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
 
     constructor(
-        options: CompilerOptions,
+        options: ICompilerOptions,
         fsImpl: typeof fs,
-        compilerInfo: CompilerInfo
+        compilerInfo: ICompilerInfo
     ) {
         this.ts = compilerInfo.tsImpl;
         this.compilerInfo = compilerInfo;
@@ -156,7 +156,7 @@ export class State {
             this.program = this.services.getProgram();
         }
 
-        var outputFiles: ts.OutputFile[] = [];
+        let outputFiles: ts.OutputFile[] = [];
 
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean) {
             outputFiles.push({
@@ -166,8 +166,8 @@ export class State {
             });
         }
 
-        var normalizedFileName = this.normalizePath(fileName);
-        var source = this.program.getSourceFile(normalizedFileName);
+        let normalizedFileName = this.normalizePath(fileName);
+        let source = this.program.getSourceFile(normalizedFileName);
         if (!source) {
             this.updateProgram();
             source = this.program.getSourceFile(normalizedFileName);
@@ -176,9 +176,9 @@ export class State {
             }
         }
 
-        var emitResult = this.program.emit(source, writeFile);
+        let emitResult = this.program.emit(source, writeFile);
 
-        var output = {
+        let output = {
             outputFiles: outputFiles,
             emitSkipped: emitResult.emitSkipped
         };
@@ -191,9 +191,9 @@ export class State {
     }
 
     updateFile(fileName: string, text: string, checked: boolean = false): boolean {
-        var prevFile = this.files[fileName];
-        var version = 0;
-        var changed = true;
+        let prevFile = this.files[fileName];
+        let version = 0;
+        let changed = true;
 
         if (prevFile) {
             if (!checked || (checked && text !== prevFile.text)) {
@@ -223,7 +223,7 @@ export class State {
     }
 
     readFile(fileName: string): Promise<string> {
-        var readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
+        let readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
         return readFile(fileName).then(function (buf) {
             return buf.toString('utf8');
         });
@@ -243,7 +243,7 @@ export class State {
     }
 
     readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {
-        var text = this.readFileSync(fileName);
+        let text = this.readFileSync(fileName);
         return this.updateFile(fileName, text, checked);
     }
 
@@ -251,7 +251,6 @@ export class State {
         return (<any>this.ts).normalizePath(path)
     }
 }
-
 
 /**
  * Emit compilation result for a specified fileName.
