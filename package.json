@@ -27,9 +27,9 @@
     "bluebird": "^2.7.1",
     "loader-utils": "^0.2.6",
     "lodash": "^3.10.0",
-    "ntypescript": "1.201507141013.1",
+    "ntypescript": "1.201507220720.1",
     "object-assign": "^2.0.0",
-    "typescript": "1.5.0-beta",
+    "typescript": "1.5.3",
     "colors": "^1.1.2"
   },
   "devDependencies": {
