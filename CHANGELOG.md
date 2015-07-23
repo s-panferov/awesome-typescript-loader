@@ -1,3 +1,13 @@
+<a name"0.8.0"></a>
+## 0.8.0 (2015-07-23)
+
+
+#### Features
+
+* ***:** add alias example ([ca86fd71](https://github.com/s-panferov/awesome-typescript-loader/commit/ca86fd71))
+* **runtime:** add require signature for AMD ([970ff875](https://github.com/s-panferov/awesome-typescript-loader/commit/970ff875))
+
+
 <a name"0.7.1"></a>
 ### 0.7.1 (2015-07-18)
 
