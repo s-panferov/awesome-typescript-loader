@@ -104,12 +104,12 @@ Use this setting to force loader to use webpack's way to load files. Useful only
 
 ### rewriteImports *(string)*
 
-Common-separated list of modules that must be processed by webpack in imports. Useful if you want to use `some-lib`
+Comma-separated list of modules that must be processed by webpack in imports. Useful if you want to use `some-lib`
 with pure TS files inside your app.
 
 ### externals *(string)*
 
-Common-separated list of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
+Comma-separated list of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
 
 ### doTypeCheck *(string) (default=true)*
 
