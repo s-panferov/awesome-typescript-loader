@@ -8,7 +8,8 @@ interface WebpackRequireEnsureCallback {
 
 interface WebpackRequire {
     (id: string): any;
-    ensure(ids: string[], callback: WebpackRequireEnsureCallback): void;
+    (paths: string[], callback: (...modules: any[]) => void): void;
+    ensure(ids: string[], callback: WebpackRequireEnsureCallback, chunkName?: string): void;
 }
 
 declare var require: WebpackRequire;
