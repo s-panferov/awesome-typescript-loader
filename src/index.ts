@@ -96,7 +96,7 @@ function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOp
             compilerInfo: _.omit(compilerInfo, 'tsImpl'),
             compilerOptions
         }
-    }, null)
+    }, null);
 
     return checker;
 }
@@ -128,7 +128,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         tsImpl,
         lib5: loadLib(path.join(compilerPath, 'bin', 'lib.d.ts')),
         lib6: loadLib(path.join(compilerPath, 'bin', 'lib.es6.d.ts'))
-    }
+    };
 
     let configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
     let configFile = null;
@@ -137,9 +137,10 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         if (configFile.error) {
             throw configFile.error;
         }
-
-        _.extend(options, configFile.compilerOptions);
-        _.extend(options, configFile.awesomeTypescriptLoaderOptions);
+        if (configFile.config) {
+            _.extend(options, configFile.config.compilerOptions);
+            _.extend(options, configFile.config.awesomeTypescriptLoaderOptions);
+        }
     }
 
     if (typeof options.emitRequireType === 'undefined') {
