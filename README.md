@@ -115,9 +115,9 @@ Comma-separated list of paths to .d.ts files that must be included in program. U
 
 Use this setting to disable type checking if you want.
 
-### forkChecker *experimental!* *(string) (default=false)*
+### forkChecker *(string) (default=false)*
 
-Do type checking in a separate process, so webpack don't need to wait. **Significantly** development workflow.
+Do type checking in a separate process, so webpack don't need to wait. **Significantly** improves development workflow.
 
 ## Using with --watch or webpack-dev-server
 

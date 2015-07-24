@@ -6,7 +6,7 @@ module.exports = function(grunt) {
         ts: {
             default : {
                 options: {
-                    compiler: './node_modules/ntypescript/bin/tsc',
+                    compiler: './node_modules/typescript/bin/tsc',
                     module: "commonjs",
                     fast: 'never',
                     preserveConstEnums: true
@@ -16,7 +16,7 @@ module.exports = function(grunt) {
             },
             watch : {
                 options: {
-                    compiler: './node_modules/ntypescript/bin/tsc',
+                    compiler: './node_modules/typescript/bin/tsc',
                     module: "commonjs",
                     fast: 'never',
                     preserveConstEnums: true

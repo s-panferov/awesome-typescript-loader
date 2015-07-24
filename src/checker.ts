@@ -1,5 +1,36 @@
 import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import * as colors from 'colors';
+import * as _ from 'lodash';
+
+const AWESOME_SYNONYMS = [
+    'awesome',
+    'impressive',
+    'amazing',
+    'grand',
+    'majestic',
+    'magnificent',
+    'wonderful',
+    'great',
+    'marvellous',
+    'incredible',
+    'fabulous',
+    'outstanding',
+    'unbelievable',
+    'beautiful',
+    'excellent',
+    'mind-blowing',
+    'superb',
+    'badass',
+    'brilliant',
+    'exciting',
+    'eye-opening',
+    'fucking good',
+    'fine',
+    'perfect',
+    'cool',
+    'fantastical',
+    'five-star'
+];
 
 export enum MessageType {
     Init = <any>'init',
@@ -80,7 +111,7 @@ function processInit(payload: IInitPayload) {
     env.host = new Host();
     env.compilerInfo = payload.compilerInfo;
     env.options = payload.compilerOptions;
-    env.service = this.ts.createLanguageService(env.host, env.compiler.createDocumentRegistry());
+    env.service = env.compiler.createLanguageService(env.host, env.compiler.createDocumentRegistry());
 }
 
 function processCompile(payload: ICompilePayload) {
@@ -98,10 +129,9 @@ function processCompile(payload: ICompilePayload) {
             } else {
                 console.error(colors.red(message));
             }
-
         });
     } else {
-        console.error(colors.green('Your program is fine!'))
+        console.error(colors.green('Your program is ' + AWESOME_SYNONYMS[_.random(AWESOME_SYNONYMS.length - 1)] + '!'));
     }
 
 }

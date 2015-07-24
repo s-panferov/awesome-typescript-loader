@@ -1,4 +1,4 @@
-/// <reference path='../node_modules/ntypescript/bin/typescriptServices.d.ts' />
+/// <reference path='../node_modules/typescript/bin/typescriptServices.d.ts' />
 /// <reference path='../typings/tsd.d.ts' />
 
 import * as Promise from 'bluebird';
@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as childProcess from 'child_process';
+import * as colors from 'colors';
 
 import { ICompilerOptions, TypeScriptCompilationError, State, ICompilerInfo } from './host';
 import { IResolver, ResolutionError } from './deps';
@@ -101,6 +102,10 @@ function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOp
     return checker;
 }
 
+const COMPILER_ERROR = colors.red(`\n\nTypescript compiler cannot be found, please add it to your package.json file:
+    npm install --save-dev typescript
+`);
+
 /**
  * Creates compiler instance
  */
@@ -120,7 +125,14 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         compilerPath = compilerName
     }
 
-    let tsImpl: typeof ts = require(compilerName);
+    let tsImpl: typeof ts;
+    try {
+        console.log(compilerName);
+        tsImpl = require(compilerName);
+    } catch (e) {
+        console.error(COMPILER_ERROR);
+        process.exit(1);
+    }
 
     let compilerInfo: ICompilerInfo = {
         compilerName,
