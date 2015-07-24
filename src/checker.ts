@@ -121,7 +121,7 @@ function processCompile(payload: ICompilePayload) {
     if (allDiagnostics.length) {
         console.error(colors.yellow('Checker diagnostics:'))
         allDiagnostics.forEach(diagnostic => {
-            let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+            let message = env.compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
 
             if (diagnostic.file) {
                 let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
