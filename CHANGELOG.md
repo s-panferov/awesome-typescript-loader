@@ -1,3 +1,12 @@
+<a name"0.9.1"></a>
+### 0.9.1 (2015-07-24)
+
+
+#### Features
+
+* **checker:** fix compiler reference ([8dcad5d2](https://github.com/s-panferov/awesome-typescript-loader/commit/8dcad5d2))
+
+
 <a name"0.9.0"></a>
 ## 0.9.0 (2015-07-24)
 
