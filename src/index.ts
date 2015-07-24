@@ -127,7 +127,6 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
     let tsImpl: typeof ts;
     try {
-        console.log(compilerName);
         tsImpl = require(compilerName);
     } catch (e) {
         console.error(COMPILER_ERROR);
@@ -262,7 +261,6 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
                 let errors = helpers.formatErrors(diagnostics);
                 errors.forEach(emitError);
-                callback();
             }
 
             let phantomImports = [];
