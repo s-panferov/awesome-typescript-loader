@@ -8,10 +8,6 @@ Thanks @andreypopp for the great project.
 The main goal of this loader is to support the **watch** mode and *webpack-dev-server* with **incremental** compilation.
 Also there are a lot of problems in other TypeScript loaders that were fixed here.
 
-## Unstable TypeScript warning
-
-Right now this library works only with the **TypeScript 1.5-beta** compiler or with *ntypescript*.
-
 ## Installation
 
 ```
@@ -53,7 +49,6 @@ After that, you would be able to build TypeScript files with webpack.
 ## TS defaults
 
 * target = 'es5'
-* module = 'commonjs'
 
 ## tsconfig.json
 
@@ -71,12 +66,14 @@ You can use .tsconfig.json file to configure your compiler and loader:
 }
 ```
 
-## Loader Options
+## Loader options
 
 ### compiler *(string) (default='typescript')*
 
 Allows use of TypeScript compilers other than the official one. Should be
 set to the NPM name of the compiler, e.g. *ntypescript* or path to a `tsc` file.
+Note that the compiler must be installed in **your** project. You can also use
+nightly versions.
 
 ### emitRequireType *(boolean) (default=true)*
 
@@ -117,12 +114,16 @@ Use this setting to disable type checking if you want.
 
 ### forkChecker *(string) (default=false)*
 
-Do type checking in a separate process, so webpack don't need to wait. **Significantly** improves development workflow.
+Do type checking in a separate process, so webpack don't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
+
+## Compiler options
+
+You can pass compiler options inside loader query string or in tsconfig file.
 
 ## Using with --watch or webpack-dev-server
 
 This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies
-using internal webpack dependency markers. When you change a file, the loader recompiles all dependencies.
+using internal webpack dependency markers. When you change a file, the loader recompiles all the dependencies.
 
 ## External Modules
 
@@ -133,7 +134,7 @@ npm install --save react
 ```
 
 ```typescript
-import React = require('react');
+import * as React from 'react';
 ```
 
 ## Internal Modules
