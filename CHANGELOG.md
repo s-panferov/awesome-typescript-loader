@@ -1,3 +1,17 @@
+<a name"0.9.0"></a>
+## 0.9.0 (2015-07-24)
+
+
+#### Bug Fixes
+
+* **index:** don't call the callback twice ([3abf8e48](https://github.com/s-panferov/awesome-typescript-loader/commit/3abf8e48))
+
+
+#### Features
+
+* ***:** use a compiler from a client app ([cae4d00f](https://github.com/s-panferov/awesome-typescript-loader/commit/cae4d00f))
+
+
 <a name"0.8.0"></a>
 ## 0.8.0 (2015-07-23)
 
