@@ -194,6 +194,13 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         }
     }
 
+    if (typeof options.jsx !== 'undefined') {
+        switch(options.jsx as any) {
+            case 'react': options.jsx = ts.JsxEmit.React; break;
+            case 'preserve': options.jsx = ts.JsxEmit.Preserve; break;
+        }
+    }
+
     if (typeof options.rewriteImports == 'undefined') {
         options.rewriteImports = '';
     }
