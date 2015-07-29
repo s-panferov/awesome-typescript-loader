@@ -31,7 +31,7 @@
     "colors": "^1.1.2"
   },
   "devDependencies": {
-    "typescript": "1.6.0-dev.20150723",
+    "typescript": "1.6.0-dev.20150729",
     "git-hooks": "0.0.10",
     "grunt": "^0.4.5",
     "grunt-bump": "^0.3.1",
