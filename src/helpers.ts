@@ -1,27 +1,29 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as host from 'host';
 
-function isFileEmit(fileName, outputFileName)  {
-    return (outputFileName.replace(/\.js$/, '.ts') === fileName) ||
-           (outputFileName.replace(/\.js$/, '.tsx') === fileName);
+function isFileEmit(fileName, outputFileName, sourceFileName) {
+    return sourceFileName === fileName
+        && outputFileName.substr(-3) === '.js';
 }
 
-function isSourceMapEmit(fileName, outputFileName)  {
-    return (outputFileName.replace(/\.js\.map$/, '.ts') === fileName) ||
-           (outputFileName.replace(/\.js\.map$/, '.tsx') === fileName);
+function isSourceMapEmit(fileName, outputFileName, sourceFileName) {
+    return sourceFileName === fileName
+        && outputFileName.substr(-7) === '.js.map';
 }
 
-export function findResultFor(output: ts.EmitOutput, fileName: string) {
+export function findResultFor(output:host.IEmitOutput, fileName:string) {
     let text;
     let sourceMap;
     fileName = path.normalize(fileName);
     for (let i = 0; i < output.outputFiles.length; i++) {
         let o = output.outputFiles[i];
         let outputFileName = path.normalize(o.name);
-        if (isFileEmit(fileName, outputFileName)) {
+        let sourceFileName = path.normalize(o.sourceName);
+        if (isFileEmit(fileName, outputFileName, sourceFileName)) {
             text = o.text;
         }
-        if (isSourceMapEmit(fileName, outputFileName)) {
+        if (isSourceMapEmit(fileName, outputFileName, sourceFileName)) {
             sourceMap = o.text;
         }
     }
