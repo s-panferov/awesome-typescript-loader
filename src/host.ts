@@ -40,6 +40,14 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     forkChecker?: boolean;
 }
 
+export interface IOutputFile extends ts.OutputFile {
+    sourceName: string
+}
+
+export interface IEmitOutput extends ts.EmitOutput {
+    outputFiles: IOutputFile[]
+}
+
 export class Host implements ts.LanguageServiceHost {
 
     state: State;
@@ -150,23 +158,25 @@ export class State {
         this.program = this.services.getProgram();
     }
 
-    emit(fileName: string): ts.EmitOutput {
+    emit(fileName: string): IEmitOutput {
 
         if (!this.program) {
             this.program = this.services.getProgram();
         }
 
-        let outputFiles: ts.OutputFile[] = [];
+        let outputFiles: IOutputFile[] = [];
+
+        let normalizedFileName = this.normalizePath(fileName);
 
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean) {
             outputFiles.push({
+                sourceName: normalizedFileName,
                 name: fileName,
                 writeByteOrderMark: writeByteOrderMark,
                 text: data
             });
         }
 
-        let normalizedFileName = this.normalizePath(fileName);
         let source = this.program.getSourceFile(normalizedFileName);
         if (!source) {
             this.updateProgram();
