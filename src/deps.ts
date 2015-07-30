@@ -31,7 +31,9 @@ function pathWithoutExt(fileName) {
 }
 
 function needRewrite(rewriteImports, importPath): boolean {
-    return rewriteImports && _.any(rewriteImports.split(','), (i) => importPath.indexOf(i) !== -1)
+    return rewriteImports && _.any(rewriteImports, (i) => {
+        return importPath.split('/')[0] == i
+    })
 }
 
 function updateText(text, pos, end, newText): string {
