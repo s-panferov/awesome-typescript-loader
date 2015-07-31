@@ -202,7 +202,11 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
     }
 
     if (typeof options.rewriteImports == 'undefined') {
-        options.rewriteImports = '';
+        options.rewriteImports = [];
+    }
+
+    if (typeof options.externals == 'undefined') {
+        options.externals = [];
     }
 
     if (options.target) {
@@ -333,7 +337,7 @@ function compiler(webpack: IWebPack, text: string): void {
     if (options.externals && !instance.externalsInvoked) {
         instance.externalsInvoked = true;
         instance.tsFlow = instance.tsFlow.then(
-            <any>Promise.all(options.externals.split(',').map(external => {
+            <any>Promise.all(options.externals.map(external => {
                 return state.fileAnalyzer.checkDependencies(resolver, external);
             }))
         );

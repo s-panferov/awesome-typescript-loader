@@ -34,8 +34,8 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
     useWebpackText?: boolean;
-    rewriteImports?: string;
-    externals?: string;
+    rewriteImports?: any;
+    externals?: any;
     doTypeCheck?: boolean;
     forkChecker?: boolean;
 }

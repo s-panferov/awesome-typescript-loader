@@ -104,9 +104,9 @@ Use this setting to force loader to use webpack's way to load files. Useful only
 Array of modules that must be processed by webpack in imports. Useful if you want to use `some-lib`
 with pure TS files inside your app.
 
-### externals *(string)*
+### externals *(array)*
 
-Comma-separated list of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
+Array of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
 
 ### doTypeCheck *(string) (default=true)*
 
