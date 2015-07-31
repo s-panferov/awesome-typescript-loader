@@ -1,3 +1,12 @@
+<a name"0.11.0-rc.0"></a>
+### 0.11.0-rc.0 (2015-07-31)
+
+
+#### Features
+
+* ***:** externals is an array now ([69cadb52](https://github.com/s-panferov/awesome-typescript-loader/commit/69cadb52))
+
+
 <a name"0.9.1"></a>
 ### 0.9.1 (2015-07-24)
 
