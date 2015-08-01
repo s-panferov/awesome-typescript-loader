@@ -1,4 +1,4 @@
-/// <reference path='../node_modules/typescript/bin/typescriptServices.d.ts' />
+/// <reference path='../node_modules/typescript/lib/typescriptServices.d.ts' />
 /// <reference path='../typings/tsd.d.ts' />
 
 import * as Promise from 'bluebird';
