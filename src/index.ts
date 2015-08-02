@@ -133,12 +133,20 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         process.exit(1);
     }
 
+    let libPath = path.join(compilerPath, 'lib', 'lib.d.ts');
+    let lib6Path = path.join(compilerPath, 'lib', 'lib.es6.d.ts');
+
+    if (!require.resolve(libPath)) {
+        libPath = path.join(compilerPath, 'bin', 'lib.d.ts');
+        lib6Path = path.join(compilerPath, 'bin', 'lib.es6.d.ts');
+    }
+
     let compilerInfo: ICompilerInfo = {
         compilerName,
         compilerPath,
         tsImpl,
-        lib5: loadLib(path.join(compilerPath, 'bin', 'lib.d.ts')),
-        lib6: loadLib(path.join(compilerPath, 'bin', 'lib.es6.d.ts'))
+        lib5: loadLib(libPath),
+        lib6: loadLib(lib6Path)
     };
 
     let configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
