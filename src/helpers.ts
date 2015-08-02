@@ -4,12 +4,14 @@ import * as host from 'host';
 
 function isFileEmit(fileName, outputFileName, sourceFileName) {
     return sourceFileName === fileName
-        && outputFileName.substr(-3) === '.js';
+        //typescript now emits .jsx files for .tsx files.
+        && (outputFileName.substr(-3) === '.js' ||  outputFileName.substr(-4) === '.jsx');
 }
 
 function isSourceMapEmit(fileName, outputFileName, sourceFileName) {
     return sourceFileName === fileName
-        && outputFileName.substr(-7) === '.js.map';
+        //typescript now emits .jsx files for .tsx files.
+        && (outputFileName.substr(-7) === '.js.map' || outputFileName.substr(-8) === '.jsx.map');
 }
 
 export function findResultFor(output:host.IEmitOutput, fileName:string) {
