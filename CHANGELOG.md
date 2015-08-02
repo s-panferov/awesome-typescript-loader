@@ -1,3 +1,12 @@
+<a name"0.11.0"></a>
+## 0.11.0 (2015-08-02)
+
+
+#### Features
+
+* ***:** support the new libs path ([c224f05d](https://github.com/s-panferov/awesome-typescript-loader/commit/c224f05d))
+
+
 <a name"0.11.0-rc.0"></a>
 ### 0.11.0-rc.0 (2015-07-31)
 
