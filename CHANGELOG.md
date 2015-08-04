@@ -1,3 +1,12 @@
+<a name"0.11.2"></a>
+### 0.11.2 (2015-08-04)
+
+
+#### Bug Fixes
+
+* **index:** use try-catch instead of if when resolving lib files ([946fc850](https://github.com/s-panferov/awesome-typescript-loader/commit/946fc850))
+
+
 <a name"0.11.1"></a>
 ### 0.11.1 (2015-08-02)
 
