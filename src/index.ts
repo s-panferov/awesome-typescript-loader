@@ -136,7 +136,9 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
     let libPath = path.join(compilerPath, 'lib', 'lib.d.ts');
     let lib6Path = path.join(compilerPath, 'lib', 'lib.es6.d.ts');
 
-    if (!require.resolve(libPath)) {
+    try {
+      require.resolve(libPath);
+    } catch(e) {
         libPath = path.join(compilerPath, 'bin', 'lib.d.ts');
         lib6Path = path.join(compilerPath, 'bin', 'lib.es6.d.ts');
     }
