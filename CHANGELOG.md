@@ -1,3 +1,12 @@
+<a name"0.11.3"></a>
+### 0.11.3 (2015-08-06)
+
+
+#### Bug Fixes
+
+* **index:** correct work with a promise chain ([c20d684c](https://github.com/s-panferov/awesome-typescript-loader/commit/c20d684c))
+
+
 <a name"0.11.2"></a>
 ### 0.11.2 (2015-08-04)
 
