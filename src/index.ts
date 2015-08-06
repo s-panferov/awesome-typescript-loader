@@ -346,11 +346,11 @@ function compiler(webpack: IWebPack, text: string): void {
 
     if (options.externals && !instance.externalsInvoked) {
         instance.externalsInvoked = true;
-        instance.tsFlow = instance.tsFlow.then(
-            <any>Promise.all(options.externals.map(external => {
+        instance.tsFlow = instance.tsFlow.then(() => {
+            return <any>Promise.all(options.externals.map(external => {
                 return state.fileAnalyzer.checkDependencies(resolver, external);
             }))
-        );
+        });
     }
 
     instance.tsFlow = instance.tsFlow
