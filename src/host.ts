@@ -38,6 +38,7 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     externals?: any;
     doTypeCheck?: boolean;
     forkChecker?: boolean;
+    useBabel?: boolean;
 }
 
 export interface IOutputFile extends ts.OutputFile {

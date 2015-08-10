@@ -9,7 +9,7 @@ import * as childProcess from 'child_process';
 import * as colors from 'colors';
 
 import { ICompilerOptions, TypeScriptCompilationError, State, ICompilerInfo } from './host';
-import { IResolver, ResolutionError } from './deps';
+import { IResolver, ResolutionError, findCompiledModule } from './deps';
 import * as helpers from './helpers';
 import { loadLib } from './helpers';
 
@@ -39,6 +39,7 @@ interface IWebPack {
 interface ICompilerInstance {
     tsFlow: Promise<any>;
     tsState: State;
+    babelImpl?: any;
     compiledFiles: {[key:string]: boolean};
     options: ICompilerOptions;
     externalsInvoked: boolean;
@@ -104,6 +105,10 @@ function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOp
 
 const COMPILER_ERROR = colors.red(`\n\nTypescript compiler cannot be found, please add it to your package.json file:
     npm install --save-dev typescript
+`);
+
+const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add it to your package.json file:
+    npm install --save-dev babel
 `);
 
 /**
@@ -223,6 +228,16 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
 
+    let babelImpl: any;
+    if (options.useBabel) {
+        try {
+            babelImpl = require(path.join(process.cwd(), 'node_modules', 'babel'));
+        } catch (e) {
+            console.error(BABEL_ERROR);
+            process.exit(1);
+        }
+    }
+
     let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
     let compiler = (<any>webpack._compiler);
 
@@ -301,6 +316,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
     return getInstanceStore(webpack._compiler)[instanceName] = {
         tsFlow,
         tsState,
+        babelImpl,
         compiledFiles: {},
         options,
         externalsInvoked: false,
@@ -330,6 +346,7 @@ function compiler(webpack: IWebPack, text: string): void {
     let fileName = webpack.resourcePath;
 
     let resolver = createResolver(webpack._compiler, webpack.resolve);
+    let isDepsApplied = false;
 
     let depsInjector = {
         add: (depFileName) => {webpack.addDependency(depFileName)},
@@ -339,6 +356,7 @@ function compiler(webpack: IWebPack, text: string): void {
     let applyDeps = _.once(() => {
         depsInjector.clear();
         depsInjector.add(fileName);
+        state.fileAnalyzer.dependencies.applyCompiledFiles(fileName, depsInjector);
         if (state.options.reEmitDependentFiles) {
             state.fileAnalyzer.dependencies.applyChain(fileName, depsInjector);
         }
@@ -370,31 +388,59 @@ function compiler(webpack: IWebPack, text: string): void {
             });
         })
         .then(() => {
-            return state.emit(fileName)
-        })
-        .then(output => {
-            let result = helpers.findResultFor(output, fileName);
+            let resultText;
+            let resultSourceMap;
 
-            if (result.text === undefined) {
-                throw new Error('no output found for ' + fileName);
+            let compiledModule = findCompiledModule(fileName);
+            if (compiledModule) {
+                state.fileAnalyzer.dependencies.addCompiledModule(fileName, compiledModule.fileName);
+                resultText = compiledModule.text;
+                resultSourceMap = JSON.parse(compiledModule.map);
+            } else {
+                let output = state.emit(fileName);
+                let result = helpers.findResultFor(output, fileName);
+
+                if (result.text === undefined) {
+                    throw new Error('No output found for ' + fileName);
+                }
+
+                resultText = result.text;
+                resultSourceMap = JSON.parse(result.sourceMap);
+                resultSourceMap.sources = [ fileName ];
+                resultSourceMap.file = fileName;
+                resultSourceMap.sourcesContent = [ text ];
+
+                if (instance.options.useBabel) {
+                    let defaultOptions = {
+                        inputSourceMap: resultSourceMap,
+                        filename: fileName,
+                        sourceMap: true
+                    }
+
+                    let babelResult = instance.babelImpl.transform(resultText, defaultOptions);
+                    resultText = babelResult.code;
+                    resultSourceMap = babelResult.map;
+                }
             }
 
-            let sourceMap = JSON.parse(result.sourceMap);
-            sourceMap.sources = [ fileName ];
-            sourceMap.file = fileName;
-            sourceMap.sourcesContent = [ text ];
+            resultSourceMap.sources = [ fileName ];
+            resultSourceMap.file = fileName;
+            resultSourceMap.sourcesContent = [ text ];
 
             applyDeps();
+            isDepsApplied = true;
 
             try {
-                callback(null, result.text, sourceMap);
+                callback(null, resultText, resultSourceMap)
             } catch (e) {
                 console.error('Error in bail mode:', e);
                 process.exit(1);
             }
         })
         .finally(() => {
-            applyDeps();
+            if (!isDepsApplied) {
+                applyDeps();
+            }
         })
         .catch(ResolutionError, err => {
             callback(err, helpers.codegenErrorReport([err]));

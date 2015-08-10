@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as util from 'util';
 import * as path from 'path';
+import * as fs from 'fs';
 import * as Promise from 'bluebird';
 
 import { State } from './host';
@@ -230,10 +231,12 @@ export interface IDependencyGraphItem {
 export class DependencyManager {
     dependencies: {[fileName: string]: string[]};
     knownTypeDeclarations: FileSet;
+    compiledModules: {[fileName: string]: string[]};
 
     constructor(dependencies: {[fileName: string]: string[]} = {}, knownTypeDeclarations: FileSet = {}) {
         this.dependencies = dependencies;
         this.knownTypeDeclarations = knownTypeDeclarations;
+        this.compiledModules = {};
     }
 
     clone(): DependencyManager {
@@ -251,8 +254,24 @@ export class DependencyManager {
         this.dependencies[fileName].push(depFileName);
     }
 
+    addCompiledModule(fileName: string, depFileName: string): void {
+        if (!this.compiledModules.hasOwnProperty(fileName)) {
+            this.clearCompiledModules(fileName);
+        }
+
+        let store = this.compiledModules[fileName];
+
+        if (store.indexOf(depFileName) === -1) {
+            store.push(depFileName);
+        }
+    }
+
     clearDependencies(fileName: string): void {
         this.dependencies[fileName] = []
+    }
+
+    clearCompiledModules(fileName: string): void {
+        this.compiledModules[fileName] = []
     }
 
     getDependencies(fileName: string): string[] {
@@ -317,6 +336,16 @@ export class DependencyManager {
         return result.buf += '\n\n';
     }
 
+    applyCompiledFiles(fileName: string, deps: IDependency) {
+        if (!this.compiledModules.hasOwnProperty(fileName)) {
+            this.clearCompiledModules(fileName);
+        }
+
+        this.compiledModules[fileName].forEach((mod) => {
+            deps.add(mod)
+        })
+    }
+
     applyChain(fileName: string, deps: IDependency) {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
@@ -351,6 +380,36 @@ export class ValidFilesManager {
 
     markFileInvalid(fileName: string) {
         this.files[fileName] = false;
+    }
+}
+
+export interface CompiledModule {
+    fileName: string,
+    text: string,
+    map?: string,
+    mapName?: string
+}
+
+export function findCompiledModule(fileName: string): CompiledModule {
+    let baseFileName = fileName.replace(/(\.ts|\.tsx)$/, '');
+    let compiledFileName = `${baseFileName}.js`
+
+    if (fs.existsSync(compiledFileName)) {
+        let mapFileName = `${baseFileName}.js.map`;
+        let isMapExists = fs.existsSync(mapFileName);
+        let result = {
+            fileName: compiledFileName,
+            text: fs.readFileSync(compiledFileName).toString(),
+            mapName: isMapExists
+                ? mapFileName
+                : null,
+            map: isMapExists
+                ? fs.readFileSync(mapFileName).toString()
+                : null
+        }
+        return result;
+    } else {
+        return null;
     }
 }
 
