@@ -1,3 +1,12 @@
+<a name"0.12.0-rc.0"></a>
+### 0.12.0-rc.0 (2015-08-10)
+
+
+#### Features
+
+* ***:** learn loader to pick-up precompiled files if any ([71935896](https://github.com/s-panferov/awesome-typescript-loader/commit/71935896))
+
+
 <a name"0.11.3"></a>
 ### 0.11.3 (2015-08-06)
 
