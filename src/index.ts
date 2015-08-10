@@ -423,9 +423,11 @@ function compiler(webpack: IWebPack, text: string): void {
                 }
             }
 
-            resultSourceMap.sources = [ fileName ];
-            resultSourceMap.file = fileName;
-            resultSourceMap.sourcesContent = [ text ];
+            if (resultSourceMap) {
+                resultSourceMap.sources = [ fileName ];
+                resultSourceMap.file = fileName;
+                resultSourceMap.sourcesContent = [ text ];
+            }
 
             applyDeps();
             isDepsApplied = true;
