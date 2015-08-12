@@ -87,7 +87,7 @@ Allows use of library other than the `target`'s default one. Useful when you wan
 
 Allows to use several TypeScript compilers with different settings in one app. Just override `instanceName` to initialize another instance.
 
-### reEmitDependentFiles *(string) (default=false')*
+### reEmitDependentFiles *(boolean) (default=false')*
 
 Collect files dependency graph and re-emit all dependent files along with changed file.
 
@@ -95,7 +95,7 @@ Collect files dependency graph and re-emit all dependent files along with change
 
 Specify path to a TS config file. Useful when you have multiple config files. This setting is useless *inside* TS config file.
 
-### useWebpackText *(string) (default=false)*
+### useWebpackText *(boolean) (default=false)*
 
 Use this setting to force loader to use webpack's way to load files. Useful only with ts-jsx-loader. Builds may become slower.
 
@@ -108,13 +108,29 @@ with pure TS files inside your app.
 
 Array of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
 
-### doTypeCheck *(string) (default=true)*
+### doTypeCheck *(boolean) (default=true)*
 
 Use this setting to disable type checking if you want.
 
-### forkChecker *(string) (default=false)*
+### forkChecker *(boolean) (default=false)*
 
 Do type checking in a separate process, so webpack don't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
+
+### useBabel *(boolean) (default=false)*
+
+Invoke Babel to traspile files. Useful with ES6 target.
+
+### usePrecompiledFiles *(boolean) (default=false)*
+
+Use pre-compiled files if any. Files must be named as `{filename}.js` and `{filename}.map`.
+
+### useCache *(boolean) (default=false)*
+
+Use internal file cache. Useful with Babel, when processing takes a long time to complete. Improves warm-up time.
+
+### cacheDirectory *(string) (default='.awcache')*
+
+Directory when cache is stored.
 
 ## Compiler options
 
