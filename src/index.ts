@@ -9,11 +9,15 @@ import * as childProcess from 'child_process';
 import * as colors from 'colors';
 
 import { ICompilerOptions, TypeScriptCompilationError, State, ICompilerInfo } from './host';
-import { IResolver, ResolutionError, findCompiledModule } from './deps';
+import { IResolver, ResolutionError } from './deps';
+import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
 import { loadLib } from './helpers';
 
 let loaderUtils = require('loader-utils');
+
+let pkg = require('../package.json');
+let cachePromise = Promise.promisify(cache);
 
 interface ICompiler {
     inputFileSystem: typeof fs;
@@ -44,6 +48,7 @@ interface ICompilerInstance {
     options: ICompilerOptions;
     externalsInvoked: boolean;
     checker: any;
+    cacheIdentifier: any;
 }
 
 function getRootCompiler(compiler) {
@@ -238,6 +243,28 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         }
     }
 
+    let cacheIdentifier = null;
+    if (options.useCache) {
+        console.log(webpack.query);
+
+        if (!options.cacheDirectory) {
+            options.cacheDirectory = path.join(process.cwd(), '.awcache');
+        }
+
+        if (!fs.existsSync(options.cacheDirectory)) {
+            fs.mkdirSync(options.cacheDirectory)
+        }
+
+        cacheIdentifier = {
+            'typescript': tsImpl.version,
+            'awesome-typescript-loader': pkg.version,
+            'awesome-typescript-loader-query': webpack.query,
+            'babel-core': babelImpl
+                ? babelImpl.version
+                : null
+        }
+    }
+
     let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
     let compiler = (<any>webpack._compiler);
 
@@ -322,7 +349,8 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         externalsInvoked: false,
         checker: options.forkChecker
             ? createChecker(compilerInfo, options)
-            : null
+            : null,
+        cacheIdentifier
     }
 }
 
@@ -388,40 +416,69 @@ function compiler(webpack: IWebPack, text: string): void {
             });
         })
         .then(() => {
-            let resultText;
-            let resultSourceMap;
+            let compiledModule
+            if (instance.options.usePrecompiledFiles) {
+                compiledModule = findCompiledModule(fileName);
+            }
 
-            let compiledModule = findCompiledModule(fileName);
             if (compiledModule) {
                 state.fileAnalyzer.dependencies.addCompiledModule(fileName, compiledModule.fileName);
-                resultText = compiledModule.text;
-                resultSourceMap = JSON.parse(compiledModule.map);
-            } else {
-                let output = state.emit(fileName);
-                let result = helpers.findResultFor(output, fileName);
-
-                if (result.text === undefined) {
-                    throw new Error('No output found for ' + fileName);
+                return {
+                    text: compiledModule.text,
+                    map: JSON.parse(compiledModule.map)
                 }
+            } else {
 
-                resultText = result.text;
-                resultSourceMap = JSON.parse(result.sourceMap);
-                resultSourceMap.sources = [ fileName ];
-                resultSourceMap.file = fileName;
-                resultSourceMap.sourcesContent = [ text ];
+                function transform() {
+                    let resultText;
+                    let resultSourceMap;
+                    let output = state.emit(fileName);
+                    let result = helpers.findResultFor(output, fileName);
 
-                if (instance.options.useBabel) {
-                    let defaultOptions = {
-                        inputSourceMap: resultSourceMap,
-                        filename: fileName,
-                        sourceMap: true
+                    if (result.text === undefined) {
+                        throw new Error('No output found for ' + fileName);
                     }
 
-                    let babelResult = instance.babelImpl.transform(resultText, defaultOptions);
-                    resultText = babelResult.code;
-                    resultSourceMap = babelResult.map;
+                    resultText = result.text;
+                    resultSourceMap = JSON.parse(result.sourceMap);
+                    resultSourceMap.sources = [ fileName ];
+                    resultSourceMap.file = fileName;
+                    resultSourceMap.sourcesContent = [ text ];
+
+                    if (instance.options.useBabel) {
+                        let defaultOptions = {
+                            inputSourceMap: resultSourceMap,
+                            filename: fileName,
+                            sourceMap: true
+                        }
+
+                        let babelResult = instance.babelImpl.transform(resultText, defaultOptions);
+                        resultText = babelResult.code;
+                        resultSourceMap = babelResult.map;
+                    }
+
+                    return {
+                        text: resultText,
+                        map: resultSourceMap
+                    };
+                }
+
+                if (instance.options.useCache) {
+                    return cachePromise({
+                        source: text,
+                        identifier: instance.cacheIdentifier,
+                        directory: instance.options.cacheDirectory,
+                        options: webpack.query,
+                        transform: transform
+                    })
+                } else {
+                    return transform();
                 }
             }
+        })
+        .then((transform: { text: string; map: any }) => {
+            let resultText = transform.text;
+            let resultSourceMap = transform.map;
 
             if (resultSourceMap) {
                 resultSourceMap.sources = [ fileName ];

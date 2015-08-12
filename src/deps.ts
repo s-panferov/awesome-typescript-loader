@@ -383,36 +383,6 @@ export class ValidFilesManager {
     }
 }
 
-export interface CompiledModule {
-    fileName: string,
-    text: string,
-    map?: string,
-    mapName?: string
-}
-
-export function findCompiledModule(fileName: string): CompiledModule {
-    let baseFileName = fileName.replace(/(\.ts|\.tsx)$/, '');
-    let compiledFileName = `${baseFileName}.js`
-
-    if (fs.existsSync(compiledFileName)) {
-        let mapFileName = `${baseFileName}.js.map`;
-        let isMapExists = fs.existsSync(mapFileName);
-        let result = {
-            fileName: compiledFileName,
-            text: fs.readFileSync(compiledFileName).toString(),
-            mapName: isMapExists
-                ? mapFileName
-                : null,
-            map: isMapExists
-                ? fs.readFileSync(mapFileName).toString()
-                : null
-        }
-        return result;
-    } else {
-        return null;
-    }
-}
-
 /**
  * Emit compilation result for a specified fileName.
  */

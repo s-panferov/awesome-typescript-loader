@@ -39,6 +39,9 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     doTypeCheck?: boolean;
     forkChecker?: boolean;
     useBabel?: boolean;
+    usePrecompiledFiles?: boolean;
+    useCache?: boolean;
+    cacheDirectory?: string;
 }
 
 export interface IOutputFile extends ts.OutputFile {
