@@ -1,3 +1,12 @@
+<a name"0.12.0-rc.2"></a>
+### 0.12.0-rc.2 (2015-08-12)
+
+
+#### Features
+
+* ***:** implement file cache ([358441a8](https://github.com/s-panferov/awesome-typescript-loader/commit/358441a8))
+
+
 <a name"0.12.0-rc.1"></a>
 ### 0.12.0-rc.1 (2015-08-10)
 
