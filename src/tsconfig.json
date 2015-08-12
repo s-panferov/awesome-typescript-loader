@@ -16,6 +16,7 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
+        "./cache.ts",
         "./checker.ts",
         "./deps.ts",
         "./helpers.ts",
