@@ -74,7 +74,6 @@ export class FileAnalyzer {
 
         this.dependencies.clearDependencies(fileName);
 
-
         let flow = this.state.hasFile(fileName) ?
             Promise.resolve(false) :
             this.state.readFileAndUpdate(fileName);

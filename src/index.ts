@@ -139,6 +139,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
     try {
         tsImpl = require(compilerName);
     } catch (e) {
+        console.error(e)
         console.error(COMPILER_ERROR);
         process.exit(1);
     }
@@ -163,6 +164,8 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
     let configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
     let configFile = null;
+
+    let tsConfigFiles = [];
     if (configFileName) {
         configFile = tsImpl.readConfigFile(configFileName);
         if (configFile.error) {
@@ -171,6 +174,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         if (configFile.config) {
             _.extend(options, configFile.config.compilerOptions);
             _.extend(options, configFile.config.awesomeTypescriptLoaderOptions);
+            tsConfigFiles = configFile.config.files || tsConfigFiles;
         }
     }
 
@@ -229,6 +233,15 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         options.externals = [];
     }
 
+    if (configFileName) {
+        let configFilePath = path.dirname(configFileName);
+        options.externals = options.externals.concat(
+            tsConfigFiles
+                .filter(file => /\.d\.ts$/.test(file))
+                .map(file => path.resolve(configFilePath, file))
+        )
+    }
+
     if (options.target) {
         options.target = helpers.parseOptionTarget(<any>options.target, tsImpl);
     }
@@ -245,8 +258,6 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
     let cacheIdentifier = null;
     if (options.useCache) {
-        console.log(webpack.query);
-
         if (!options.cacheDirectory) {
             options.cacheDirectory = path.join(process.cwd(), '.awcache');
         }

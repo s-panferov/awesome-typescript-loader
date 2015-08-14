@@ -1,5 +1,3 @@
-/// <reference path="./typings/react.d.ts" />
-
 import * as React from 'react';
 
 class Component extends React.Component<{ text: string }, void> {

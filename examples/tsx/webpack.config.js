@@ -8,12 +8,8 @@ module.exports = {
     module: {
         loaders: [
             {
-                test: /\.tsx$/,
-                loader: 'babel-loader!awesome-typescript-loader?compiler=ntypescript&module=common&jsx=react'
-            },
-            {
-                test: /\.ts$/,
-                loader: 'awesome-typescript-loader?compiler=ntypescript&module=common'
+                test: /\.tsx?$/,
+                loader: '../../dist/index.js?+useCache&+useBabel&module=common&jsx=preserve'
             }
         ]
     },
