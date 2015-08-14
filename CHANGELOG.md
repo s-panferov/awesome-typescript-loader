@@ -1,3 +1,12 @@
+<a name"0.12.0"></a>
+## 0.12.0 (2015-08-14)
+
+
+#### Features
+
+* ***:** read `.d.ts` files from `tsconfig.json` ([d4025d30](https://github.com/s-panferov/awesome-typescript-loader/commit/d4025d30))
+
+
 <a name"0.12.0-rc.2"></a>
 ### 0.12.0-rc.2 (2015-08-12)
 
