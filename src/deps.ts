@@ -31,16 +31,6 @@ function pathWithoutExt(fileName) {
     );
 }
 
-function needRewrite(rewriteImports, importPath): boolean {
-    return rewriteImports && _.any(rewriteImports, (i) => {
-        return importPath.split('/')[0] == i
-    })
-}
-
-function updateText(text, pos, end, newText): string {
-    return text.slice(0, pos) + ` '${newText}'` + text.slice(end, text.length);
-}
-
 function isImportOrExportDeclaration(node: ts.Node) {
     return (!!(<any>node).exportClause || !!(<any>node).importClause)
         && (<any>node).moduleSpecifier;
@@ -128,7 +118,6 @@ export class FileAnalyzer {
 
         let isDeclaration = isTypeDeclaration(fileName);
 
-        let rewrites: {pos: number, end: number, module: string}[] = [];
         let resolves: Promise<void>[] = [];
 
         let result = [];
@@ -137,11 +126,6 @@ export class FileAnalyzer {
                 // we need this check to ensure that we have an external import
                 let importPath = (<any>node).moduleReference.expression.text;
                 resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                    if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                        let { pos, end } = (<any>node).moduleReference.expression;
-                        let module = pathWithoutExt(absolutePath);
-                        rewrites.push({ pos, end, module });
-                    }
                     if (!isIgnoreDependency(absolutePath)) {
                         result.push(absolutePath);
                     }
@@ -149,11 +133,6 @@ export class FileAnalyzer {
             } else if (!isDeclaration && isImportOrExportDeclaration(node)) {
                 let importPath = (<any>node).moduleSpecifier.text;
                 resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                    if (needRewrite(this.state.options.rewriteImports, importPath)) {
-                        let module = pathWithoutExt(absolutePath);
-                        let { pos, end } = (<any>node).moduleSpecifier;
-                        rewrites.push({ pos, end, module });
-                    }
                     if (!isIgnoreDependency(absolutePath)) {
                         result.push(absolutePath);
                     }
@@ -168,11 +147,6 @@ export class FileAnalyzer {
 
         visit(sourceFile);
         return Promise.all(resolves).then(() => {
-            let orderedRewrites = (<any>_).sortByAll(rewrites, 'pos', 'end').reverse();
-            orderedRewrites.forEach(({ pos, end, module }) => {
-                scriptSnapshot = updateText(scriptSnapshot, pos, end, module)
-            });
-            this.state.updateFile(fileName, scriptSnapshot);
             return result;
         });
     }

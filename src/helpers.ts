@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as host from 'host';
+import * as host from './host';
 
 function isFileEmit(fileName, outputFileName, sourceFileName) {
     return sourceFileName === fileName
