@@ -24,6 +24,10 @@ export interface ICompilerInfo {
     lib6: { fileName: string, text: string };
 }
 
+export interface SyncResolver {
+    (context: string, fileName: string): string;
+}
+
 export interface ICompilerOptions extends ts.CompilerOptions {
     noLib?: boolean;
     instanceName?: string;
@@ -34,7 +38,6 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
     useWebpackText?: boolean;
-    rewriteImports?: any;
     externals?: any;
     doTypeCheck?: boolean;
     forkChecker?: boolean;
@@ -53,12 +56,31 @@ export interface IEmitOutput extends ts.EmitOutput {
     outputFiles: IOutputFile[]
 }
 
+export class ModuleResolutionHost implements ts.ModuleResolutionHost {
+    servicesHost: Host;
+
+    constructor(servicesHost: Host) {
+        this.servicesHost = servicesHost;
+    }
+
+    fileExists(fileName: string)  {
+        return this.servicesHost.getScriptSnapshot(fileName) !== undefined;
+    }
+
+    readFile(fileName: string): string {
+        let snapshot = this.servicesHost.getScriptSnapshot(fileName);
+        return snapshot && snapshot.getText(0, snapshot.getLength());
+    }
+}
+
 export class Host implements ts.LanguageServiceHost {
 
     state: State;
+    moduleResolutionHost: ModuleResolutionHost
 
     constructor(state: State) {
         this.state = state;
+        this.moduleResolutionHost = new ModuleResolutionHost(this);
     }
 
     getScriptFileNames() {
@@ -96,6 +118,32 @@ export class Host implements ts.LanguageServiceHost {
             this.state.compilerInfo.lib5.fileName;
     }
 
+    resolveModuleNames(moduleNames: string[], containingFile: string) {
+        let resolvedFileNames: string[] = [];
+
+        for (let moduleName of moduleNames) {
+            let resolvedFileName: string;
+            try {
+                resolvedFileName = this.state.resolver(containingFile, moduleName)
+                if (!resolvedFileName.match(/\.tsx?$/)) resolvedFileName = null;
+            }
+            catch (e) { resolvedFileName = null }
+
+            if (!resolvedFileName) {
+                resolvedFileName = this.state.ts.resolveModuleName(
+                    moduleName,
+                    containingFile,
+                    this.state.options,
+                    this.moduleResolutionHost
+                ).resolvedFileName
+            }
+
+            resolvedFileNames.push(resolvedFileName);
+        }
+
+        return resolvedFileNames;
+    }
+
     log(message) {
         //console.log(message);
     }
@@ -113,14 +161,17 @@ export class State {
     options: ICompilerOptions;
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
+    resolver: SyncResolver;
 
     constructor(
         options: ICompilerOptions,
         fsImpl: typeof fs,
-        compilerInfo: ICompilerInfo
+        compilerInfo: ICompilerInfo,
+        resolver: SyncResolver
     ) {
         this.ts = compilerInfo.tsImpl;
         this.compilerInfo = compilerInfo;
+        this.resolver = resolver;
         this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());

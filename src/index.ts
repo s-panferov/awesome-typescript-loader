@@ -15,6 +15,7 @@ import * as helpers from './helpers';
 import { loadLib } from './helpers';
 
 let loaderUtils = require('loader-utils');
+let deasync = require('deasync');
 
 let pkg = require('../package.json');
 let cachePromise = Promise.promisify(cache);
@@ -225,10 +226,6 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         }
     }
 
-    if (typeof options.rewriteImports == 'undefined') {
-        options.rewriteImports = [];
-    }
-
     if (typeof options.externals == 'undefined') {
         options.externals = [];
     }
@@ -276,7 +273,9 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         }
     }
 
-    let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo);
+    let syncResolver = deasync(webpack.resolve);
+
+    let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo, syncResolver);
     let compiler = (<any>webpack._compiler);
 
     compiler.plugin('watch-run', (watching, callback) => {
