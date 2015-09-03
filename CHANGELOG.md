@@ -1,3 +1,12 @@
+<a name"0.13.1"></a>
+### 0.13.1 (2015-09-03)
+
+
+#### Features
+
+* ***:** pass resolution info into the checker ([266ec78e](https://github.com/s-panferov/awesome-typescript-loader/commit/266ec78e))
+
+
 <a name"0.12.0"></a>
 ## 0.12.0 (2015-08-14)
 
