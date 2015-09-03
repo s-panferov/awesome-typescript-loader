@@ -44,11 +44,12 @@ export interface IMessage {
 
 export interface IInitPayload {
     compilerOptions: ICompilerOptions;
-    compilerInfo: ICompilerInfo
+    compilerInfo: ICompilerInfo;
 }
 
 export interface ICompilePayload {
     files: {[fileName: string]: IFile};
+    resolutionCache: {[fileName: string]: string};
 }
 
 export interface IEnv {
@@ -57,6 +58,7 @@ export interface IEnv {
     compilerInfo?: ICompilerInfo;
     host?: Host;
     files?: {[fileName: string]: IFile};
+    resolutionCache?: {[fileName: string]: string};
     program?: ts.Program;
     service?: ts.LanguageService;
 }
@@ -94,6 +96,18 @@ export class Host implements ts.LanguageServiceHost {
         return env.options;
     }
 
+    resolveModuleNames(moduleNames: string[], containingFile: string) {
+        let resolvedFileNames: string[] = [];
+
+        for (let moduleName of moduleNames) {
+            resolvedFileNames.push(
+                env.resolutionCache[`${containingFile}::${moduleName}`]
+            );
+        }
+
+        return resolvedFileNames;
+    }
+
     getDefaultLibFileName(options) {
         return options.target === ts.ScriptTarget.ES6 ?
             env.compilerInfo.lib6.fileName :
@@ -115,7 +129,17 @@ function processInit(payload: IInitPayload) {
 }
 
 function processCompile(payload: ICompilePayload) {
+    console.log(colors.cyan(`[${ env.options.instanceName || '' }] Checking started...`));
+    let timeStart = +new Date();
+    process.send({
+        messageType: 'progress',
+        payload: {
+            inProgress: true
+        }
+    });
+
     env.files = payload.files;
+    env.resolutionCache = payload.resolutionCache;
     let program = env.program = env.service.getProgram();
     let allDiagnostics = env.compiler.getPreEmitDiagnostics(program);
     if (allDiagnostics.length) {
@@ -131,9 +155,19 @@ function processCompile(payload: ICompilePayload) {
             }
         });
     } else {
-        console.error(colors.green('Your program is ' + AWESOME_SYNONYMS[_.random(AWESOME_SYNONYMS.length - 1)] + '!'));
+        let timeEnd = +new Date();
+        console.error(
+            colors.green(`[${ env.options.instanceName || '' }] Program is `
+                + AWESOME_SYNONYMS[_.random(AWESOME_SYNONYMS.length - 1)] + `! ${(timeEnd - timeStart) / 1000} sec.`)
+        );
     }
 
+    process.send({
+        messageType: 'progress',
+        payload: {
+            inProgress: false
+        }
+    });
 }
 
 process.on('message', function(msg: IMessage) {

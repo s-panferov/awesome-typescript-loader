@@ -95,8 +95,14 @@ function createResolver(compiler: ICompiler, webpackResolver: any): IResolver {
     return resolve;
 }
 
+interface ChildProcess extends childProcess.ChildProcess {
+    inProgress?: boolean;
+    compilerInfo?: ICompilerInfo;
+    compilerOptions?: ICompilerOptions;
+}
+
 function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOptions) {
-    let checker = childProcess.fork(path.join(__dirname, 'checker.js'));
+    let checker: ChildProcess = childProcess.fork(path.join(__dirname, 'checker.js'));
 
     checker.send({
         messageType: 'init',
@@ -106,7 +112,25 @@ function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOp
         }
     }, null);
 
+    checker.inProgress = false;
+    checker.compilerInfo = compilerInfo;
+    checker.compilerOptions = compilerOptions;
+    checker.on('message', function(msg) {
+        if (msg.messageType == 'progress') {
+            checker.inProgress = msg.payload.inProgress;
+        }
+    });
+
     return checker;
+}
+
+function resetChecker(checker: ChildProcess) {
+    if (checker.inProgress) {
+        checker.kill('SIGKILL');
+        return createChecker(checker.compilerInfo, checker.compilerOptions);
+    } else {
+        return checker;
+    }
 }
 
 const COMPILER_ERROR = colors.red(`\n\nTypescript compiler cannot be found, please add it to your package.json file:
@@ -313,15 +337,14 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
             if (options.forkChecker) {
                 let payload = {
-                    files: state.files
+                    files: state.files,
+                    resolutionCache: state.host.moduleResolutionHost.resolutionCache
                 };
 
-                console.time('\nSending files to the checker');
                 instance.checker.send({
                     messageType: 'compile',
                     payload
-                })
-                console.timeEnd('\nSending files to the checker');
+                });
             } else {
                 let diagnostics = state.ts.getPreEmitDiagnostics(state.program);
                 let emitError = (err) => {

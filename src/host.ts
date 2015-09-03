@@ -58,6 +58,7 @@ export interface IEmitOutput extends ts.EmitOutput {
 
 export class ModuleResolutionHost implements ts.ModuleResolutionHost {
     servicesHost: Host;
+    resolutionCache: {[fileName: string]: string} = {};
 
     constructor(servicesHost: Host) {
         this.servicesHost = servicesHost;
@@ -74,7 +75,6 @@ export class ModuleResolutionHost implements ts.ModuleResolutionHost {
 }
 
 export class Host implements ts.LanguageServiceHost {
-
     state: State;
     moduleResolutionHost: ModuleResolutionHost
 
@@ -138,6 +138,7 @@ export class Host implements ts.LanguageServiceHost {
                 ).resolvedFileName
             }
 
+            this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedFileName;
             resolvedFileNames.push(resolvedFileName);
         }
 
