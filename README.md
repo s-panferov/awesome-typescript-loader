@@ -52,7 +52,7 @@ After that, you would be able to build TypeScript files with webpack.
 
 ## tsconfig.json
 
-You can use .tsconfig.json file to configure your compiler and loader:
+You can use tsconfig.json file to configure your compiler and loader:
 
 ```
 {
