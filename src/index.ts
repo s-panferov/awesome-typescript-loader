@@ -192,7 +192,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
     let tsConfigFiles = [];
     if (configFileName) {
-        configFile = tsImpl.readConfigFile(configFileName);
+        configFile = tsImpl.readConfigFile(configFileName, (path) => fs.readFileSync(path).toString());
         if (configFile.error) {
             throw configFile.error;
         }
@@ -357,6 +357,19 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
                 let errors = helpers.formatErrors(diagnostics);
                 errors.forEach(emitError);
+            }
+
+            if (instance.options.generateDoc) {
+                let { DocWriter, DocContext } = require('docscript');
+                let docContext = new DocContext();
+                docContext.setProgram(state.program);
+
+                Object.keys(state.files).forEach((fileName) => {
+                    console.log(`Generate doc for ${fileName}`);
+                    docContext.addDoc(fileName, state.program.getSourceFile(fileName));
+                });
+
+                new DocWriter(docContext).writeDocs('docs');
             }
 
             let phantomImports = [];
