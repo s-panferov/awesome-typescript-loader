@@ -111,6 +111,20 @@ Use this setting to disable type checking if you want.
 
 Do type checking in a separate process, so webpack don't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
 
+Works only with `ForkCheckerPlugin`:
+
+```js
+var ForkCheckerPlugin = require('awesome-typescript-loader').ForkCheckerPlugin;
+
+plugins: [
+    new ForkCheckerPlugin(),
+]
+```
+
+### forkCheckerSilent *(boolean) (default=false)*
+
+Less logging from the checker.
+
 ### useBabel *(boolean) (default=false)*
 
 Invoke Babel to traspile files. Useful with ES6 target.

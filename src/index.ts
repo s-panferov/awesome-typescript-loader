@@ -23,6 +23,7 @@ let cachePromise = Promise.promisify(cache);
 interface ICompiler {
     inputFileSystem: typeof fs;
     _tsInstances: {[key:string]: ICompilerInstance};
+    _tsFork: boolean;
     options: {
         externals: {
             [ key: string ]: string
@@ -192,7 +193,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
     let tsConfigFiles = [];
     if (configFileName) {
-        configFile = tsImpl.readConfigFile(configFileName);
+        configFile = tsImpl.readConfigFile(configFileName, (path) => fs.readFileSync(path).toString());
         if (configFile.error) {
             throw configFile.error;
         }
@@ -297,12 +298,14 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         }
     }
 
+    let forkChecker = options.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
     let syncResolver = deasync(webpack.resolve);
 
     let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo, syncResolver);
     let compiler = (<any>webpack._compiler);
 
     compiler.plugin('watch-run', (watching, callback) => {
+
         let resolver = createResolver(watching.compiler, watching.compiler.resolvers.normal.resolve);
         let instance: ICompilerInstance = resolveInstance(watching.compiler, instanceName);
         let state = instance.tsState;
@@ -335,7 +338,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
             let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
             let state = instance.tsState;
 
-            if (options.forkChecker) {
+            if (forkChecker) {
                 let payload = {
                     files: state.files,
                     resolutionCache: state.host.moduleResolutionHost.resolutionCache
@@ -355,7 +358,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
                     compilation.errors.push(new Error(err))
                 };
 
-                let errors = helpers.formatErrors(diagnostics);
+                let errors = helpers.formatErrors(instanceName, diagnostics);
                 errors.forEach(emitError);
             }
 
@@ -380,7 +383,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         compiledFiles: {},
         options,
         externalsInvoked: false,
-        checker: options.forkChecker
+        checker: forkChecker
             ? createChecker(compilerInfo, options)
             : null,
         cacheIdentifier
@@ -539,5 +542,16 @@ function compiler(webpack: IWebPack, text: string): void {
         })
         .catch((err) => { callback(err) })
 }
+
+class ForkCheckerPlugin {
+    apply(compiler) {
+        compiler.plugin("watch-run", function(params, callback) {
+            compiler._tsFork = true;
+            callback();
+        });
+    }
+}
+
+(loader as any).ForkCheckerPlugin = ForkCheckerPlugin;
 
 export = loader;

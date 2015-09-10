@@ -55,14 +55,14 @@ export function codegenErrorReport(errors) {
         .join('\n');
 }
 
-export function formatErrors(errors: ts.Diagnostic[]) {
+export function formatErrors(instanceName: string, errors: ts.Diagnostic[]) {
     return errors.map(function (diagnostic) {
         let lineChar;
         if (diagnostic.file) {
             lineChar = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
         }
         return (
-            (diagnostic.file ? diagnostic.file.fileName : '')
+            `[${ instanceName }] ` + (diagnostic.file ? diagnostic.file.fileName : '')
             + (lineChar ? formatLineChar(lineChar) + ' ' : '') + "\n"
             + (typeof diagnostic.messageText == "string" ?
                 diagnostic.messageText :

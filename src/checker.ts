@@ -2,36 +2,6 @@ import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import * as colors from 'colors';
 import * as _ from 'lodash';
 
-const AWESOME_SYNONYMS = [
-    'awesome',
-    'impressive',
-    'amazing',
-    'grand',
-    'majestic',
-    'magnificent',
-    'wonderful',
-    'great',
-    'marvellous',
-    'incredible',
-    'fabulous',
-    'outstanding',
-    'unbelievable',
-    'beautiful',
-    'excellent',
-    'mind-blowing',
-    'superb',
-    'badass',
-    'brilliant',
-    'exciting',
-    'eye-opening',
-    'fucking good',
-    'fine',
-    'perfect',
-    'cool',
-    'fantastical',
-    'five-star'
-];
-
 export enum MessageType {
     Init = <any>'init',
     Compile = <any>'compile'
@@ -129,7 +99,12 @@ function processInit(payload: IInitPayload) {
 }
 
 function processCompile(payload: ICompilePayload) {
-    console.log(colors.cyan(`[${ env.options.instanceName || '' }] Checking started...`));
+    let instanceName = env.options.instanceName || 'default';
+    let silent = !!env.options.forkCheckerSilent;
+    if (!silent) {
+        console.log(colors.cyan(`[${ instanceName }] Checking started in a separate process...`));
+    }
+
     let timeStart = +new Date();
     process.send({
         messageType: 'progress',
@@ -143,23 +118,22 @@ function processCompile(payload: ICompilePayload) {
     let program = env.program = env.service.getProgram();
     let allDiagnostics = env.compiler.getPreEmitDiagnostics(program);
     if (allDiagnostics.length) {
-        console.error(colors.yellow('Checker diagnostics:'))
         allDiagnostics.forEach(diagnostic => {
             let message = env.compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-
             if (diagnostic.file) {
                 let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-                console.error(`${colors.cyan(diagnostic.file.fileName)} (${line + 1},${character + 1}):\n    ${colors.red(message)}`);
+                console.error(`[${ instanceName }] ${colors.red(diagnostic.file.fileName)} (${line + 1},${character + 1}):\n    ${colors.red(message)}`);
             } else {
-                console.error(colors.red(message));
+                console.error(colors.red(`[${ instanceName }] ${ message }`));
             }
         });
     } else {
-        let timeEnd = +new Date();
-        console.error(
-            colors.green(`[${ env.options.instanceName || '' }] Program is `
-                + AWESOME_SYNONYMS[_.random(AWESOME_SYNONYMS.length - 1)] + `! ${(timeEnd - timeStart) / 1000} sec.`)
-        );
+        if (!silent) {
+            let timeEnd = +new Date();
+            console.log(
+                colors.green(`[${ instanceName }] Ok, ${(timeEnd - timeStart) / 1000} sec.`)
+            );
+        }
     }
 
     process.send({
