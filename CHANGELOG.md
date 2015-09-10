@@ -1,3 +1,12 @@
+<a name"0.14.0-rc.0"></a>
+### 0.14.0-rc.0 (2015-09-10)
+
+
+#### Features
+
+* ***:** checker in sep. process now runs only with ForkCheckerPlugin ([85e9e1bc](https://github.com/s-panferov/awesome-typescript-loader/commit/85e9e1bc))
+
+
 <a name"0.13.1"></a>
 ### 0.13.1 (2015-09-03)
 
