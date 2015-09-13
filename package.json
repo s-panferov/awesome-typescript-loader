@@ -42,6 +42,6 @@
     "grunt-shell": "^1.1.2",
     "grunt-ts": "^3.0.0",
     "load-grunt-tasks": "^0.6.0",
-    "typescript": "^1.6.0-dev.20150910"
+    "typescript": "^1.7.0-dev.20150917"
   }
 }

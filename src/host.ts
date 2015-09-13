@@ -59,7 +59,7 @@ export interface IEmitOutput extends ts.EmitOutput {
 
 export class ModuleResolutionHost implements ts.ModuleResolutionHost {
     servicesHost: Host;
-    resolutionCache: {[fileName: string]: ts.ResolvedModuleWithFailedLookupLocations} = {};
+    resolutionCache: {[fileName: string]: ts.ResolvedModule} = {};
 
     constructor(servicesHost: Host) {
         this.servicesHost = servicesHost;
@@ -124,7 +124,7 @@ export class Host implements ts.LanguageServiceHost {
 
         for (let moduleName of moduleNames) {
             let resolvedFileName: string;
-            let resolvedModule: ts.ResolvedModuleWithFailedLookupLocations;
+            let resolvedModule: ts.ResolvedModule;
             try {
                 resolvedFileName = this.state.resolver(containingFile, moduleName)
                 if (!resolvedFileName.match(/\.tsx?$/)) {
@@ -135,15 +135,23 @@ export class Host implements ts.LanguageServiceHost {
                 resolvedFileName = null
             }
 
-            resolvedModule = this.state.ts.resolveModuleName(
+            let tsResolved = this.state.ts.resolveModuleName(
                 resolvedFileName || moduleName,
                 containingFile,
                 this.state.options,
                 this.moduleResolutionHost
             );
 
+            if (tsResolved.resolvedModule) {
+                resolvedModule = tsResolved.resolvedModule;
+            } else {
+                resolvedModule = {
+                    resolvedFileName: resolvedFileName || ''
+                }
+            }
+
             this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedModule;
-            resolvedModules.push(resolvedModule.resolvedModule);
+            resolvedModules.push(resolvedModule);
         }
 
         return resolvedModules;
