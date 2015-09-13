@@ -19,7 +19,7 @@ export interface IInitPayload {
 
 export interface ICompilePayload {
     files: {[fileName: string]: IFile};
-    resolutionCache: {[fileName: string]: string};
+    resolutionCache: {[fileName: string]: ts.ResolvedModule};
 }
 
 export interface IEnv {
@@ -28,7 +28,7 @@ export interface IEnv {
     compilerInfo?: ICompilerInfo;
     host?: Host;
     files?: {[fileName: string]: IFile};
-    resolutionCache?: {[fileName: string]: string};
+    resolutionCache?: {[fileName: string]: ts.ResolvedModule};
     program?: ts.Program;
     service?: ts.LanguageService;
 }
@@ -67,15 +67,15 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let resolvedFileNames: string[] = [];
+        let resolvedModules: ts.ResolvedModule[] = [];
 
         for (let moduleName of moduleNames) {
-            resolvedFileNames.push(
+            resolvedModules.push(
                 env.resolutionCache[`${containingFile}::${moduleName}`]
             );
         }
 
-        return resolvedFileNames;
+        return resolvedModules;
     }
 
     getDefaultLibFileName(options) {
@@ -87,7 +87,6 @@ export class Host implements ts.LanguageServiceHost {
     log(message) {
         //console.log(message);
     }
-
 }
 
 function processInit(payload: IInitPayload) {

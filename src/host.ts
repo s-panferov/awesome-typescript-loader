@@ -59,7 +59,7 @@ export interface IEmitOutput extends ts.EmitOutput {
 
 export class ModuleResolutionHost implements ts.ModuleResolutionHost {
     servicesHost: Host;
-    resolutionCache: {[fileName: string]: string} = {};
+    resolutionCache: {[fileName: string]: ts.ResolvedModuleWithFailedLookupLocations} = {};
 
     constructor(servicesHost: Host) {
         this.servicesHost = servicesHost;
@@ -120,30 +120,33 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let resolvedFileNames: string[] = [];
+        let resolvedModules: ts.ResolvedModule[] = [];
 
         for (let moduleName of moduleNames) {
             let resolvedFileName: string;
+            let resolvedModule: ts.ResolvedModuleWithFailedLookupLocations;
             try {
                 resolvedFileName = this.state.resolver(containingFile, moduleName)
-                if (!resolvedFileName.match(/\.tsx?$/)) resolvedFileName = null;
+                if (!resolvedFileName.match(/\.tsx?$/)) {
+                    resolvedFileName = null;
+                }
             }
-            catch (e) { resolvedFileName = null }
-
-            if (!resolvedFileName) {
-                resolvedFileName = this.state.ts.resolveModuleName(
-                    moduleName,
-                    containingFile,
-                    this.state.options,
-                    this.moduleResolutionHost
-                ).resolvedFileName
+            catch (e) {
+                resolvedFileName = null
             }
 
-            this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedFileName;
-            resolvedFileNames.push(resolvedFileName);
+            resolvedModule = this.state.ts.resolveModuleName(
+                resolvedFileName || moduleName,
+                containingFile,
+                this.state.options,
+                this.moduleResolutionHost
+            );
+
+            this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedModule;
+            resolvedModules.push(resolvedModule.resolvedModule);
         }
 
-        return resolvedFileNames;
+        return resolvedModules;
     }
 
     log(message) {
