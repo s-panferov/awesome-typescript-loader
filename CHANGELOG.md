@@ -1,3 +1,12 @@
+<a name"0.14.0-rc.1"></a>
+### 0.14.0-rc.1 (2015-09-15)
+
+
+#### Features
+
+* **cache:** use sha512 ([48692dd2](https://github.com/s-panferov/awesome-typescript-loader/commit/48692dd2))
+
+
 <a name"0.14.0-rc.0"></a>
 ### 0.14.0-rc.0 (2015-09-10)
 
