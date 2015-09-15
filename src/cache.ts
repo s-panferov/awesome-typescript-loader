@@ -88,11 +88,11 @@ function write(filename: string, result: any, callback) {
  * @return {String}
  */
 function filename(source: string, identifier, options) {
-    let hash = crypto.createHash('SHA1') as any;
+    let hash = crypto.createHash('sha512') as any;
     let contents = JSON.stringify({
-        source: source,
-        options: options,
         identifier: identifier,
+        options: options,
+        source: source,
     });
 
     hash.end(contents);
