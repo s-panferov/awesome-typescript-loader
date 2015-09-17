@@ -1,3 +1,14 @@
+<a name"0.14.0"></a>
+## 0.14.0 (2015-09-17)
+
+
+#### Features
+
+* ***:**
+  * remove outdated examples; we need tests instead ([26ef32ea](https://github.com/s-panferov/awesome-typescript-loader/commit/26ef32ea))
+  * update module resolution logic according to https://github.com/Microsoft/TypeScr ([59ff7f77](https://github.com/s-panferov/awesome-typescript-loader/commit/59ff7f77))
+
+
 <a name"0.14.0-rc.1"></a>
 ### 0.14.0-rc.1 (2015-09-15)
 
