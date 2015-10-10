@@ -44,6 +44,8 @@ export function parseOptionTarget(target: string, tsInst: typeof ts): ts.ScriptT
             return tsInst.ScriptTarget.ES5;
         case 'es6':
             return tsInst.ScriptTarget.ES6;
+        case 'latest':
+            return tsInst.ScriptTarget.Latest;
     }
 }
 
