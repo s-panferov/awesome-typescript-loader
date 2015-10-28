@@ -120,13 +120,14 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
+        let containingFolder = containingFile.substr(0, containingFile.lastIndexOf('/'));
         let resolvedModules: ts.ResolvedModule[] = [];
 
         for (let moduleName of moduleNames) {
             let resolvedFileName: string;
             let resolvedModule: ts.ResolvedModule;
             try {
-                resolvedFileName = this.state.resolver(containingFile, moduleName)
+                resolvedFileName = this.state.resolver(containingFolder, moduleName)
                 if (!resolvedFileName.match(/\.tsx?$/)) {
                     resolvedFileName = null;
                 }
@@ -137,7 +138,7 @@ export class Host implements ts.LanguageServiceHost {
 
             let tsResolved = this.state.ts.resolveModuleName(
                 resolvedFileName || moduleName,
-                containingFile,
+                containingFolder,
                 this.state.options,
                 this.moduleResolutionHost
             );
@@ -150,7 +151,7 @@ export class Host implements ts.LanguageServiceHost {
                 }
             }
 
-            this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedModule;
+            this.moduleResolutionHost.resolutionCache[`${containingFolder}::${moduleName}`] = resolvedModule;
             resolvedModules.push(resolvedModule);
         }
 
