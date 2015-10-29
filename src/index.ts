@@ -340,7 +340,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
 
             if (forkChecker) {
                 let payload = {
-                    files: state.files,
+                    files: state.allFiles(),
                     resolutionCache: state.host.moduleResolutionHost.resolutionCache
                 };
 
@@ -363,7 +363,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
             }
 
             let phantomImports = [];
-            Object.keys(state.files).forEach((fileName) => {
+            state.allFileNames().forEach((fileName) => {
                 if (!instance.compiledFiles[fileName]) {
                     phantomImports.push(fileName)
                 }
