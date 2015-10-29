@@ -203,6 +203,14 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
             tsConfigFiles = configFile.config.files || tsConfigFiles;
         }
     }
+    if (typeof options.moduleResolution === "string") {
+       var moduleTypes = {
+           "node": tsImpl.ModuleResolutionKind.NodeJs,
+           "classic": tsImpl.ModuleResolutionKind.Classic
+       };
+        options.moduleResolution = moduleTypes[options.moduleResolution];
+
+    }
 
     if (typeof options.emitRequireType === 'undefined') {
         options.emitRequireType = true;
