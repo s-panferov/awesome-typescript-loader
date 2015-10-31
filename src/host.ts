@@ -114,7 +114,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getDefaultLibFileName(options) {
-        return options.target === ts.ScriptTarget.ES6 ?
+        return options.target === this.state.ts.ScriptTarget.ES6 ?
             this.state.compilerInfo.lib6.fileName :
             this.state.compilerInfo.lib5.fileName;
     }
@@ -205,7 +205,7 @@ export class State {
         }
 
         if (!this.options.noLib) {
-            if (this.options.target === ts.ScriptTarget.ES6 || this.options.library === 'es6') {
+            if (this.options.target === this.ts.ScriptTarget.ES6 || this.options.library === 'es6') {
                 this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
             } else {
                 this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);

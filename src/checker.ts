@@ -79,7 +79,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getDefaultLibFileName(options) {
-        return options.target === ts.ScriptTarget.ES6 ?
+        return options.target === env.compiler.ScriptTarget.ES6 ?
             env.compilerInfo.lib6.fileName :
             env.compilerInfo.lib5.fileName;
     }
