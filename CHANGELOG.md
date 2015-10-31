@@ -1,3 +1,45 @@
+<a name"0.14.1"></a>
+### 0.14.1 (2015-10-31)
+
+
+#### Bug Fixes
+
+* ***:**
+  * correctly process jsx option ([f7ae91c4](https://github.com/s-panferov/awesome-typescript-loader/commit/f7ae91c4))
+  * fix unrecoverable error during watch ([6f7ad270](https://github.com/s-panferov/awesome-typescript-loader/commit/6f7ad270))
+  * watch tsx files too ([cc494a3b](https://github.com/s-panferov/awesome-typescript-loader/commit/cc494a3b))
+* **index:**
+  * correct work with a promise chain ([c20d684c](https://github.com/s-panferov/awesome-typescript-loader/commit/c20d684c))
+  * use try-catch instead of if when resolving lib files ([946fc850](https://github.com/s-panferov/awesome-typescript-loader/commit/946fc850))
+  * don't call the callback twice ([3abf8e48](https://github.com/s-panferov/awesome-typescript-loader/commit/3abf8e48))
+
+
+#### Features
+
+* ***:**
+  * bump dev typescript ([b29a73d7](https://github.com/s-panferov/awesome-typescript-loader/commit/b29a73d7))
+  * bump typescript ([b2115448](https://github.com/s-panferov/awesome-typescript-loader/commit/b2115448))
+  * remove outdated examples; we need tests instead ([26ef32ea](https://github.com/s-panferov/awesome-typescript-loader/commit/26ef32ea))
+  * update module resolution logic according to https://github.com/Microsoft/TypeScr ([59ff7f77](https://github.com/s-panferov/awesome-typescript-loader/commit/59ff7f77))
+  * checker in sep. process now runs only with ForkCheckerPlugin ([85e9e1bc](https://github.com/s-panferov/awesome-typescript-loader/commit/85e9e1bc))
+  * pass resolution info into the checker ([266ec78e](https://github.com/s-panferov/awesome-typescript-loader/commit/266ec78e))
+  * implement node-style module resolution ([77a67df8](https://github.com/s-panferov/awesome-typescript-loader/commit/77a67df8))
+  * read `.d.ts` files from `tsconfig.json` ([d4025d30](https://github.com/s-panferov/awesome-typescript-loader/commit/d4025d30))
+  * implement file cache ([358441a8](https://github.com/s-panferov/awesome-typescript-loader/commit/358441a8))
+  * ignore null source maps ([42433c9b](https://github.com/s-panferov/awesome-typescript-loader/commit/42433c9b))
+  * learn loader to pick-up precompiled files if any ([71935896](https://github.com/s-panferov/awesome-typescript-loader/commit/71935896))
+  * support the new libs path ([c224f05d](https://github.com/s-panferov/awesome-typescript-loader/commit/c224f05d))
+  * externals is an array now ([69cadb52](https://github.com/s-panferov/awesome-typescript-loader/commit/69cadb52))
+  * rewriteImports is an array now ([8f7f4555](https://github.com/s-panferov/awesome-typescript-loader/commit/8f7f4555))
+  * use a compiler from a client app ([cae4d00f](https://github.com/s-panferov/awesome-typescript-loader/commit/cae4d00f))
+  * add alias example ([ca86fd71](https://github.com/s-panferov/awesome-typescript-loader/commit/ca86fd71))
+  * now we can start ckecker in a separate process ([2cdb8f4b](https://github.com/s-panferov/awesome-typescript-loader/commit/2cdb8f4b))
+  * impl JSX support ([849e506b](https://github.com/s-panferov/awesome-typescript-loader/commit/849e506b))
+* **cache:** use sha512 ([48692dd2](https://github.com/s-panferov/awesome-typescript-loader/commit/48692dd2))
+* **checker:** fix compiler reference ([8dcad5d2](https://github.com/s-panferov/awesome-typescript-loader/commit/8dcad5d2))
+* **runtime:** add require signature for AMD ([970ff875](https://github.com/s-panferov/awesome-typescript-loader/commit/970ff875))
+
+
 <a name"0.14.0"></a>
 ## 0.14.0 (2015-09-17)
 
