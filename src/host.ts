@@ -85,17 +85,17 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptFileNames() {
-        return Object.keys(this.state.files);
+        return this.state.allFileNames();
     }
 
     getScriptVersion(fileName: string) {
-        if (this.state.files[fileName]) {
-            return this.state.files[fileName].version.toString();
+        if (this.state.getFile(fileName)) {
+            return this.state.getFile(fileName).version.toString();
         }
     }
 
     getScriptSnapshot(fileName) {
-        let file = this.state.files[fileName];
+        let file = this.state.getFile(fileName);
         if (file) {
             return this.state.ts.ScriptSnapshot.fromString(file.text);
         }
@@ -169,7 +169,7 @@ export class State {
     fs: typeof fs;
     compilerInfo: ICompilerInfo;
     host: Host;
-    files: {[fileName: string]: IFile} = {};
+    private files: {[fileName: string]: IFile} = {};
     services: ts.LanguageService;
     options: ICompilerOptions;
     program: ts.Program;
@@ -227,7 +227,21 @@ export class State {
         this.program = this.services.getProgram();
     }
 
+    allFileNames() {
+        return Object.keys(this.files);
+    }
+
+    /**
+     * Returns all the files in this state.
+     * Don't add new files using this value (eg `allFiles()[newFilePath] = ...`), just use it as a
+     * read only reference (as otherwise the paths won't be normalized correctly)
+     */
+    allFiles() {
+        return this.files;
+    }
+
     emit(fileName: string): IEmitOutput {
+        fileName = this.normalizePath(fileName);
 
         if (!this.program) {
             this.program = this.services.getProgram();
@@ -270,6 +284,7 @@ export class State {
     }
 
     updateFile(fileName: string, text: string, checked: boolean = false): boolean {
+        fileName = this.normalizePath(fileName);
         let prevFile = this.files[fileName];
         let version = 0;
         let changed = true;
@@ -291,17 +306,25 @@ export class State {
     }
 
     addFile(fileName: string, text: string): void {
+        fileName = this.normalizePath(fileName);
         this.files[fileName] = {
             text: text,
             version: 0
         }
     }
 
+    getFile(fileName: string) {
+        fileName = this.normalizePath(fileName);
+        return this.files[fileName];
+    }
+
     hasFile(fileName: string): boolean {
+        fileName = this.normalizePath(fileName);
         return this.files.hasOwnProperty(fileName);
     }
 
     readFile(fileName: string): Promise<string> {
+        fileName = this.normalizePath(fileName);
         let readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
         return readFile(fileName).then(function (buf) {
             return buf.toString('utf8');
@@ -309,19 +332,23 @@ export class State {
     }
 
     readFileSync(fileName: string): string {
+        fileName = this.normalizePath(fileName);
         // Use global fs here, because local doesn't contain `readFileSync`
         return fs.readFileSync(fileName, {encoding: 'utf-8'});
     }
 
     readFileAndAdd(fileName: string): Promise<any> {
+        fileName = this.normalizePath(fileName);
         return this.readFile(fileName).then((text) => this.addFile(fileName, text));
     }
 
     readFileAndUpdate(fileName: string, checked: boolean = false): Promise<boolean> {
+        fileName = this.normalizePath(fileName);
         return this.readFile(fileName).then((text) => this.updateFile(fileName, text, checked));
     }
 
     readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {
+        fileName = this.normalizePath(fileName);
         let text = this.readFileSync(fileName);
         return this.updateFile(fileName, text, checked);
     }
