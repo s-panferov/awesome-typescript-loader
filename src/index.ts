@@ -188,7 +188,7 @@ function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceNa
         lib6: loadLib(lib6Path)
     };
 
-    let configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
+    let configFileName = options.tsconfig || 'tsconfig.json';
     let configFile = null;
 
     let tsConfigFiles = [];
