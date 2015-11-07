@@ -1,7 +1,5 @@
 import * as _ from 'lodash';
-import * as util from 'util';
 import * as path from 'path';
-import * as fs from 'fs';
 import * as Promise from 'bluebird';
 
 import { State } from './host';
@@ -41,14 +39,6 @@ function isTypeDeclaration(fileName: string): boolean {
     return /\.d.ts$/.test(fileName);
 }
 
-function pathWithoutExt(fileName) {
-    let extension = path.extname(fileName);
-    return path.join(
-        path.dirname(fileName),
-        path.basename(fileName, extension)
-    );
-}
-
 function isImportOrExportDeclaration(node: ts.Node) {
     return (!!(<any>node).exportClause || !!(<any>node).importClause)
         && (<any>node).moduleSpecifier;
@@ -56,10 +46,6 @@ function isImportOrExportDeclaration(node: ts.Node) {
 
 function isImportEqualsDeclaration(node: ts.Node) {
     return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression')
-}
-
-function isSourceFileDeclaration(node: ts.Node) {
-    return !!(<any>node).referencedFiles
 }
 
 function isIgnoreDependency(absulutePath: string) {
@@ -79,7 +65,7 @@ export class FileAnalyzer {
         if (this.validFiles.isFileValid(fileName)) {
             return false
         }
-        
+
         this.validFiles.markFileValid(fileName);
         this.dependencies.clearDependencies(fileName);
 
@@ -89,25 +75,25 @@ export class FileAnalyzer {
             if (!this.state.hasFile(fileName)) {
                 changed = await this.state.readFileAndUpdate(fileName);
             }
-    
+
             await this.checkDependenciesInternal(resolver, fileName);
         } catch (err) {
             this.validFiles.markFileInvalid(fileName);
             throw err
         }
-        
+
         return changed;
     }
 
-    private async checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
+    async checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
         let imports = await this.findImportDeclarations(resolver, fileName);
-        
+
         let tasks: Promise<any>[] = [];
-        
+
         for (let importPath of imports) {
             let isDeclaration = isTypeDeclaration(importPath);
             let isRequiredJs = /\.js$/.exec(importPath) || importPath.indexOf('.') === -1;
-            
+
             if (isDeclaration) {
                 let hasDeclaration = this.dependencies.hasTypeDeclaration(importPath);
                 if (!hasDeclaration) {
@@ -121,18 +107,14 @@ export class FileAnalyzer {
                 tasks.push(this.checkDependencies(resolver, importPath));
             }
         }
-        
+
         await Promise.all(tasks);
         return null;
     }
-    
+
     async findImportDeclarations(resolver: IResolver, fileName: string): Promise<string[]> {
         let sourceFile = this.state.services.getSourceFile(fileName);
-        let scriptSnapshot = (<any>sourceFile).scriptSnapshot.text;
-
         let isDeclaration = isTypeDeclaration(fileName);
-
-        let resolves: Promise<void>[] = [];
 
         let imports = [];
         let visit = (node: ts.Node) => {
@@ -145,17 +127,17 @@ export class FileAnalyzer {
                 imports.push(importPath);
             }
         };
-        
+
         imports.push.apply(imports, sourceFile.referencedFiles.map(file => file.fileName));
         this.state.ts.forEachChild(sourceFile, visit);
-        
+
         let task = imports.map(async (importPath) => {
             let absolutePath: string = await this.resolve(resolver, fileName, importPath);
             if (!isIgnoreDependency(absolutePath)) {
                 return absolutePath;
             }
         });
-        
+
         let resolvedImports = await Promise.all(task);
         return resolvedImports.filter(Boolean);
     }
@@ -187,7 +169,7 @@ export class FileAnalyzer {
             if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
                 // Make import relative
                 defPath = './' + defPath;
-            }  
+            }
             result = resolver(path.dirname(fileName), defPath)
         }
 

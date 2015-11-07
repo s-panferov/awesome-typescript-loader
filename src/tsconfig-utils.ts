@@ -1,13 +1,4 @@
 import * as path from 'path';
-import * as tsconfig from 'tsconfig';
-
-function reverseKeysAndValues(obj) {
-    var toret = {};
-    Object.keys(obj).forEach(function (key) {
-        toret[obj[key]] = key;
-    });
-    return toret;
-}
 
 function buildEnumMap(tsImpl: typeof ts) {
     let typescriptEnumMap = {
@@ -39,20 +30,13 @@ function buildEnumMap(tsImpl: typeof ts) {
             'LF': tsImpl.NewLineKind.LineFeed
         }
     };
-    
-    return typescriptEnumMap;
-}
 
-function mixin(target, source) {
-    for (var key in source) {
-        target[key] = source[key];
-    }
-    return target;
+    return typescriptEnumMap;
 }
 
 export function rawToTsCompilerOptions(jsonOptions, projectDir, tsImpl: typeof ts) {
     let typescriptEnumMap = buildEnumMap(tsImpl);
-    var compilerOptions: any = {};
+    let compilerOptions: any = {};
     for (var key in jsonOptions) {
         if (typescriptEnumMap[key]) {
             compilerOptions[key] = typescriptEnumMap[key][jsonOptions[key].toLowerCase()];

@@ -59,7 +59,6 @@ function read(filename: string, callback) {
     });
 };
 
-
 /**
  * Write contents into a compressed file.
  *
@@ -77,7 +76,6 @@ function write(filename: string, result: any, callback) {
         return fs.writeFile(filename, data, callback);
     });
 };
-
 
 /**
  * Build the filename for the cached file

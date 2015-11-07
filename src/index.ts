@@ -2,21 +2,15 @@
 /// <reference path='../typings/tsd.d.ts' />
 
 import * as Promise from 'bluebird';
-import * as path from 'path';
-import * as fs from 'fs';
 import * as _ from 'lodash';
-import * as colors from 'colors';
 
-import { ICompilerOptions, TypeScriptCompilationError, State, ICompilerInfo } from './host';
-import { IResolver, ResolutionError, createResolver } from './deps';
+import { ICompilerOptions } from './host';
+import { createResolver } from './deps';
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
-import { createChecker } from './checker';
-import { ICompilerInstance, IWebPack, ensureInstance } from './instance';
+import { IWebPack, ensureInstance } from './instance';
 
 let loaderUtils = require('loader-utils');
-
-let pkg = require('../package.json');
 let cachePromise = Promise.promisify(cache);
 
 function loader(text) {
@@ -62,12 +56,12 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             externalsInvocation = options.externals.map(async (external) => {
                 await state.fileAnalyzer.checkDependencies(resolver, external);
             });
-            
+
             await Promise.all(externalsInvocation as any);
         }
         instance.externalsInvoked = true;
     }
-    
+
     instance.compiledFiles[fileName] = true;
     let doUpdate = false;
     if (instance.options.useWebpackText) {
@@ -75,20 +69,20 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             doUpdate = true;
         }
     }
-        
+
     try {
         let wasChanged = await state.fileAnalyzer.checkDependencies(resolver, fileName)
         if (wasChanged || doUpdate) {
             state.updateProgram();
         }
-        
+
         let compiledModule
         if (instance.options.usePrecompiledFiles) {
             compiledModule = findCompiledModule(fileName);
         }
-        
+
         let transformation = null;
-        
+
         if (compiledModule) {
             state.fileAnalyzer.dependencies.addCompiledModule(fileName, compiledModule.fileName);
             transformation = {
@@ -101,14 +95,13 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                 let resultText;
                 let resultSourceMap;
                 let output = state.emit(fileName);
-                
-                
+
                 let result = helpers.findResultFor(output, fileName);
-                
+
                 if (result.text === undefined) {
                     throw new Error('No output found for ' + fileName);
                 }
-                
+
                 resultText = result.text;
                 resultSourceMap = JSON.parse(result.sourceMap);
                 resultSourceMap.sources = [ fileName ];
@@ -145,7 +138,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                 transformation = transform();
             }
         }
-        
+
         let resultText = transformation.text;
         let resultSourceMap = transformation.map;
 
@@ -154,7 +147,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             resultSourceMap.file = fileName;
             resultSourceMap.sourcesContent = [ text ];
         }
-        
+
         try {
             callback(null, resultText, resultSourceMap)
         } catch (e) {
@@ -163,6 +156,8 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         }
     } catch (err) {
         callback(err, helpers.codegenErrorReport([err]));
+    } finally {
+        applyDeps();
     }
 }
 

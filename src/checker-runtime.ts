@@ -1,6 +1,5 @@
 import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import * as colors from 'colors';
-import * as _ from 'lodash';
 
 export enum MessageType {
     Init = <any>'init',
@@ -85,7 +84,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     log(message) {
-        //console.log(message);
+
     }
 }
 

@@ -8,13 +8,13 @@ function withoutExt(fileName: string): string {
 
 function isFileEmit(fileName, outputFileName, sourceFileName) {
     return sourceFileName === fileName
-        //typescript now emits .jsx files for .tsx files.
+        // typescript now emits .jsx files for .tsx files.
         && (outputFileName.substr(-3) === '.js' ||  outputFileName.substr(-4) === '.jsx');
 }
 
 function isSourceMapEmit(fileName, outputFileName, sourceFileName) {
     return sourceFileName === fileName
-        //typescript now emits .jsx files for .tsx files.
+        // typescript now emits .jsx files for .tsx files.
         && (outputFileName.substr(-7) === '.js.map' || outputFileName.substr(-8) === '.jsx.map');
 }
 
@@ -22,7 +22,7 @@ export function findResultFor(output: host.IEmitOutput, fileName: string) {
     let text;
     let sourceMap;
     fileName = withoutExt(path.normalize(fileName));
-    
+
     for (let i = 0; i < output.outputFiles.length; i++) {
         let o = output.outputFiles[i];
         let outputFileName = path.normalize(o.name);
@@ -38,20 +38,6 @@ export function findResultFor(output: host.IEmitOutput, fileName: string) {
         text: text,
         sourceMap: sourceMap
     };
-}
-
-export function parseOptionTarget(target: string, tsInst: typeof ts): ts.ScriptTarget {
-    target = target.toLowerCase();
-    switch (target) {
-        case 'es3':
-            return tsInst.ScriptTarget.ES3;
-        case 'es5':
-            return tsInst.ScriptTarget.ES5;
-        case 'es6':
-            return tsInst.ScriptTarget.ES6;
-        case 'latest':
-            return tsInst.ScriptTarget.Latest;
-    }
 }
 
 export function codegenErrorReport(errors) {

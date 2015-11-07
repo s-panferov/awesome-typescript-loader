@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as tsconfig from 'tsconfig';
-import { loadLib, parseOptionTarget, formatErrors } from './helpers';
+import { loadLib, formatErrors } from './helpers';
 import { ICompilerInfo } from './host';
 import { createResolver } from './deps';
 import { createChecker } from './checker';
@@ -136,7 +136,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     if (configFilePath) {
         configFile = tsconfig.readFileSync(configFilePath);
     }
-    
+
     let tsFiles: string[] = [];
     if (configFile) {
         if (configFile.compilerOptions) {
@@ -145,9 +145,9 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
             tsFiles = configFile.files;
         }
     }
-    
+
     options = rawToTsCompilerOptions(options, path.dirname(configFilePath), tsImpl);
-    
+
     _.defaults(options, {
         externals: [],
         doTypeCheck: true,
@@ -155,9 +155,9 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         verbose: false,
         noLib: false
     });
-    
+
     options.externals.push.apply(options.externals, tsFiles)
-    
+
     let babelImpl: any;
     if (options.useBabel) {
         try {
@@ -226,7 +226,7 @@ function setupWatchRun(compiler, instanceName: string) {
         changedFiles.forEach((changedFile) => {
             state.fileAnalyzer.validFiles.markFileInvalid(changedFile);
         });
-        
+
         try {
             let tasks = changedFiles.map(async function(changedFile) {
                 if (/\.ts$|\.d\.ts|\.tsx$/.test(changedFile)) {
@@ -234,9 +234,9 @@ function setupWatchRun(compiler, instanceName: string) {
                     await state.fileAnalyzer.checkDependencies(resolver, changedFile);
                 }
             });
-            
+
             await Promise.all(tasks);
-            state.updateProgram(); 
+            state.updateProgram();
             callback();
         } catch (err) {
             console.error(err.toString());
@@ -255,7 +255,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 files: state.allFiles(),
                 resolutionCache: state.host.moduleResolutionHost.resolutionCache
             };
-            
+
             instance.checker.send({
                 messageType: 'compile',
                 payload

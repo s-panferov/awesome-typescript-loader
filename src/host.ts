@@ -141,7 +141,7 @@ export class Host implements ts.LanguageServiceHost {
                 this.state.options,
                 this.moduleResolutionHost
             );
-            
+
             if (tsResolved.resolvedModule) {
                 resolvedModule = tsResolved.resolvedModule;
             } else {
@@ -149,7 +149,7 @@ export class Host implements ts.LanguageServiceHost {
                     resolvedFileName: resolvedFileName || ''
                 }
             }
-            
+
             this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedModule;
             resolvedModules.push(resolvedModule);
         }
@@ -158,7 +158,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     log(message) {
-        //console.log(message);
+        // console.log(message);
     }
 
 }
@@ -169,7 +169,7 @@ export class State {
     fs: typeof fs;
     compilerInfo: ICompilerInfo;
     host: Host;
-    private files: {[fileName: string]: IFile} = {};
+    files: {[fileName: string]: IFile} = {};
     services: ts.LanguageService;
     options: ICompilerOptions;
     program: ts.Program;
@@ -193,13 +193,13 @@ export class State {
         this.fileAnalyzer = new FileAnalyzer(this);
 
         this.options = {};
-        
+
         objectAssign(this.options, options);
 
         if (this.options.emitRequireType) {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }
-        
+
         if (!this.options.noLib) {
             if (this.options.target === this.ts.ScriptTarget.ES6 || this.options.library === 'es6') {
                 this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
@@ -285,7 +285,7 @@ export class State {
             text: text,
             version: version
         };
-        
+
         return changed
     }
 
