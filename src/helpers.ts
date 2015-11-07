@@ -2,6 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as host from './host';
 
+function withoutExt(fileName: string): string {
+    return path.join(path.dirname(fileName), path.basename(fileName).split('.')[0]);
+}
+
 function isFileEmit(fileName, outputFileName, sourceFileName) {
     return sourceFileName === fileName
         //typescript now emits .jsx files for .tsx files.
@@ -14,14 +18,15 @@ function isSourceMapEmit(fileName, outputFileName, sourceFileName) {
         && (outputFileName.substr(-7) === '.js.map' || outputFileName.substr(-8) === '.jsx.map');
 }
 
-export function findResultFor(output:host.IEmitOutput, fileName:string) {
+export function findResultFor(output: host.IEmitOutput, fileName: string) {
     let text;
     let sourceMap;
-    fileName = path.normalize(fileName);
+    fileName = withoutExt(path.normalize(fileName));
+    
     for (let i = 0; i < output.outputFiles.length; i++) {
         let o = output.outputFiles[i];
         let outputFileName = path.normalize(o.name);
-        let sourceFileName = path.normalize(o.sourceName);
+        let sourceFileName = withoutExt(path.normalize(o.sourceName));
         if (isFileEmit(fileName, outputFileName, sourceFileName)) {
             text = o.text;
         }

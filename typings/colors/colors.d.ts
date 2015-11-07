@@ -19,7 +19,6 @@ declare module "colors" {
 }
 
 interface String {
-    bold:string;
     italic:string;
     underline:string;
     inverse:string;

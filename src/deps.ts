@@ -19,6 +19,24 @@ export interface IDependency {
     clear(): void
 }
 
+export interface IExternals {
+    [key: string]: string
+}
+
+export function createResolver(externals: IExternals, webpackResolver: any): IResolver {
+    let resolver: IResolver = Promise.promisify(webpackResolver) as any;
+
+    function resolve(base: string, dep: string): Promise<string> {
+        if (externals && externals.hasOwnProperty(dep)) {
+            return Promise.resolve<string>('%%ignore')
+        } else {
+            return resolver(base, dep)
+        }
+    }
+
+    return resolve;
+}
+
 function isTypeDeclaration(fileName: string): boolean {
     return /\.d.ts$/.test(fileName);
 }
@@ -57,62 +75,58 @@ export class FileAnalyzer {
         this.state = state;
     }
 
-    checkDependencies(resolver: IResolver, fileName: string): Promise<boolean> {
+    async checkDependencies(resolver: IResolver, fileName: string): Promise<boolean> {
         if (this.validFiles.isFileValid(fileName)) {
-            return Promise.resolve(false);
+            return false
         }
-
+        
+        this.validFiles.markFileValid(fileName);
         this.dependencies.clearDependencies(fileName);
 
-        let flow = this.state.hasFile(fileName) ?
-            Promise.resolve(false) :
-            this.state.readFileAndUpdate(fileName);
+        let changed = false;
 
-        this.validFiles.markFileValid(fileName);
-
-        let wasChanged = false;
-        return flow
-            .then((changed) => {
-                wasChanged = changed;
-                return this.checkDependenciesInternal(resolver, fileName) })
-            .catch((err) => {
-                this.validFiles.markFileInvalid(fileName);
-                throw err
-            })
-            .then(() => wasChanged);
+        try {
+            if (!this.state.hasFile(fileName)) {
+                changed = await this.state.readFileAndUpdate(fileName);
+            }
+    
+            await this.checkDependenciesInternal(resolver, fileName);
+        } catch (err) {
+            this.validFiles.markFileInvalid(fileName);
+            throw err
+        }
+        
+        return changed;
     }
 
-    private checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
-        let dependencies = this.findImportDeclarations(resolver, fileName)
-            .then((deps) => {
-                return deps.map(depFileName => {
-
-                    let result: Promise<string> = Promise.resolve(depFileName);
-                    let isDeclaration = isTypeDeclaration(depFileName);
-
-                    let isRequiredJs = /\.js$/.exec(depFileName) || depFileName.indexOf('.') === -1;
-
-                    if (isDeclaration) {
-                        let hasDeclaration = this.dependencies.hasTypeDeclaration(depFileName);
-                        if (!hasDeclaration) {
-                            this.dependencies.addTypeDeclaration(depFileName);
-                            return this.checkDependencies(resolver, depFileName).then(() => result)
-                        }
-                    } else if (isRequiredJs) {
-                        return Promise.resolve(null);
-                    } else {
-                        this.dependencies.addDependency(fileName, depFileName);
-                        return this.checkDependencies(resolver, depFileName);
-                    }
-
-                    return result;
-                });
-            });
-
-        return Promise.all(dependencies).then((_) => {});
+    private async checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
+        let imports = await this.findImportDeclarations(resolver, fileName);
+        
+        let tasks: Promise<any>[] = [];
+        
+        for (let importPath of imports) {
+            let isDeclaration = isTypeDeclaration(importPath);
+            let isRequiredJs = /\.js$/.exec(importPath) || importPath.indexOf('.') === -1;
+            
+            if (isDeclaration) {
+                let hasDeclaration = this.dependencies.hasTypeDeclaration(importPath);
+                if (!hasDeclaration) {
+                    this.dependencies.addTypeDeclaration(importPath);
+                    tasks.push(this.checkDependencies(resolver, importPath));
+                }
+            } else if (isRequiredJs) {
+                continue;
+            } else {
+                this.dependencies.addDependency(fileName, importPath);
+                tasks.push(this.checkDependencies(resolver, importPath));
+            }
+        }
+        
+        await Promise.all(tasks);
+        return null;
     }
-
-    private findImportDeclarations(resolver: IResolver, fileName: string): Promise<string[]> {
+    
+    async findImportDeclarations(resolver: IResolver, fileName: string): Promise<string[]> {
         let sourceFile = this.state.services.getSourceFile(fileName);
         let scriptSnapshot = (<any>sourceFile).scriptSnapshot.text;
 
@@ -120,35 +134,30 @@ export class FileAnalyzer {
 
         let resolves: Promise<void>[] = [];
 
-        let result = [];
+        let imports = [];
         let visit = (node: ts.Node) => {
             if (!isDeclaration && isImportEqualsDeclaration(node)) {
                 // we need this check to ensure that we have an external import
                 let importPath = (<any>node).moduleReference.expression.text;
-                resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                    if (!isIgnoreDependency(absolutePath)) {
-                        result.push(absolutePath);
-                    }
-                }));
+                imports.push(importPath);
             } else if (!isDeclaration && isImportOrExportDeclaration(node)) {
                 let importPath = (<any>node).moduleSpecifier.text;
-                resolves.push(this.resolve(resolver, fileName, importPath).then((absolutePath) => {
-                    if (!isIgnoreDependency(absolutePath)) {
-                        result.push(absolutePath);
-                    }
-                }));
-            } else if (isSourceFileDeclaration(node)) {
-                result = result.concat((<ts.SourceFile>node).referencedFiles.map(function (f) {
-                    return path.resolve(path.dirname((<ts.SourceFile>node).fileName), f.fileName);
-                }));
+                imports.push(importPath);
             }
-            this.state.ts.forEachChild(node, visit);
         };
-
-        visit(sourceFile);
-        return Promise.all(resolves).then(() => {
-            return result;
+        
+        imports.push.apply(imports, sourceFile.referencedFiles.map(file => file.fileName));
+        this.state.ts.forEachChild(sourceFile, visit);
+        
+        let task = imports.map(async (importPath) => {
+            let absolutePath: string = await this.resolve(resolver, fileName, importPath);
+            if (!isIgnoreDependency(absolutePath)) {
+                return absolutePath;
+            }
         });
+        
+        let resolvedImports = await Promise.all(task);
+        return resolvedImports.filter(Boolean);
     }
 
     resolve(resolver: IResolver, fileName: string, defPath: string): Promise<string> {
@@ -175,13 +184,11 @@ export class FileAnalyzer {
                     }
                 })
         } else {
-            // We don't need to resolve .d.ts here because they are already
-            // absolute at this step.
-            if (/\.d\.ts$/.test(defPath)) {
-                result = Promise.resolve(defPath)
-            } else {
-                result = resolver(path.dirname(fileName), defPath)
-            }
+            if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
+                // Make import relative
+                defPath = './' + defPath;
+            }  
+            result = resolver(path.dirname(fileName), defPath)
         }
 
         return result
@@ -293,22 +300,6 @@ export class DependencyManager {
         return result;
     }
 
-    formatDependencyGraph(item: IDependencyGraphItem): string {
-        let result = {
-            buf: 'DEPENDENCY GRAPH FOR: ' + path.relative(process.cwd(), item.fileName)
-        };
-        let walk = (item: IDependencyGraphItem, level: number, buf: typeof result) => {
-            for (let i = 0; i < level; i++) { buf.buf = buf.buf + "  " }
-            buf.buf = buf.buf + path.relative(process.cwd(), item.fileName);
-            buf.buf = buf.buf + "\n";
-
-            item.dependencies.forEach((dep) => walk(dep, level + 1, buf))
-        };
-
-        walk(item, 0, result);
-        return result.buf += '\n\n';
-    }
-
     applyCompiledFiles(fileName: string, deps: IDependency) {
         if (!this.compiledModules.hasOwnProperty(fileName)) {
             this.clearCompiledModules(fileName);
@@ -359,9 +350,8 @@ export class ValidFilesManager {
 /**
  * Emit compilation result for a specified fileName.
  */
-export class ResolutionError {
+export class ResolutionError extends Error {
     message: string;
     fileName: string;
     cause: Error;
 }
-util.inherits(ResolutionError, Error);
