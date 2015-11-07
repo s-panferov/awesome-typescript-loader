@@ -5,7 +5,8 @@
   "main": "dist.babel/index.js",
   "scripts": {
     "grunt": "grunt",
-    "prepublish": "grunt"
+    "prepublish": "grunt",
+    "babel": "babel dist --presets es2015-node4 --out-dir dist.babel --watch"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
