@@ -193,19 +193,13 @@ export class State {
         this.fileAnalyzer = new FileAnalyzer(this);
 
         this.options = {};
-
-        objectAssign(this.options, {
-            target: this.ts.ScriptTarget.ES5,
-            sourceMap: true,
-            verbose: false
-        });
-
+        
         objectAssign(this.options, options);
 
         if (this.options.emitRequireType) {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }
-
+        
         if (!this.options.noLib) {
             if (this.options.target === this.ts.ScriptTarget.ES6 || this.options.library === 'es6') {
                 this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
@@ -213,8 +207,6 @@ export class State {
                 this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
             }
         }
-
-        this.updateProgram();
     }
 
     updateProgram() {

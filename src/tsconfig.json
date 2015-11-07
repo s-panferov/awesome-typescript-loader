@@ -24,6 +24,6 @@
         "./host.ts",
         "./index.ts",
         "./instance.ts",
-        "./webpack.ts"
+        "./tsconfig-utils.ts"
     ]
 }

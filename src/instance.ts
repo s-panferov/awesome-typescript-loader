@@ -3,10 +3,12 @@ import * as colors from 'colors';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
+import * as tsconfig from 'tsconfig';
 import { loadLib, parseOptionTarget, formatErrors } from './helpers';
 import { ICompilerInfo } from './host';
 import { createResolver } from './deps';
 import { createChecker } from './checker';
+import { rawToTsCompilerOptions } from './tsconfig-utils';
 
 let deasync = require('deasync');
 
@@ -127,94 +129,35 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         lib6: loadLib(lib6Path)
     };
 
-    let configFileName = tsImpl.findConfigFile(options.tsconfig || process.cwd());
-    let configFile = null;
-
-    let tsConfigFiles = [];
-    if (configFileName) {
-        configFile = tsImpl.readConfigFile(configFileName, (path) => fs.readFileSync(path).toString());
-        if (configFile.error) {
-            throw configFile.error;
-        }
-        if (configFile.config) {
-            _.extend(options, configFile.config.compilerOptions);
-            _.extend(options, configFile.config.awesomeTypescriptLoaderOptions);
-            tsConfigFiles = configFile.config.files || tsConfigFiles;
-        }
+    let configFilePath: string;
+    let configFile: tsconfig.TSConfig;
+    let folder = options.tsconfig || process.cwd();
+    configFilePath = tsconfig.resolveSync(folder);
+    if (configFilePath) {
+        configFile = tsconfig.readFileSync(configFilePath);
     }
-    if (typeof options.moduleResolution === "string") {
-       var moduleTypes = {
-           "node": tsImpl.ModuleResolutionKind.NodeJs,
-           "classic": tsImpl.ModuleResolutionKind.Classic
-       };
-        options.moduleResolution = moduleTypes[options.moduleResolution];
-
-    }
-
-    if (typeof options.emitRequireType === 'undefined') {
-        options.emitRequireType = true;
-    } else {
-        if (typeof options.emitRequireType === 'string') {
-            options.emitRequireType = (<any>options.emitRequireType) === 'true'
+    
+    let tsFiles: string[] = [];
+    if (configFile) {
+        if (configFile.compilerOptions) {
+            _.extend(options, configFile.compilerOptions);
+            _.extend(options, (configFile as any).awesomeTypescriptLoaderOptions);
+            tsFiles = configFile.files;
         }
     }
-
-    if (typeof options.reEmitDependentFiles === 'undefined') {
-        options.reEmitDependentFiles = false;
-    } else {
-        if (typeof options.reEmitDependentFiles === 'string') {
-            options.reEmitDependentFiles = (<any>options.reEmitDependentFiles) === 'true'
-        }
-    }
-
-    if (typeof options.doTypeCheck === 'undefined') {
-        options.doTypeCheck = true;
-    } else {
-        if (typeof options.doTypeCheck === 'string') {
-            options.doTypeCheck = (<any>options.doTypeCheck) === 'true'
-        }
-    }
-
-    if (typeof options.forkChecker === 'undefined') {
-        options.forkChecker = false;
-    } else {
-        if (typeof options.forkChecker === 'string') {
-            options.forkChecker = (<any>options.forkChecker) === 'true'
-        }
-    }
-
-    if (typeof options.useWebpackText === 'undefined') {
-        options.useWebpackText = false;
-    } else {
-        if (typeof options.useWebpackText === 'string') {
-            options.useWebpackText = (<any>options.useWebpackText) === 'true'
-        }
-    }
-
-    if (typeof options.jsx !== 'undefined') {
-        switch(options.jsx as any) {
-            case 'react': options.jsx = tsImpl.JsxEmit.React; break;
-            case 'preserve': options.jsx = tsImpl.JsxEmit.Preserve; break;
-        }
-    }
-
-    if (typeof options.externals == 'undefined') {
-        options.externals = [];
-    }
-
-    if (configFileName) {
-        let configFilePath = path.dirname(configFileName);
-        options.externals = options.externals.concat(
-            tsConfigFiles
-                .filter(file => /\.d\.ts$/.test(file))
-                .map(file => path.resolve(configFilePath, file))
-        )
-    }
-
-    if (options.target) {
-        options.target = parseOptionTarget(<any>options.target, tsImpl);
-    }
-
+    
+    options = rawToTsCompilerOptions(options, path.dirname(configFilePath), tsImpl);
+    
+    _.defaults(options, {
+        externals: [],
+        doTypeCheck: true,
+        sourceMap: true,
+        verbose: false,
+        noLib: false
+    });
+    
+    options.externals.push.apply(options.externals, tsFiles)
+    
     let babelImpl: any;
     if (options.useBabel) {
         try {
@@ -251,10 +194,31 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo, syncResolver);
     let compiler = (<any>webpack._compiler);
 
+    setupWatchRun(compiler, instanceName);
+
+    if (options.doTypeCheck) {
+        setupAfterCompile(compiler, instanceName, forkChecker);
+    }
+
+    return getInstanceStore(webpack._compiler)[instanceName] = {
+        tsFlow,
+        tsState,
+        babelImpl,
+        compiledFiles: {},
+        options,
+        externalsInvoked: false,
+        checker: forkChecker
+            ? createChecker(compilerInfo, options)
+            : null,
+        cacheIdentifier
+    }
+}
+
+function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', async function (watching, callback) {
         let compiler: ICompiler = watching.compiler;
         let resolver = createResolver(compiler.options.externals, watching.compiler.resolvers.normal.resolve);
-        let instance: ICompilerInstance = resolveInstance(watching.compiler, instanceName);
+        let instance = resolveInstance(watching.compiler, instanceName);
         let state = instance.tsState;
         let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         let changedFiles = Object.keys(mtimes);
@@ -275,64 +239,51 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
             state.updateProgram(); 
             callback();
         } catch (err) {
-            console.error(err);
+            console.error(err.toString());
             callback();
         }
     });
+}
 
-    if (options.doTypeCheck) {
-        compiler.plugin('after-compile', function(compilation, callback) {
-            let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
-            let state = instance.tsState;
+function setupAfterCompile(compiler, instanceName, forkChecker = false) {
+    compiler.plugin('after-compile', function(compilation, callback) {
+        let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
+        let state = instance.tsState;
 
-            if (forkChecker) {
-                let payload = {
-                    files: state.allFiles(),
-                    resolutionCache: state.host.moduleResolutionHost.resolutionCache
-                };
-                
-                instance.checker.send({
-                    messageType: 'compile',
-                    payload
-                });
-            } else {
-                let diagnostics = state.ts.getPreEmitDiagnostics(state.program);
-                let emitError = (err) => {
-                    if (compilation.bail) {
-                        console.error('Error in bail mode:', err);
-                        process.exit(1);
-                    }
-                    compilation.errors.push(new Error(err))
-                };
-
-                let errors = formatErrors(instanceName, diagnostics);
-                errors.forEach(emitError);
-            }
-
-            let phantomImports = [];
-            state.allFileNames().forEach((fileName) => {
-                if (!instance.compiledFiles[fileName]) {
-                    phantomImports.push(fileName)
-                }
+        if (forkChecker) {
+            let payload = {
+                files: state.allFiles(),
+                resolutionCache: state.host.moduleResolutionHost.resolutionCache
+            };
+            
+            instance.checker.send({
+                messageType: 'compile',
+                payload
             });
+        } else {
+            let diagnostics = state.ts.getPreEmitDiagnostics(state.program);
+            let emitError = (err) => {
+                if (compilation.bail) {
+                    console.error('Error in bail mode:', err);
+                    process.exit(1);
+                }
+                compilation.errors.push(new Error(err))
+            };
 
-            instance.compiledFiles = {};
-            compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
-            compilation.fileDependencies = _.uniq(compilation.fileDependencies);
-            callback();
+            let errors = formatErrors(instanceName, diagnostics);
+            errors.forEach(emitError);
+        }
+
+        let phantomImports = [];
+        state.allFileNames().forEach((fileName) => {
+            if (!instance.compiledFiles[fileName]) {
+                phantomImports.push(fileName)
+            }
         });
-    }
 
-    return getInstanceStore(webpack._compiler)[instanceName] = {
-        tsFlow,
-        tsState,
-        babelImpl,
-        compiledFiles: {},
-        options,
-        externalsInvoked: false,
-        checker: forkChecker
-            ? createChecker(compilerInfo, options)
-            : null,
-        cacheIdentifier
-    }
+        instance.compiledFiles = {};
+        compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
+        compilation.fileDependencies = _.uniq(compilation.fileDependencies);
+        callback();
+    });
 }

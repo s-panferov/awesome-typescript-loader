@@ -11,7 +11,6 @@ import { ICompilerOptions, TypeScriptCompilationError, State, ICompilerInfo } fr
 import { IResolver, ResolutionError, createResolver } from './deps';
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
-import { loadLib } from './helpers';
 import { createChecker } from './checker';
 import { ICompilerInstance, IWebPack, ensureInstance } from './instance';
 
@@ -79,7 +78,6 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         
     try {
         let wasChanged = await state.fileAnalyzer.checkDependencies(resolver, fileName)
-        
         if (wasChanged || doUpdate) {
             state.updateProgram();
         }
@@ -164,7 +162,6 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             process.exit(1);
         }
     } catch (err) {
-        console.log(err);
         callback(err, helpers.codegenErrorReport([err]));
     }
 }
