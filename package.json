@@ -2,10 +2,11 @@
   "name": "awesome-typescript-loader",
   "version": "0.14.1",
   "description": "Awesome TS loader for webpack",
-  "main": "dist/index.js",
+  "main": "dist.babel/index.js",
   "scripts": {
     "grunt": "grunt",
-    "prepublish": "grunt"
+    "prepublish": "grunt",
+    "babel": "babel dist --presets es2015-node4 --out-dir dist.babel --watch"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -29,9 +30,13 @@
     "deasync": "^0.1.1",
     "loader-utils": "^0.2.6",
     "lodash": "^3.10.0",
-    "object-assign": "^2.0.0"
+    "object-assign": "^2.0.0",
+    "tsconfig": "^2.1.1"
   },
   "devDependencies": {
+    "babel-preset-es2015": "^6.1.2",
+    "babel-preset-es2015-node4": "^1.0.0",
+    "babel-preset-stage-2": "^6.1.2",
     "git-hooks": "0.0.10",
     "grunt": "^0.4.5",
     "grunt-bump": "^0.3.1",
@@ -42,6 +47,6 @@
     "grunt-shell": "^1.1.2",
     "grunt-ts": "^3.0.0",
     "load-grunt-tasks": "^0.6.0",
-    "typescript": "^1.8.0-dev.20151031"
+    "typescript": "^1.8.0-dev.20151107"
   }
 }

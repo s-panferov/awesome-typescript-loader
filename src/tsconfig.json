@@ -1,7 +1,7 @@
 {
     "version": "1.5.0-beta",
     "compilerOptions": {
-        "target": "es5",
+        "target": "es6",
         "module": "commonjs",
         "declaration": false,
         "noImplicitAny": false,
@@ -17,10 +17,13 @@
     ],
     "files": [
         "./cache.ts",
+        "./checker-runtime.ts",
         "./checker.ts",
         "./deps.ts",
         "./helpers.ts",
         "./host.ts",
-        "./index.ts"
+        "./index.ts",
+        "./instance.ts",
+        "./tsconfig-utils.ts"
     ]
 }

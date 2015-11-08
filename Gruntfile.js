@@ -9,7 +9,8 @@ module.exports = function(grunt) {
                     compiler: './node_modules/typescript/bin/tsc',
                     module: "commonjs",
                     fast: 'never',
-                    preserveConstEnums: true
+                    preserveConstEnums: true,
+                    target: 'es6'
                 },
                 src: 'src/**/*.ts',
                 outDir: 'dist'
@@ -19,7 +20,8 @@ module.exports = function(grunt) {
                     compiler: './node_modules/typescript/bin/tsc',
                     module: "commonjs",
                     fast: 'never',
-                    preserveConstEnums: true
+                    preserveConstEnums: true,
+                    target: 'es6'
                 },
                 src: 'src/**/*.ts',
                 watch: 'src/',

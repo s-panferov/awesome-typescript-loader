@@ -125,15 +125,15 @@ export class Host implements ts.LanguageServiceHost {
         for (let moduleName of moduleNames) {
             let resolvedFileName: string;
             let resolvedModule: ts.ResolvedModule;
-            try {
-                resolvedFileName = this.state.resolver(containingFile, moduleName)
-                if (!resolvedFileName.match(/\.tsx?$/)) {
-                    resolvedFileName = null;
-                }
-            }
-            catch (e) {
-                resolvedFileName = null
-            }
+            // try {
+            //     resolvedFileName = this.state.resolver(containingFile, moduleName)
+            //     if (!resolvedFileName.match(/\.tsx?$/)) {
+            //         resolvedFileName = null;
+            //     }
+            // }
+            // catch (e) {
+            //     resolvedFileName = null
+            // }
 
             let tsResolved = this.state.ts.resolveModuleName(
                 resolvedFileName || moduleName,
@@ -158,7 +158,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     log(message) {
-        //console.log(message);
+        // console.log(message);
     }
 
 }
@@ -169,12 +169,13 @@ export class State {
     fs: typeof fs;
     compilerInfo: ICompilerInfo;
     host: Host;
-    private files: {[fileName: string]: IFile} = {};
+    files: {[fileName: string]: IFile} = {};
     services: ts.LanguageService;
     options: ICompilerOptions;
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
     resolver: SyncResolver;
+    readFileImpl: (fileName: string) => Promise<Buffer>
 
     constructor(
         options: ICompilerOptions,
@@ -186,17 +187,12 @@ export class State {
         this.compilerInfo = compilerInfo;
         this.resolver = resolver;
         this.fs = fsImpl;
+        this.readFileImpl = Promise.promisify(this.fs.readFile.bind(this.fs)) as any;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.fileAnalyzer = new FileAnalyzer(this);
 
         this.options = {};
-
-        objectAssign(this.options, {
-            target: this.ts.ScriptTarget.ES5,
-            sourceMap: true,
-            verbose: false
-        });
 
         objectAssign(this.options, options);
 
@@ -211,16 +207,6 @@ export class State {
                 this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
             }
         }
-
-        this.updateProgram();
-    }
-
-    resetService() {
-        this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
-    }
-
-    resetProgram() {
-        this.program = null;
     }
 
     updateProgram() {
@@ -249,23 +235,21 @@ export class State {
 
         let outputFiles: IOutputFile[] = [];
 
-        let normalizedFileName = this.normalizePath(fileName);
-
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean) {
             outputFiles.push({
-                sourceName: normalizedFileName,
+                sourceName: fileName,
                 name: fileName,
                 writeByteOrderMark: writeByteOrderMark,
                 text: data
             });
         }
 
-        let source = this.program.getSourceFile(normalizedFileName);
+        let source = this.program.getSourceFile(fileName);
         if (!source) {
             this.updateProgram();
-            source = this.program.getSourceFile(normalizedFileName);
+            source = this.program.getSourceFile(fileName);
             if (!source) {
-                throw new Error(`File ${normalizedFileName} was not found in program`);
+                throw new Error(`File ${fileName} was not found in program`);
             }
         }
 
@@ -323,12 +307,10 @@ export class State {
         return this.files.hasOwnProperty(fileName);
     }
 
-    readFile(fileName: string): Promise<string> {
+    async readFile(fileName: string): Promise<string> {
         fileName = this.normalizePath(fileName);
-        let readFile = Promise.promisify(this.fs.readFile.bind(this.fs));
-        return readFile(fileName).then(function (buf) {
-            return buf.toString('utf8');
-        });
+        let buf = await this.readFileImpl(fileName);
+        return buf.toString('utf8');
     }
 
     readFileSync(fileName: string): string {
@@ -337,14 +319,16 @@ export class State {
         return fs.readFileSync(fileName, {encoding: 'utf-8'});
     }
 
-    readFileAndAdd(fileName: string): Promise<any> {
+    async readFileAndAdd(fileName: string): Promise<any> {
         fileName = this.normalizePath(fileName);
-        return this.readFile(fileName).then((text) => this.addFile(fileName, text));
+        let text = await this.readFile(fileName);
+        this.addFile(fileName, text);
     }
 
-    readFileAndUpdate(fileName: string, checked: boolean = false): Promise<boolean> {
+    async readFileAndUpdate(fileName: string, checked: boolean = false): Promise<boolean> {
         fileName = this.normalizePath(fileName);
-        return this.readFile(fileName).then((text) => this.updateFile(fileName, text, checked));
+        let text = await this.readFile(fileName);
+        return this.updateFile(fileName, text, checked);
     }
 
     readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {

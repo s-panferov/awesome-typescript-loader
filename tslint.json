@@ -3,13 +3,11 @@
     "class-name": true,
     "comment-format": [
         true,
-        "check-space",
-        "check-uppercase"
+        "check-space"
     ],
     "curly": true,
     "eofline": true,
     "indent": true,
-    "interface-name": true,
     "jsdoc-format": true,
     "member-ordering": [
       true,
@@ -27,14 +25,7 @@
     "no-unreachable": true,
     "no-unused-variable": true,
     "no-var-keyword": true,
-    "no-use-before-declare": true,
     "quotemark": true,
-    "semicolon": true,
-    "typedef": [
-      true,
-      "call-signature",
-      "parameter"
-    ],
     "typedef-whitespace": true
   }
 }
