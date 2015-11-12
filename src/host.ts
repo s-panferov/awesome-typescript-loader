@@ -353,8 +353,8 @@ export class State {
         return this.updateFile(fileName, text, checked);
     }
 
-    normalizePath(path: string): string {
-        return (<any>this.ts).normalizePath(path)
+    normalizePath(filePath: string): string {
+        return path.normalize(filePath);
     }
 }
 
