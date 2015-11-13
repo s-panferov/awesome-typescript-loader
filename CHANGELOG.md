@@ -1,3 +1,22 @@
+<a name"0.15.0-rc.0"></a>
+### 0.15.0-rc.0 (2015-11-13)
+
+
+#### Bug Fixes
+
+* **host:** import path ([478553a7](https://github.com/s-panferov/awesome-typescript-loader/commit/478553a7))
+
+
+#### Features
+
+* ***:**
+  * return webpack pre-resolution ([19c559a9](https://github.com/s-panferov/awesome-typescript-loader/commit/19c559a9))
+  * refactor tsconfig parser ([b2f414f1](https://github.com/s-panferov/awesome-typescript-loader/commit/b2f414f1))
+  * async refactor ([9831bdcc](https://github.com/s-panferov/awesome-typescript-loader/commit/9831bdcc))
+  * bump dev typescript ([b29a73d7](https://github.com/s-panferov/awesome-typescript-loader/commit/b29a73d7))
+  * bump typescript ([b2115448](https://github.com/s-panferov/awesome-typescript-loader/commit/b2115448))
+
+
 <a name"0.14.1"></a>
 ### 0.14.1 (2015-10-31)
 
