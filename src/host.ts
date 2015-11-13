@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as util from 'util';
+import * as path from 'path';
 import * as Promise from 'bluebird';
 
 import { FileAnalyzer } from './deps';
