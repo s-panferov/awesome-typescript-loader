@@ -1,5 +1,8 @@
 /// <reference path='../node_modules/typescript/lib/typescriptServices.d.ts' />
+/// <reference path="./defines.d.ts"/>
 /// <reference path='../typings/tsd.d.ts' />
+
+require('babel-polyfill');
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';

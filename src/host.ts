@@ -1,8 +1,6 @@
 import * as fs from 'fs';
 import * as util from 'util';
-import * as path from 'path';
 import * as Promise from 'bluebird';
-import * as _ from 'lodash';
 
 import { FileAnalyzer } from './deps';
 import { loadLib } from './helpers';
@@ -125,15 +123,16 @@ export class Host implements ts.LanguageServiceHost {
         for (let moduleName of moduleNames) {
             let resolvedFileName: string;
             let resolvedModule: ts.ResolvedModule;
-            // try {
-            //     resolvedFileName = this.state.resolver(containingFile, moduleName)
-            //     if (!resolvedFileName.match(/\.tsx?$/)) {
-            //         resolvedFileName = null;
-            //     }
-            // }
-            // catch (e) {
-            //     resolvedFileName = null
-            // }
+
+            try {
+                resolvedFileName = this.state.resolver(containingFile, moduleName)
+                if (!resolvedFileName.match(/\.tsx?$/)) {
+                    resolvedFileName = null;
+                }
+            }
+            catch (e) {
+                resolvedFileName = null
+            }
 
             let tsResolved = this.state.ts.resolveModuleName(
                 resolvedFileName || moduleName,

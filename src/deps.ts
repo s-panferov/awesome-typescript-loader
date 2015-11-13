@@ -87,10 +87,10 @@ export class FileAnalyzer {
 
     async checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
         let imports = await this.findImportDeclarations(resolver, fileName);
-
         let tasks: Promise<any>[] = [];
 
-        for (let importPath of imports) {
+        for (let i = 0; i < imports.length; i++) {
+            let importPath = imports[i];
             let isDeclaration = isTypeDeclaration(importPath);
             let isRequiredJs = /\.js$/.exec(importPath) || importPath.indexOf('.') === -1;
 
@@ -170,7 +170,7 @@ export class FileAnalyzer {
                 // Make import relative
                 defPath = './' + defPath;
             }
-            result = resolver(path.dirname(fileName), defPath)
+            result = Promise.resolve(path.resolve(path.dirname(fileName), defPath));
         }
 
         return result
