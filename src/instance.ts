@@ -9,8 +9,7 @@ import { ICompilerInfo } from './host';
 import { createResolver } from './deps';
 import { createChecker } from './checker';
 import { rawToTsCompilerOptions } from './tsconfig-utils';
-
-let deasync = require('deasync');
+import makeResolver from './resolver';
 
 let pkg = require('../package.json');
 
@@ -156,6 +155,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         noLib: false
     });
 
+    options = _.omit(options, 'outDir') as any;
     options.externals.push.apply(options.externals, tsFiles)
 
     let babelImpl: any;
@@ -189,7 +189,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     }
 
     let forkChecker = options.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
-    let syncResolver = deasync(webpack.resolve);
+    let resolver = makeResolver(webpack._compiler.options);
+    let syncResolver = resolver.resolveSync.bind(resolver);
 
     let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo, syncResolver);
     let compiler = (<any>webpack._compiler);

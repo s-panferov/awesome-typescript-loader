@@ -126,7 +126,10 @@ export class Host implements ts.LanguageServiceHost {
             let resolvedModule: ts.ResolvedModule;
 
             try {
-                resolvedFileName = this.state.resolver(containingFile, moduleName)
+                resolvedFileName = this.state.resolver(
+                    this.state.normalizePath(path.dirname(containingFile)),
+                    moduleName
+                );
                 if (!resolvedFileName.match(/\.tsx?$/)) {
                     resolvedFileName = null;
                 }

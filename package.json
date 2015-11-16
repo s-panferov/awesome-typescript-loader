@@ -28,7 +28,7 @@
     "babel-polyfill": "^6.1.19",
     "bluebird": "^2.10.2",
     "colors": "^1.1.2",
-    "deasync": "^0.1.1",
+    "enhanced-resolve": "^0.9.1",
     "loader-utils": "^0.2.6",
     "lodash": "^3.10.0",
     "object-assign": "^2.1.1",
