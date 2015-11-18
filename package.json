@@ -26,7 +26,7 @@
   "dependencies": {
     "bluebird": "^2.7.1",
     "colors": "^1.1.2",
-    "deasync": "^0.1.1",
+    "deasync": "0.1.1",
     "loader-utils": "^0.2.6",
     "lodash": "^3.10.0",
     "object-assign": "^2.0.0"
