@@ -1,3 +1,12 @@
+<a name"0.15.0-rc.2"></a>
+### 0.15.0-rc.2 (2015-11-18)
+
+
+#### Features
+
+* ***:** use another preset for babel to work on prev node versions ([5c7972d4](https://github.com/s-panferov/awesome-typescript-loader/commit/5c7972d4))
+
+
 <a name"0.15.0-rc.1"></a>
 ### 0.15.0-rc.1 (2015-11-16)
 
