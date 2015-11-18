@@ -1,3 +1,14 @@
+<a name"0.14.2"></a>
+### 0.14.2 (2015-11-18)
+
+
+#### Features
+
+* ***:**
+  * bump dev typescript ([b29a73d7](https://github.com/s-panferov/awesome-typescript-loader/commit/b29a73d7))
+  * bump typescript ([b2115448](https://github.com/s-panferov/awesome-typescript-loader/commit/b2115448))
+
+
 <a name"0.14.1"></a>
 ### 0.14.1 (2015-10-31)
 
