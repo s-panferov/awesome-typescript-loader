@@ -2,10 +2,10 @@
     "version": "1.5.0-beta",
     "compilerOptions": {
         "target": "es6",
-        "module": "commonjs",
         "declaration": false,
         "noImplicitAny": false,
         "removeComments": true,
+        "moduleResolution": "node",
         "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true
@@ -25,6 +25,10 @@
         "./host.ts",
         "./index.ts",
         "./instance.ts",
+        "./resolver.ts",
         "./tsconfig-utils.ts"
-    ]
+    ],
+    "atom": {
+        "rewriteTsconfig": true
+    }
 }

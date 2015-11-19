@@ -1,6 +1,8 @@
 import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import * as colors from 'colors';
 
+require('babel-polyfill');
+
 export enum MessageType {
     Init = <any>'init',
     Compile = <any>'compile'

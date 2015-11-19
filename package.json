@@ -6,7 +6,7 @@
   "scripts": {
     "grunt": "grunt",
     "prepublish": "grunt",
-    "babel": "babel dist --presets es2015-node4 --out-dir dist.babel --watch"
+    "babel": "babel dist --presets es2015 --out-dir dist.babel --watch"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -48,6 +48,6 @@
     "grunt-shell": "^1.1.2",
     "grunt-ts": "^3.0.0",
     "load-grunt-tasks": "^0.6.0",
-    "typescript": "^1.8.0-dev.20151107"
+    "typescript": "^1.8.0-dev.20151119"
   }
 }

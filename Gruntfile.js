@@ -21,7 +21,9 @@ module.exports = function(grunt) {
                     module: "commonjs",
                     fast: 'never',
                     preserveConstEnums: true,
-                    target: 'es6'
+                    moduleResolution: "node",
+                    target: 'es6',
+                    experimentalAsyncFunctions: true
                 },
                 src: 'src/**/*.ts',
                 watch: 'src/',
