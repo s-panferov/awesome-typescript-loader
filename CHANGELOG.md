@@ -1,3 +1,12 @@
+<a name"0.15.1"></a>
+### 0.15.1 (2015-11-20)
+
+
+#### Bug Fixes
+
+* ***:** fix program update issue ([a606ed89](https://github.com/s-panferov/awesome-typescript-loader/commit/a606ed89))
+
+
 <a name"0.15.0"></a>
 ## 0.15.0 (2015-11-19)
 
