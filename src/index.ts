@@ -90,13 +90,15 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             state.fileAnalyzer.dependencies.addCompiledModule(fileName, compiledModule.fileName);
             transformation = {
                 text: compiledModule.text,
-                map: JSON.parse(compiledModule.map)
+                map: compiledModule.map
+                    ? JSON.parse(compiledModule.map)
+                    : null
             }
         } else {
 
             function transform() {
                 let resultText;
-                let resultSourceMap;
+                let resultSourceMap = null;
                 let output = state.emit(fileName);
 
                 let result = helpers.findResultFor(output, fileName);
@@ -106,14 +108,20 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                 }
 
                 resultText = result.text;
-                resultSourceMap = JSON.parse(result.sourceMap);
-                resultSourceMap.sources = [ fileName ];
-                resultSourceMap.file = fileName;
-                resultSourceMap.sourcesContent = [ text ];
+
+                if (result.sourceMap) {
+                    resultSourceMap = JSON.parse(result.sourceMap);
+                    resultSourceMap.sources = [ loaderUtils.getRemainingRequest(webpack) ];
+                    resultSourceMap.file = fileName;
+                    resultSourceMap.sourcesContent = [ text ];
+
+                    resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');
+                }
 
                 if (instance.options.useBabel) {
                     let defaultOptions = {
                         inputSourceMap: resultSourceMap,
+                        sourceRoot: process.cwd(),
                         filename: fileName,
                         sourceMap: true
                     }

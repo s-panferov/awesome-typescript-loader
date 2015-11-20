@@ -160,8 +160,9 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
 
     let babelImpl: any;
     if (options.useBabel) {
+        console.error('babel')
         try {
-            babelImpl = require(path.join(process.cwd(), 'node_modules', 'babel'));
+            babelImpl = require(path.join(process.cwd(), 'node_modules', 'babel-core'));
         } catch (e) {
             console.error(BABEL_ERROR);
             process.exit(1);
@@ -262,6 +263,12 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 payload
             });
         } else {
+            if (!state.program) {
+                // program may be undefined here, if all files
+                // will be loaded by tsconfig
+                state.updateProgram();
+            }
+
             let diagnostics = state.ts.getPreEmitDiagnostics(state.program);
             let emitError = (err) => {
                 if (compilation.bail) {
