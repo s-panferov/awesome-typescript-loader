@@ -7,22 +7,29 @@ interface ChildProcess extends childProcess.ChildProcess {
     inProgress?: boolean;
     compilerInfo?: ICompilerInfo;
     compilerOptions?: ICompilerOptions;
+    webpackOptions?: any;
 }
 
-export function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICompilerOptions): ChildProcess {
+export function createChecker(
+    compilerInfo: ICompilerInfo,
+    compilerOptions: ICompilerOptions,
+    webpackOptions: any
+): ChildProcess {
     let checker: ChildProcess = childProcess.fork(path.join(__dirname, 'checker-runtime.js'));
 
     checker.send({
         messageType: 'init',
         payload: {
             compilerInfo: _.omit(compilerInfo, 'tsImpl'),
-            compilerOptions
+            compilerOptions,
+            webpackOptions
         }
     }, null);
 
     checker.inProgress = false;
     checker.compilerInfo = compilerInfo;
     checker.compilerOptions = compilerOptions;
+    checker.webpackOptions = webpackOptions;
     checker.on('message', function(msg) {
         if (msg.messageType == 'progress') {
             checker.inProgress = msg.payload.inProgress;
@@ -35,7 +42,7 @@ export function createChecker(compilerInfo: ICompilerInfo, compilerOptions: ICom
 export function resetChecker(checker: ChildProcess) {
     if (checker.inProgress) {
         checker.kill('SIGKILL');
-        return createChecker(checker.compilerInfo, checker.compilerOptions);
+        return createChecker(checker.compilerInfo, checker.compilerOptions, checker.webpackOptions);
     } else {
         return checker;
     }

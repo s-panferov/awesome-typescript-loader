@@ -6,6 +6,7 @@ function buildEnumMap(tsImpl: typeof ts) {
             'es3': tsImpl.ScriptTarget.ES3,
             'es5': tsImpl.ScriptTarget.ES5,
             'es6': tsImpl.ScriptTarget.ES6,
+            'es2015': tsImpl.ScriptTarget.ES2015,
             'latest': tsImpl.ScriptTarget.Latest
         },
         module: {
