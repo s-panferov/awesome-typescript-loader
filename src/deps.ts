@@ -145,7 +145,11 @@ export class FileAnalyzer {
     resolve(resolver: IResolver, fileName: string, defPath: string): Promise<string> {
         let result;
 
-        if (!path.extname(defPath).length) {
+        if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
+            // Make import relative
+            defPath = './' + defPath;
+            result = Promise.resolve(path.resolve(path.dirname(fileName), defPath));
+        } else {
             result = resolver(path.dirname(fileName), defPath + ".ts")
                 .error(function (error) {
                     return resolver(path.dirname(fileName), defPath + ".d.ts")
@@ -165,12 +169,6 @@ export class FileAnalyzer {
                         throw error;
                     }
                 })
-        } else {
-            if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
-                // Make import relative
-                defPath = './' + defPath;
-            }
-            result = Promise.resolve(path.resolve(path.dirname(fileName), defPath));
         }
 
         return result
