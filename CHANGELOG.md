@@ -1,3 +1,17 @@
+<a name"0.15.3"></a>
+### 0.15.3 (2015-11-24)
+
+
+#### Bug Fixes
+
+* **checker-runtime:** fix SyncResolver type ([b55af480](https://github.com/s-panferov/awesome-typescript-loader/commit/b55af480))
+
+
+#### Features
+
+* **checker-runtime:** checker now can resolve imports too ([99220c1f](https://github.com/s-panferov/awesome-typescript-loader/commit/99220c1f))
+
+
 <a name"0.15.2"></a>
 ### 0.15.2 (2015-11-24)
 
