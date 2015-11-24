@@ -152,7 +152,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         doTypeCheck: true,
         sourceMap: true,
         verbose: false,
-        noLib: false
+        noLib: false,
+        sourceRoot: process.cwd()
     });
 
     options = _.omit(options, 'outDir') as any;

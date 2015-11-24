@@ -6,6 +6,7 @@ require('babel-polyfill');
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as path from 'path';
 
 import { ICompilerOptions } from './host';
 import { createResolver } from './deps';
@@ -154,7 +155,12 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         let resultSourceMap = transformation.map;
 
         if (resultSourceMap) {
-            resultSourceMap.sources = [ fileName ];
+            let sourcePath = path.relative(
+                instance.options.sourceRoot,
+                loaderUtils.getRemainingRequest(webpack)
+            );
+
+            resultSourceMap.sources = [ sourcePath ];
             resultSourceMap.file = fileName;
             resultSourceMap.sourcesContent = [ text ];
         }
