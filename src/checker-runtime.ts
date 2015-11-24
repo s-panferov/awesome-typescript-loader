@@ -1,4 +1,4 @@
-import { ICompilerOptions, ICompilerInfo, IFile, SyncResolver } from './host';
+import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import makeResolver from './resolver';
 import * as colors from 'colors';
 import * as path from 'path';
@@ -36,6 +36,10 @@ export interface IEnv {
     resolutionCache?: {[fileName: string]: ts.ResolvedModule};
     program?: ts.Program;
     service?: ts.LanguageService;
+}
+
+export interface SyncResolver {
+    resolveSync(context: string, fileName: string): string;
 }
 
 let env: IEnv = {};
