@@ -156,7 +156,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         sourceRoot: process.cwd()
     });
 
-    options = _.omit(options, 'outDir') as any;
+    options = _.omit(options, 'outDir', 'files', 'exclude') as any;
     options.externals.push.apply(options.externals, tsFiles)
 
     let babelImpl: any;
@@ -202,6 +202,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         setupAfterCompile(compiler, instanceName, forkChecker);
     }
 
+    let webpackOptions = _.pick(webpack._compiler.options, 'resolve');
+
     return getInstanceStore(webpack._compiler)[instanceName] = {
         tsFlow,
         tsState,
@@ -210,7 +212,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         options,
         externalsInvoked: false,
         checker: forkChecker
-            ? createChecker(compilerInfo, options)
+            ? createChecker(compilerInfo, options, webpackOptions)
             : null,
         cacheIdentifier
     }

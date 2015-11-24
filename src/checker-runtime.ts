@@ -1,5 +1,7 @@
-import { ICompilerOptions, ICompilerInfo, IFile } from './host';
+import { ICompilerOptions, ICompilerInfo, IFile, SyncResolver } from './host';
+import makeResolver from './resolver';
 import * as colors from 'colors';
+import * as path from 'path';
 
 require('babel-polyfill');
 
@@ -16,6 +18,7 @@ export interface IMessage {
 export interface IInitPayload {
     compilerOptions: ICompilerOptions;
     compilerInfo: ICompilerInfo;
+    webpackOptions: any;
 }
 
 export interface ICompilePayload {
@@ -25,6 +28,7 @@ export interface ICompilePayload {
 
 export interface IEnv {
     options?: ICompilerOptions;
+    webpackOptions?: any;
     compiler?: typeof ts;
     compilerInfo?: ICompilerInfo;
     host?: Host;
@@ -36,7 +40,35 @@ export interface IEnv {
 
 let env: IEnv = {};
 
+export class ModuleResolutionHost implements ts.ModuleResolutionHost {
+    servicesHost: Host;
+
+    constructor(servicesHost: Host) {
+        this.servicesHost = servicesHost;
+    }
+
+    fileExists(fileName: string)  {
+        return this.servicesHost.getScriptSnapshot(fileName) !== undefined;
+    }
+
+    readFile(fileName: string): string {
+        let snapshot = this.servicesHost.getScriptSnapshot(fileName);
+        return snapshot && snapshot.getText(0, snapshot.getLength());
+    }
+}
+
 export class Host implements ts.LanguageServiceHost {
+    moduleResolutionHost: ModuleResolutionHost
+    resolver: SyncResolver
+
+    constructor() {
+        this.moduleResolutionHost = new ModuleResolutionHost(this);
+        this.resolver = makeResolver(env.webpackOptions);
+    }
+
+    normalizePath(filePath: string): string {
+        return path.normalize(filePath);
+    }
 
     getScriptFileNames() {
         return Object.keys(env.files);
@@ -71,9 +103,44 @@ export class Host implements ts.LanguageServiceHost {
         let resolvedModules: ts.ResolvedModule[] = [];
 
         for (let moduleName of moduleNames) {
-            resolvedModules.push(
-                env.resolutionCache[`${containingFile}::${moduleName}`]
-            );
+            let cached = env.resolutionCache[`${containingFile}::${moduleName}`];
+            if (cached) {
+                resolvedModules.push(cached);
+            } else {
+                let resolvedFileName: string;
+                let resolvedModule: ts.ResolvedModule;
+
+                try {
+                    resolvedFileName = this.resolver.resolveSync(
+                        this.normalizePath(path.dirname(containingFile)),
+                        moduleName
+                    );
+
+                    if (!resolvedFileName.match(/\.tsx?$/)) {
+                        resolvedFileName = null;
+                    }
+                }
+                catch (e) {
+                    resolvedFileName = null
+                }
+
+                let tsResolved = env.compiler.resolveModuleName(
+                    resolvedFileName || moduleName,
+                    containingFile,
+                    env.options,
+                    this.moduleResolutionHost
+                );
+
+                if (tsResolved.resolvedModule) {
+                    resolvedModule = tsResolved.resolvedModule;
+                } else {
+                    resolvedModule = {
+                        resolvedFileName: resolvedFileName || ''
+                    }
+                }
+
+                resolvedModules.push(resolvedModule);
+            }
         }
 
         return resolvedModules;
@@ -92,9 +159,10 @@ export class Host implements ts.LanguageServiceHost {
 
 function processInit(payload: IInitPayload) {
     env.compiler = require(payload.compilerInfo.compilerName);
-    env.host = new Host();
     env.compilerInfo = payload.compilerInfo;
     env.options = payload.compilerOptions;
+    env.webpackOptions = payload.webpackOptions;
+    env.host = new Host();
     env.service = env.compiler.createLanguageService(env.host, env.compiler.createDocumentRegistry());
 }
 
