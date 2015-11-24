@@ -1,3 +1,17 @@
+<a name"0.15.2"></a>
+### 0.15.2 (2015-11-24)
+
+
+#### Bug Fixes
+
+* **deps:** fix path respolution for angular-style file names ([b43e2d8f](https://github.com/s-panferov/awesome-typescript-loader/commit/b43e2d8f))
+
+
+#### Features
+
+* ***:** add sourceRoot support ([bddf79cb](https://github.com/s-panferov/awesome-typescript-loader/commit/bddf79cb))
+
+
 <a name"0.15.1"></a>
 ### 0.15.1 (2015-11-20)
 
