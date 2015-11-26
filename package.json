@@ -32,6 +32,9 @@
     "loader-utils": "^0.2.6",
     "lodash": "^3.10.0",
     "object-assign": "^2.1.1",
+    "parse-json": "^2.2.0",
+    "strip-bom": "^2.0.0",
+    "strip-json-comments": "^2.0.0",
     "tsconfig": "^2.1.1"
   },
   "devDependencies": {

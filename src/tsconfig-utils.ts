@@ -1,4 +1,49 @@
 import * as path from 'path';
+import * as colors from 'colors';
+import { TSConfig } from 'tsconfig';
+
+let parseJson = require('parse-json');
+let stripBom = require('strip-bom');
+let stripComments = require('strip-json-comments');
+
+const TSCONFIG_ERROR = colors.red(`\n\n[awesome-typescript-loader] You have \`resolveGlobs\` enabled and don't have an \`exclude\` directive in your tsconfig file. This WILL slow down your compilation. Please add:
+    {
+        // ...
+        "exclude": [
+            "node_modules",
+            "bower_components"
+        ]
+    }
+`);
+
+export function tsconfigSuggestions(config: TSConfig) {
+    let hasExclude = config.exclude && (
+        config.exclude.indexOf('node_modules') !== -1
+        || config.exclude.indexOf('./node_modules') !== -1
+    );
+
+    let hasGlobIgnore = config.filesGlob && (
+        config.filesGlob.some(item => item.indexOf('!node_modules') !== -1)
+        ||  !config.filesGlob.some(item => item.indexOf('!./node_modules') !== -1))
+
+    if (!hasExclude && !hasGlobIgnore) {
+        console.warn(TSCONFIG_ERROR);
+    }
+}
+
+/**
+ * Parse `tsconfig.json` file.
+ */
+export function parseContent(contents: string, filename: string): TSConfig {
+    const data = stripComments(stripBom(contents))
+
+    // A tsconfig.json file is permitted to be completely empty.
+    if (/^\s*$/.test(data)) {
+        return {}
+    }
+
+    return parseJson(data, null, filename)
+}
 
 function buildEnumMap(tsImpl: typeof ts) {
     let typescriptEnumMap = {
