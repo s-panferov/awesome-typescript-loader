@@ -1,3 +1,12 @@
+<a name"0.15.4"></a>
+### 0.15.4 (2015-11-26)
+
+
+#### Features
+
+* ***:** add glob warning ([0cb62506](https://github.com/s-panferov/awesome-typescript-loader/commit/0cb62506))
+
+
 <a name"0.15.3"></a>
 ### 0.15.3 (2015-11-24)
 
