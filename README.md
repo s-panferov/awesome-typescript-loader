@@ -141,6 +141,10 @@ Use internal file cache. Useful with Babel, when processing takes a long time to
 
 Directory when cache is stored.
 
+### resolveGlobs *(string) (default=true)*
+
+Invoke glob resolver using 'filesGlob' and 'exclude' sections of `tsconfig`.
+
 ## Compiler options
 
 You can pass compiler options inside loader query string or in tsconfig file.

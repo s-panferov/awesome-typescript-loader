@@ -46,6 +46,7 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     useCache?: boolean;
     cacheDirectory?: string;
     files?: any;
+    resolveGlobs?: boolean;
 }
 
 export interface IOutputFile extends ts.OutputFile {

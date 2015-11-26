@@ -8,7 +8,7 @@ import { loadLib, formatErrors } from './helpers';
 import { ICompilerInfo } from './host';
 import { createResolver } from './deps';
 import { createChecker } from './checker';
-import { rawToTsCompilerOptions } from './tsconfig-utils';
+import { rawToTsCompilerOptions, parseContent, tsconfigSuggestions } from './tsconfig-utils';
 import makeResolver from './resolver';
 
 let pkg = require('../package.json');
@@ -103,7 +103,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
 
     let tsImpl: typeof ts;
     try {
-        tsImpl = require(compilerName);
+        tsImpl = require(compilerPath);
     } catch (e) {
         console.error(e)
         console.error(COMPILER_ERROR);
@@ -128,12 +128,21 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         lib6: loadLib(lib6Path)
     };
 
+    _.defaults(options, {
+        resolveGlobs: true
+    });
+
     let configFilePath: string;
     let configFile: tsconfig.TSConfig;
     let folder = options.tsconfig || process.cwd();
     configFilePath = tsconfig.resolveSync(folder);
     if (configFilePath) {
-        configFile = tsconfig.readFileSync(configFilePath);
+        configFile = parseContent(fs.readFileSync(configFilePath).toString(), configFilePath);
+
+        if (options.resolveGlobs) {
+            tsconfigSuggestions(configFile);
+            configFile = tsconfig.readFileSync(configFilePath);
+        }
     }
 
     let tsFiles: string[] = [];
