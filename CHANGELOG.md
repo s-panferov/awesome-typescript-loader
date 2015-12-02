@@ -1,3 +1,12 @@
+<a name"0.15.6"></a>
+### 0.15.6 (2015-12-02)
+
+
+#### Bug Fixes
+
+* ***:** exclude package.json files from program ([d8546dc1](https://github.com/s-panferov/awesome-typescript-loader/commit/d8546dc1))
+
+
 <a name"0.15.5"></a>
 ### 0.15.5 (2015-12-02)
 
