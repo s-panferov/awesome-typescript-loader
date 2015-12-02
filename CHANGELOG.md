@@ -1,3 +1,12 @@
+<a name"0.15.5"></a>
+### 0.15.5 (2015-12-02)
+
+
+#### Bug Fixes
+
+* **host:** add ad-hoc files lookup to support `typings` scenario ([b768c243](https://github.com/s-panferov/awesome-typescript-loader/commit/b768c243))
+
+
 <a name"0.15.4"></a>
 ### 0.15.4 (2015-11-26)
 
