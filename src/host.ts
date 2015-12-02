@@ -96,9 +96,17 @@ export class Host implements ts.LanguageServiceHost {
 
     getScriptSnapshot(fileName) {
         let file = this.state.getFile(fileName);
-        if (file) {
-            return this.state.ts.ScriptSnapshot.fromString(file.text);
+        if (!file) {
+            try {
+                this.state.readFileAndUpdateSync(fileName);
+                file = this.state.getFile(fileName);
+            }
+            catch (e) {
+                return;
+            }
         }
+
+        return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
 
     getCurrentDirectory() {
@@ -293,9 +301,9 @@ export class State {
         return changed
     }
 
-    addFile(fileName: string, text: string): void {
+    addFile(fileName: string, text: string): IFile {
         fileName = this.normalizePath(fileName);
-        this.files[fileName] = {
+        return this.files[fileName] = {
             text: text,
             version: 0
         }
