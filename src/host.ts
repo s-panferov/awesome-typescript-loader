@@ -98,8 +98,15 @@ export class Host implements ts.LanguageServiceHost {
         let file = this.state.getFile(fileName);
         if (!file) {
             try {
-                this.state.readFileAndUpdateSync(fileName);
-                file = this.state.getFile(fileName);
+                let text = this.state.readFileSync(fileName);
+                file = {
+                    version: 0,
+                    text
+                };
+
+                if (path.basename(fileName) !== 'package.json') {
+                    file = this.state.addFile(fileName, text);
+                }
             }
             catch (e) {
                 return;

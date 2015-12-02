@@ -2,6 +2,7 @@ import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import makeResolver from './resolver';
 import * as colors from 'colors';
 import * as path from 'path';
+import * as fs from 'fs';
 
 require('babel-polyfill');
 
@@ -85,10 +86,26 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptSnapshot(fileName) {
-        let file = env.files[fileName];
-        if (file) {
-            return env.compiler.ScriptSnapshot.fromString(file.text);
+        let fileName_ = path.normalize(fileName);
+        let file = env.files[fileName_];
+
+        if (!file) {
+            try {
+                file = {
+                    version: 0,
+                    text: fs.readFileSync(fileName, { encoding: 'utf8' }).toString()
+                }
+
+                if (path.basename(fileName) !== 'package.json') {
+                    env.files[fileName_] = file;
+                }
+            }
+            catch (e) {
+                return;
+            }
         }
+
+        return env.compiler.ScriptSnapshot.fromString(file.text);
     }
 
     getCurrentDirectory() {
