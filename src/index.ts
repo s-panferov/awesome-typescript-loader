@@ -53,11 +53,11 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         }
     });
 
-    if (options.externals && !instance.externalsInvoked) {
+    if (instance.options.externals && !instance.externalsInvoked) {
         if (externalsInvocation) {
             await externalsInvocation;
         } else {
-            externalsInvocation = options.externals.map(async (external) => {
+            externalsInvocation = instance.options.externals.map(async (external) => {
                 await state.fileAnalyzer.checkDependencies(resolver, external);
             });
 
