@@ -1,3 +1,12 @@
+<a name"0.15.9"></a>
+### 0.15.9 (2015-12-03)
+
+
+#### Bug Fixes
+
+* **deps:** don't resolve symlinks to all .d.ts files ([a23d4bf4](https://github.com/s-panferov/awesome-typescript-loader/commit/a23d4bf4))
+
+
 <a name"0.15.8"></a>
 ### 0.15.8 (2015-12-03)
 
