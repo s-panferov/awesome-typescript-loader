@@ -1,3 +1,12 @@
+<a name"0.15.8"></a>
+### 0.15.8 (2015-12-03)
+
+
+#### Bug Fixes
+
+* **index:** use instance.options to invoke externals ([1715bee8](https://github.com/s-panferov/awesome-typescript-loader/commit/1715bee8))
+
+
 <a name"0.15.7"></a>
 ### 0.15.7 (2015-12-03)
 
