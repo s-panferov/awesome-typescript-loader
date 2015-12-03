@@ -148,15 +148,14 @@ export class FileAnalyzer {
         if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
             // Make import relative
             defPath = './' + defPath;
+        }
+
+        if (isTypeDeclaration(defPath)) {
+            // We MUST NOT resolve symlinks when working with .d.ts files, because/
+            // they work whithout module resolution.
             result = Promise.resolve(path.resolve(path.dirname(fileName), defPath));
         } else {
-            result = resolver(path.dirname(fileName), defPath + ".ts")
-                .error(function (error) {
-                    return resolver(path.dirname(fileName), defPath + ".d.ts")
-                })
-                .error(function (error) {
-                    return resolver(path.dirname(fileName), defPath)
-                })
+            result = resolver(path.dirname(fileName), defPath)
                 .error(function (error) {
                     // Node builtin modules
                     try {
@@ -168,7 +167,7 @@ export class FileAnalyzer {
                     } catch (e) {
                         throw error;
                     }
-                })
+                });
         }
 
         return result
