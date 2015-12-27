@@ -61,6 +61,9 @@ describe('main test', function() {
 
     it('should check typing', function(done) {
         var config = {
+            output: {
+                path: outputDir
+            },
             entry: './test/fixtures/with-type-errors.ts',
             module: {
                 loaders: [
