@@ -6,7 +6,8 @@
   "scripts": {
     "grunt": "grunt",
     "prepublish": "grunt",
-    "babel": "babel dist --presets es2015 --out-dir dist.babel --watch"
+    "babel": "babel dist --presets es2015 --out-dir dist.babel --watch",
+    "test": "mocha"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -38,9 +39,11 @@
     "tsconfig": "^2.1.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.3.17",
     "babel-preset-es2015": "^6.1.2",
     "babel-preset-es2015-node4": "^1.0.0",
     "babel-preset-stage-2": "^6.1.2",
+    "expect": "^1.13.4",
     "git-hooks": "0.0.10",
     "grunt": "^0.4.5",
     "grunt-bump": "^0.3.1",
@@ -51,6 +54,9 @@
     "grunt-shell": "^1.1.2",
     "grunt-ts": "^3.0.0",
     "load-grunt-tasks": "^0.6.0",
+    "mkdirp": "^0.5.1",
+    "mocha": "^2.3.4",
+    "rimraf": "^2.5.0",
     "typescript": "^1.8.0-dev.20151202"
   }
 }

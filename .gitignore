@@ -5,3 +5,4 @@ dist.babel
 tscommand
 npm-debug.log
 .awcache
+test/output
