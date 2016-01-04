@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "jsx": "react",
+        "noLib": false,
+        "preserveConstEnums": true,
+        "experimentalDecorators": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "experimentalAsyncFunctions": true
+    },
+    "exclude": [
+        "node_modules",
+        "bower_components"
+    ]
+}
