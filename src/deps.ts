@@ -9,16 +9,16 @@ let objectAssign = require('object-assign');
 type FileSet = {[fileName: string]: boolean};
 
 export interface IResolver {
-    (base: string, dep: string): Promise<string>
+    (base: string, dep: string): Promise<string>;
 }
 
 export interface IDependency {
     add(fileName: string): void;
-    clear(): void
+    clear(): void;
 }
 
 export interface IExternals {
-    [key: string]: string
+    [key: string]: string;
 }
 
 export function createResolver(externals: IExternals, webpackResolver: any): IResolver {
@@ -26,9 +26,9 @@ export function createResolver(externals: IExternals, webpackResolver: any): IRe
 
     function resolve(base: string, dep: string): Promise<string> {
         if (externals && externals.hasOwnProperty(dep)) {
-            return Promise.resolve<string>('%%ignore')
+            return Promise.resolve<string>('%%ignore');
         } else {
-            return resolver(base, dep)
+            return resolver(base, dep);
         }
     }
 
@@ -45,7 +45,7 @@ function isImportOrExportDeclaration(node: ts.Node) {
 }
 
 function isImportEqualsDeclaration(node: ts.Node) {
-    return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression')
+    return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression');
 }
 
 function isIgnoreDependency(absulutePath: string) {
@@ -63,7 +63,7 @@ export class FileAnalyzer {
 
     async checkDependencies(resolver: IResolver, fileName: string): Promise<boolean> {
         if (this.validFiles.isFileValid(fileName)) {
-            return false
+            return false;
         }
 
         this.validFiles.markFileValid(fileName);
@@ -79,7 +79,7 @@ export class FileAnalyzer {
             await this.checkDependenciesInternal(resolver, fileName);
         } catch (err) {
             this.validFiles.markFileInvalid(fileName);
-            throw err
+            throw err;
         }
 
         return changed;
@@ -178,13 +178,13 @@ export class FileAnalyzer {
                 detailedError.fileName = fileName;
 
                 throw detailedError;
-            })
+            });
     }
 }
 
 export interface IDependencyGraphItem {
     fileName: string;
-    dependencies: IDependencyGraphItem[]
+    dependencies: IDependencyGraphItem[];
 }
 
 export class DependencyManager {
@@ -202,7 +202,7 @@ export class DependencyManager {
         return new DependencyManager(
             _.cloneDeep(this.dependencies),
             _.cloneDeep(this.knownTypeDeclarations)
-        )
+        );
     }
 
     addDependency(fileName: string, depFileName: string): void {
@@ -226,11 +226,11 @@ export class DependencyManager {
     }
 
     clearDependencies(fileName: string): void {
-        this.dependencies[fileName] = []
+        this.dependencies[fileName] = [];
     }
 
     clearCompiledModules(fileName: string): void {
-        this.compiledModules[fileName] = []
+        this.compiledModules[fileName] = [];
     }
 
     getDependencies(fileName: string): string[] {
@@ -238,15 +238,15 @@ export class DependencyManager {
             this.clearDependencies(fileName);
         }
 
-        return this.dependencies[fileName].slice()
+        return this.dependencies[fileName].slice();
     }
 
     addTypeDeclaration(fileName: string) {
-        this.knownTypeDeclarations[fileName] = true
+        this.knownTypeDeclarations[fileName] = true;
     }
 
     hasTypeDeclaration(fileName: string): boolean {
-        return this.knownTypeDeclarations.hasOwnProperty(fileName)
+        return this.knownTypeDeclarations.hasOwnProperty(fileName);
     }
 
     getTypeDeclarations(): {[fileName: string]: boolean} {
@@ -272,7 +272,7 @@ export class DependencyManager {
                     appliedDeps[depFileName] = true;
                     walk(depFileName, depContext);
                 }
-            })
+            });
         };
 
         walk(fileName, result);
@@ -285,8 +285,8 @@ export class DependencyManager {
         }
 
         this.compiledModules[fileName].forEach((mod) => {
-            deps.add(mod)
-        })
+            deps.add(mod);
+        });
     }
 
     applyChain(fileName: string, deps: IDependency) {
@@ -301,8 +301,8 @@ export class DependencyManager {
             let itemFileName = item.fileName;
             if (!appliedDeps[itemFileName]) {
                 appliedDeps[itemFileName] = true;
-                deps.add(itemFileName)
-                item.dependencies.forEach((dep) => walk(dep))
+                deps.add(itemFileName);
+                item.dependencies.forEach((dep) => walk(dep));
             }
         };
 
@@ -314,7 +314,7 @@ export class ValidFilesManager {
     files: {[fileName: string]: boolean} = {};
 
     isFileValid(fileName: string): boolean {
-        return !!this.files[fileName]
+        return !!this.files[fileName];
     }
 
     markFileValid(fileName: string) {

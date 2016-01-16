@@ -12,8 +12,8 @@ export enum MessageType {
 }
 
 export interface IMessage {
-    messageType: MessageType,
-    payload: any
+    messageType: MessageType;
+    payload: any;
 }
 
 export interface IInitPayload {
@@ -63,8 +63,8 @@ export class ModuleResolutionHost implements ts.ModuleResolutionHost {
 }
 
 export class Host implements ts.LanguageServiceHost {
-    moduleResolutionHost: ModuleResolutionHost
-    resolver: SyncResolver
+    moduleResolutionHost: ModuleResolutionHost;
+    resolver: SyncResolver;
 
     constructor() {
         this.moduleResolutionHost = new ModuleResolutionHost(this);
@@ -94,7 +94,7 @@ export class Host implements ts.LanguageServiceHost {
                 file = {
                     version: 0,
                     text: fs.readFileSync(fileName, { encoding: 'utf8' }).toString()
-                }
+                };
 
                 if (path.basename(fileName) !== 'package.json') {
                     env.files[fileName_] = file;
@@ -142,7 +142,7 @@ export class Host implements ts.LanguageServiceHost {
                     }
                 }
                 catch (e) {
-                    resolvedFileName = null
+                    resolvedFileName = null;
                 }
 
                 let tsResolved = env.compiler.resolveModuleName(
@@ -157,7 +157,7 @@ export class Host implements ts.LanguageServiceHost {
                 } else {
                     resolvedModule = {
                         resolvedFileName: resolvedFileName || ''
-                    }
+                    };
                 }
 
                 resolvedModules.push(resolvedModule);

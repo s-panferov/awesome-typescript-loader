@@ -18,7 +18,7 @@ let loaderUtils = require('loader-utils');
 let cachePromise = Promise.promisify(cache);
 
 function loader(text) {
-    compiler.call(undefined, this, text)
+    compiler.call(undefined, this, text);
 }
 
 let externalsInvocation: Promise<void>;
@@ -40,7 +40,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
 
     let resolver = createResolver(webpack._compiler.options.externals, webpack.resolve);
     let depsInjector = {
-        add: (depFileName) => {webpack.addDependency(depFileName)},
+        add: (depFileName) => webpack.addDependency(depFileName),
         clear: webpack.clearDependencies.bind(webpack)
     };
 
@@ -75,12 +75,12 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     }
 
     try {
-        let wasChanged = await state.fileAnalyzer.checkDependencies(resolver, fileName)
+        let wasChanged = await state.fileAnalyzer.checkDependencies(resolver, fileName);
         if (wasChanged || doUpdate) {
             state.updateProgram();
         }
 
-        let compiledModule
+        let compiledModule;
         if (instance.options.usePrecompiledFiles) {
             compiledModule = findCompiledModule(fileName);
         }
@@ -94,7 +94,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                 map: compiledModule.map
                     ? JSON.parse(compiledModule.map)
                     : null
-            }
+            };
         } else {
 
             function transform() {
@@ -125,7 +125,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                         sourceRoot: process.cwd(),
                         filename: fileName,
                         sourceMap: true
-                    }
+                    };
 
                     let babelResult = instance.babelImpl.transform(resultText, defaultOptions);
                     resultText = babelResult.code;
@@ -145,7 +145,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                     directory: instance.options.cacheDirectory,
                     options: webpack.query,
                     transform: transform
-                } as any)
+                } as any);
             } else {
                 transformation = transform();
             }
@@ -166,7 +166,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         }
 
         try {
-            callback(null, resultText, resultSourceMap)
+            callback(null, resultText, resultSourceMap);
         } catch (e) {
             console.error('Error in bail mode:', e);
             process.exit(1);
