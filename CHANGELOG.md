@@ -1,3 +1,37 @@
+<a name"0.15.10"></a>
+### 0.15.10 (2016-01-26)
+
+
+#### Bug Fixes
+
+* ***:**
+  * exclude package.json files from program ([d8546dc1](https://github.com/s-panferov/awesome-typescript-loader/commit/d8546dc1))
+  * fix program update issue ([a606ed89](https://github.com/s-panferov/awesome-typescript-loader/commit/a606ed89))
+* **checker-runtime:** fix SyncResolver type ([b55af480](https://github.com/s-panferov/awesome-typescript-loader/commit/b55af480))
+* **deps:**
+  * don't resolve symlinks to all .d.ts files ([a23d4bf4](https://github.com/s-panferov/awesome-typescript-loader/commit/a23d4bf4))
+  * fix path respolution for angular-style file names ([b43e2d8f](https://github.com/s-panferov/awesome-typescript-loader/commit/b43e2d8f))
+* **host:**
+  * add ad-hoc files lookup to support `typings` scenario ([b768c243](https://github.com/s-panferov/awesome-typescript-loader/commit/b768c243))
+  * import path ([478553a7](https://github.com/s-panferov/awesome-typescript-loader/commit/478553a7))
+* **index:** use instance.options to invoke externals ([1715bee8](https://github.com/s-panferov/awesome-typescript-loader/commit/1715bee8))
+
+
+#### Features
+
+* ***:**
+  * use only .d.ts files from tsconfig.json ([baa4d4e9](https://github.com/s-panferov/awesome-typescript-loader/commit/baa4d4e9))
+  * debounce running checker ([938fc968](https://github.com/s-panferov/awesome-typescript-loader/commit/938fc968))
+  * add glob warning ([0cb62506](https://github.com/s-panferov/awesome-typescript-loader/commit/0cb62506))
+  * add sourceRoot support ([bddf79cb](https://github.com/s-panferov/awesome-typescript-loader/commit/bddf79cb))
+  * use another preset for babel to work on prev node versions ([5c7972d4](https://github.com/s-panferov/awesome-typescript-loader/commit/5c7972d4))
+  * return webpack pre-resolution ([19c559a9](https://github.com/s-panferov/awesome-typescript-loader/commit/19c559a9))
+  * refactor tsconfig parser ([b2f414f1](https://github.com/s-panferov/awesome-typescript-loader/commit/b2f414f1))
+  * async refactor ([9831bdcc](https://github.com/s-panferov/awesome-typescript-loader/commit/9831bdcc))
+* **checker-runtime:** checker now can resolve imports too ([99220c1f](https://github.com/s-panferov/awesome-typescript-loader/commit/99220c1f))
+* **tests:** create a basic test for the loader ([9aed17f4](https://github.com/s-panferov/awesome-typescript-loader/commit/9aed17f4))
+
+
 <a name"0.15.9"></a>
 ### 0.15.9 (2015-12-03)
 
