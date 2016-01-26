@@ -137,11 +137,12 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     let folder = options.tsconfig || process.cwd();
     configFilePath = tsconfig.resolveSync(folder);
     if (configFilePath) {
-        configFile = parseContent(fs.readFileSync(configFilePath).toString(), configFilePath);
+        let content = fs.readFileSync(configFilePath).toString();
+        configFile = parseContent(content, configFilePath);
 
         if (options.resolveGlobs) {
             tsconfigSuggestions(configFile);
-            configFile = tsconfig.readFileSync(configFilePath);
+            configFile = tsconfig.readFileSync(configFilePath, { filterDefinitions: true });
         }
     }
 

@@ -90,7 +90,7 @@ describe('main test', function() {
                 loaders: [
                     {
                         test: /\.tsx?/,
-                        loader: loader + `?tsconfig=${tsConfig}`
+                        loader: loader + '?tsconfig=' + tsConfig
                     },
                 ],
             },
