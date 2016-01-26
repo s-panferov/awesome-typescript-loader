@@ -1,3 +1,4 @@
+import * as ts from "typescript";
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
@@ -50,11 +51,11 @@ export interface ICompilerOptions extends ts.CompilerOptions {
 }
 
 export interface IOutputFile extends ts.OutputFile {
-    sourceName: string
+    sourceName: string;
 }
 
 export interface IEmitOutput extends ts.EmitOutput {
-    outputFiles: IOutputFile[]
+    outputFiles: IOutputFile[];
 }
 
 export class ModuleResolutionHost implements ts.ModuleResolutionHost {
@@ -77,7 +78,7 @@ export class ModuleResolutionHost implements ts.ModuleResolutionHost {
 
 export class Host implements ts.LanguageServiceHost {
     state: State;
-    moduleResolutionHost: ModuleResolutionHost
+    moduleResolutionHost: ModuleResolutionHost;
 
     constructor(state: State) {
         this.state = state;
@@ -151,7 +152,7 @@ export class Host implements ts.LanguageServiceHost {
                 }
             }
             catch (e) {
-                resolvedFileName = null
+                resolvedFileName = null;
             }
 
             let tsResolved = this.state.ts.resolveModuleName(
@@ -166,7 +167,7 @@ export class Host implements ts.LanguageServiceHost {
             } else {
                 resolvedModule = {
                     resolvedFileName: resolvedFileName || ''
-                }
+                };
             }
 
             this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedModule;
@@ -194,7 +195,7 @@ export class State {
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
     resolver: SyncResolver;
-    readFileImpl: (fileName: string) => Promise<Buffer>
+    readFileImpl: (fileName: string) => Promise<Buffer>;
 
     constructor(
         options: ICompilerOptions,
@@ -305,7 +306,7 @@ export class State {
             version: version
         };
 
-        return changed
+        return changed;
     }
 
     addFile(fileName: string, text: string): IFile {
@@ -313,7 +314,7 @@ export class State {
         return this.files[fileName] = {
             text: text,
             version: 0
-        }
+        };
     }
 
     getFile(fileName: string) {

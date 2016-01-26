@@ -24,7 +24,7 @@ export function tsconfigSuggestions(config: TSConfig) {
 
     let hasGlobIgnore = config.filesGlob && (
         config.filesGlob.some(item => item.indexOf('!node_modules') !== -1)
-        ||  !config.filesGlob.some(item => item.indexOf('!./node_modules') !== -1))
+        ||  !config.filesGlob.some(item => item.indexOf('!./node_modules') !== -1));
 
     if (!hasExclude && !hasGlobIgnore) {
         console.warn(TSCONFIG_ERROR);
@@ -35,14 +35,14 @@ export function tsconfigSuggestions(config: TSConfig) {
  * Parse `tsconfig.json` file.
  */
 export function parseContent(contents: string, filename: string): TSConfig {
-    const data = stripComments(stripBom(contents))
+    const data = stripComments(stripBom(contents));
 
     // A tsconfig.json file is permitted to be completely empty.
     if (/^\s*$/.test(data)) {
-        return {}
+        return {};
     }
 
-    return parseJson(data, null, filename)
+    return parseJson(data, null, filename);
 }
 
 function buildEnumMap(tsImpl: typeof ts) {
@@ -83,7 +83,7 @@ function buildEnumMap(tsImpl: typeof ts) {
 export function rawToTsCompilerOptions(jsonOptions, projectDir, tsImpl: typeof ts) {
     let typescriptEnumMap = buildEnumMap(tsImpl);
     let compilerOptions: any = {};
-    for (var key in jsonOptions) {
+    for (let key in jsonOptions) {
         if (typescriptEnumMap[key]) {
             compilerOptions[key] = typescriptEnumMap[key][jsonOptions[key].toLowerCase()];
         }

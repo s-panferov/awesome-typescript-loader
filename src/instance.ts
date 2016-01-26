@@ -32,7 +32,7 @@ interface ICompiler {
         externals: {
             [ key: string ]: string
         }
-    }
+    };
 }
 
 export interface IWebPack {
@@ -48,18 +48,18 @@ export interface IWebPack {
 
 function getRootCompiler(compiler) {
     if (compiler.parentCompilation) {
-        return getRootCompiler(compiler.parentCompilation.compiler)
+        return getRootCompiler(compiler.parentCompilation.compiler);
     } else {
         return compiler;
     }
 }
 
-function getInstanceStore(compiler): {[key:string]: ICompilerInstance} {
+function getInstanceStore(compiler): { [key:string]: ICompilerInstance } {
     let store = getRootCompiler(compiler)._tsInstances;
     if (store) {
-        return store
+        return store;
     } else {
-        throw new Error('Can not resolve instance store')
+        throw new Error('Can not resolve instance store');
     }
 }
 
@@ -90,7 +90,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
 
     let exInstance = resolveInstance(webpack._compiler, instanceName);
     if (exInstance) {
-        return exInstance
+        return exInstance;
     }
 
     let tsFlow = Promise.resolve();
@@ -98,14 +98,14 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     let compilerName = options.compiler || 'typescript';
     let compilerPath = path.dirname(compilerName);
     if (compilerPath == '.') {
-        compilerPath = compilerName
+        compilerPath = compilerName;
     }
 
     let tsImpl: typeof ts;
     try {
         tsImpl = require(compilerPath);
     } catch (e) {
-        console.error(e)
+        console.error(e);
         console.error(COMPILER_ERROR);
         process.exit(1);
     }
@@ -166,7 +166,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     });
 
     options = _.omit(options, 'outDir', 'files', 'exclude') as any;
-    options.externals.push.apply(options.externals, tsFiles)
+    options.externals.push.apply(options.externals, tsFiles);
 
     let babelImpl: any;
     if (options.useBabel) {
@@ -185,7 +185,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         }
 
         if (!fs.existsSync(options.cacheDirectory)) {
-            fs.mkdirSync(options.cacheDirectory)
+            fs.mkdirSync(options.cacheDirectory);
         }
 
         cacheIdentifier = {
@@ -195,7 +195,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
             'babel-core': babelImpl
                 ? babelImpl.version
                 : null
-        }
+        };
     }
 
     let forkChecker = options.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
@@ -224,7 +224,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
             ? createChecker(compilerInfo, options, webpackOptions)
             : null,
         cacheIdentifier
-    }
+    };
 }
 
 function setupWatchRun(compiler, instanceName: string) {
@@ -286,7 +286,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                     console.error('Error in bail mode:', err);
                     process.exit(1);
                 }
-                compilation.errors.push(new Error(err))
+                compilation.errors.push(new Error(err));
             };
 
             let errors = formatErrors(instanceName, diagnostics);
@@ -296,7 +296,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         let phantomImports = [];
         state.allFileNames().forEach((fileName) => {
             if (!instance.compiledFiles[fileName]) {
-                phantomImports.push(fileName)
+                phantomImports.push(fileName);
             }
         });
 

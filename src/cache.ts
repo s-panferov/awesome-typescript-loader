@@ -5,15 +5,15 @@ import * as path from 'path';
 import * as zlib from 'zlib';
 
 export interface CompiledModule {
-    fileName: string,
-    text: string,
-    map?: string,
-    mapName?: string
+    fileName: string;
+    text: string;
+    map?: string;
+    mapName?: string;
 }
 
 export function findCompiledModule(fileName: string): CompiledModule {
     let baseFileName = fileName.replace(/(\.ts|\.tsx)$/, '');
-    let compiledFileName = `${baseFileName}.js`
+    let compiledFileName = `${baseFileName}.js`;
 
     if (fs.existsSync(compiledFileName)) {
         let mapFileName = `${baseFileName}.js.map`;
@@ -27,7 +27,7 @@ export function findCompiledModule(fileName: string): CompiledModule {
             map: isMapExists
                 ? fs.readFileSync(mapFileName).toString()
                 : null
-        }
+        };
         return result;
     } else {
         return null;
