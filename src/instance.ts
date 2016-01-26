@@ -258,6 +258,15 @@ function setupWatchRun(compiler, instanceName: string) {
     });
 }
 
+let runChecker = (instance, payload) => {
+    instance.checker.send({
+        messageType: 'compile',
+        payload
+    });
+};
+
+runChecker = _.debounce(runChecker, 200);
+
 function setupAfterCompile(compiler, instanceName, forkChecker = false) {
     compiler.plugin('after-compile', function(compilation, callback) {
         let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
@@ -269,10 +278,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 resolutionCache: state.host.moduleResolutionHost.resolutionCache
             };
 
-            instance.checker.send({
-                messageType: 'compile',
-                payload
-            });
+            runChecker(instance, payload);
         } else {
             if (!state.program) {
                 // program may be undefined here, if all files

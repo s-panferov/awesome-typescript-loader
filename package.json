@@ -34,7 +34,7 @@
     "colors": "^1.1.2",
     "enhanced-resolve": "^0.9.1",
     "loader-utils": "^0.2.6",
-    "lodash": "^3.10.0",
+    "lodash": "^3.10.1",
     "object-assign": "^2.1.1",
     "parse-json": "^2.2.0",
     "strip-bom": "^2.0.0",
@@ -59,8 +59,10 @@
     "load-grunt-tasks": "^0.6.0",
     "mkdirp": "^0.5.1",
     "mocha": "^2.3.4",
+    "ps-node": "0.0.5",
     "rimraf": "^2.5.0",
     "tslint": "^3.2.2-dev.1",
-    "typescript": "^1.8.0-dev.20151202"
+    "typescript": "^1.8.0-dev.20151202",
+    "webpack-dev-server": "^1.14.1"
   }
 }
