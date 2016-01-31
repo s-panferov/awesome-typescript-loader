@@ -3,6 +3,11 @@ declare module "pinkie-promise" {
     export = promise;
 }
 
+declare module "es6-promisify" {
+    let promise: (foo) => Promise<any>;
+    export = promise;
+}
+
 declare module 'tsconfig' {
     export interface CompilerOptions {
         [key: string]: any;

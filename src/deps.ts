@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as path from 'path';
-import * as Promise from 'bluebird';
+import * as promisify from 'es6-promisify';
 
 import { State } from './host';
 
@@ -22,7 +22,7 @@ export interface IExternals {
 }
 
 export function createResolver(externals: IExternals, webpackResolver: any): IResolver {
-    let resolver: IResolver = Promise.promisify(webpackResolver) as any;
+    let resolver: IResolver = promisify(webpackResolver) as any;
 
     function resolve(base: string, dep: string): Promise<string> {
         if (externals && externals.hasOwnProperty(dep)) {
@@ -139,11 +139,12 @@ export class FileAnalyzer {
         });
 
         let resolvedImports = await Promise.all(task);
+
         return resolvedImports.filter(Boolean);
     }
 
     resolve(resolver: IResolver, fileName: string, defPath: string): Promise<string> {
-        let result;
+        let result: Promise<string>;
 
         if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
             // Make import relative
@@ -156,7 +157,7 @@ export class FileAnalyzer {
             result = Promise.resolve(path.resolve(path.dirname(fileName), defPath));
         } else {
             result = resolver(path.dirname(fileName), defPath)
-                .error(function (error) {
+                .catch(function (error) {
                     // Node builtin modules
                     try {
                         if (require.resolve(defPath) == defPath) {
@@ -171,7 +172,7 @@ export class FileAnalyzer {
         }
 
         return result
-            .error(function (error) {
+            .catch(function (error) {
                 let detailedError: any = new ResolutionError();
                 detailedError.message = error.message + "\n    Required in " + fileName;
                 detailedError.cause = error;

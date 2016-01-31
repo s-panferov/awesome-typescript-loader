@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
-import * as Promise from 'bluebird';
+import * as promisify from 'es6-promisify';
 
 import { FileAnalyzer } from './deps';
 import { loadLib } from './helpers';
@@ -207,7 +207,7 @@ export class State {
         this.compilerInfo = compilerInfo;
         this.resolver = resolver;
         this.fs = fsImpl;
-        this.readFileImpl = Promise.promisify(this.fs.readFile.bind(this.fs)) as any;
+        this.readFileImpl = promisify(this.fs.readFile.bind(this.fs)) as any;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.fileAnalyzer = new FileAnalyzer(this);

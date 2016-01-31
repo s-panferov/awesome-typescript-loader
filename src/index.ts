@@ -4,7 +4,7 @@
 
 require('babel-polyfill');
 
-import * as Promise from 'bluebird';
+import * as promisify from 'es6-promisify';
 import * as _ from 'lodash';
 import * as path from 'path';
 
@@ -15,10 +15,15 @@ import * as helpers from './helpers';
 import { IWebPack, ensureInstance } from './instance';
 
 let loaderUtils = require('loader-utils');
-let cachePromise = Promise.promisify(cache);
+let cachePromise: any = promisify(cache);
 
-function loader(text) {
-    compiler.call(undefined, this, text);
+async function loader(text) {
+    try {
+        await compiler.call(undefined, this, text);
+    } catch(e) {
+        console.error(e, e.stack);
+        throw e;
+    }
 }
 
 let externalsInvocation: Promise<void>;
@@ -110,10 +115,11 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
 
                 resultText = result.text;
 
+                let sourceFileName = fileName.replace(process.cwd() + '/', '');
                 if (result.sourceMap) {
                     resultSourceMap = JSON.parse(result.sourceMap);
-                    resultSourceMap.sources = [ loaderUtils.getRemainingRequest(webpack) ];
-                    resultSourceMap.file = fileName;
+                    resultSourceMap.sources = [ sourceFileName ];
+                    resultSourceMap.file = sourceFileName;
                     resultSourceMap.sourcesContent = [ text ];
 
                     resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');

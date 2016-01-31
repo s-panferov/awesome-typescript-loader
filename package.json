@@ -30,9 +30,9 @@
   "homepage": "https://github.com/s-panferov/awesome-typescript-loader",
   "dependencies": {
     "babel-polyfill": "^6.1.19",
-    "bluebird": "^2.10.2",
     "colors": "^1.1.2",
     "enhanced-resolve": "^0.9.1",
+    "es6-promisify": "^3.0.0",
     "loader-utils": "^0.2.6",
     "lodash": "^3.10.1",
     "object-assign": "^2.1.1",
@@ -62,7 +62,7 @@
     "ps-node": "0.0.5",
     "rimraf": "^2.5.0",
     "tslint": "^3.3.0-dev.1",
-    "typescript": "^1.8.0-dev.20160125",
+    "typescript": "^1.8.0",
     "webpack": "^1.12.12",
     "webpack-dev-server": "^1.14.1"
   }
