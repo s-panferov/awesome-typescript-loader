@@ -79,7 +79,7 @@ const COMPILER_ERROR = colors.red(`\n\nTypescript compiler cannot be found, plea
 `);
 
 const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add it to your package.json file:
-    npm install --save-dev babel
+    npm install --save-dev babel-core
 `);
 
 /**
