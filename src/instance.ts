@@ -13,6 +13,15 @@ import makeResolver from './resolver';
 
 let pkg = require('../package.json');
 
+export interface LoaderPlugin {
+    processProgram?: (program: ts.Program) => void;
+}
+
+export interface LoaderPluginDef {
+    file: string;
+    options: any;
+}
+
 export interface ICompilerInstance {
     tsFlow: Promise<any>;
     tsState: State;
@@ -22,6 +31,8 @@ export interface ICompilerInstance {
     externalsInvoked: boolean;
     checker: any;
     cacheIdentifier: any;
+    plugins: LoaderPluginDef[];
+    initedPlugins: LoaderPlugin[];
 }
 
 interface ICompiler {
@@ -44,6 +55,11 @@ export interface IWebPack {
     resolve: () => void;
     addDependency: (dep: string) => void;
     clearDependencies: () => void;
+    options: {
+        atl?: {
+            plugins: LoaderPluginDef[]
+        }
+    };
 }
 
 function getRootCompiler(compiler) {
@@ -214,6 +230,20 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
 
     let webpackOptions = _.pick(webpack._compiler.options, 'resolve');
 
+    let atlOptions = webpack.options.atl;
+    let plugins: LoaderPluginDef[] = [];
+
+    if (atlOptions && atlOptions.plugins) {
+        plugins = atlOptions.plugins;
+    }
+
+    let initedPlugins = [];
+    if (!forkChecker) {
+        initedPlugins = plugins.map(plugin => {
+            return require(plugin.file)(plugin.options);
+        });
+    }
+
     return getInstanceStore(webpack._compiler)[instanceName] = {
         tsFlow,
         tsState,
@@ -222,9 +252,11 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         options,
         externalsInvoked: false,
         checker: forkChecker
-            ? createChecker(compilerInfo, options, webpackOptions)
+            ? createChecker(compilerInfo, options, webpackOptions, plugins)
             : null,
-        cacheIdentifier
+        cacheIdentifier,
+        plugins,
+        initedPlugins
     };
 }
 
@@ -298,6 +330,10 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
             let errors = formatErrors(instanceName, diagnostics);
             errors.forEach(emitError);
+
+            instance.initedPlugins.forEach(plugin => {
+                plugin.processProgram(state.program);
+            });
         }
 
         let phantomImports = [];

@@ -174,7 +174,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         try {
             callback(null, resultText, resultSourceMap);
         } catch (e) {
-            console.error('Error in bail mode:', e);
+            console.error('Error in bail mode:', e, e.stack.join('\n'));
             process.exit(1);
         }
     } catch (err) {

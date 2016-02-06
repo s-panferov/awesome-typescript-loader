@@ -1,4 +1,5 @@
 import { ICompilerOptions, ICompilerInfo, IFile } from './host';
+import { LoaderPlugin, LoaderPluginDef } from './instance';
 import makeResolver from './resolver';
 import * as colors from 'colors';
 import * as path from 'path';
@@ -20,6 +21,7 @@ export interface IInitPayload {
     compilerOptions: ICompilerOptions;
     compilerInfo: ICompilerInfo;
     webpackOptions: any;
+    plugins: LoaderPluginDef[];
 }
 
 export interface ICompilePayload {
@@ -37,6 +39,8 @@ export interface IEnv {
     resolutionCache?: {[fileName: string]: ts.ResolvedModule};
     program?: ts.Program;
     service?: ts.LanguageService;
+    plugins?: LoaderPluginDef[];
+    initedPlugins?: LoaderPlugin[];
 }
 
 export interface SyncResolver {
@@ -185,6 +189,10 @@ function processInit(payload: IInitPayload) {
     env.webpackOptions = payload.webpackOptions;
     env.host = new Host();
     env.service = env.compiler.createLanguageService(env.host, env.compiler.createDocumentRegistry());
+    env.plugins = payload.plugins;
+    env.initedPlugins = env.plugins.map(plugin => {
+        return require(plugin.file)(plugin.options);
+    });
 }
 
 function processCompile(payload: ICompilePayload) {
@@ -224,6 +232,10 @@ function processCompile(payload: ICompilePayload) {
             );
         }
     }
+
+    env.initedPlugins.forEach(plugin => {
+        plugin.processProgram(program);
+    });
 
     process.send({
         messageType: 'progress',
