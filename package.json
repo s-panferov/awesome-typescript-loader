@@ -63,7 +63,7 @@
     "mocha": "^2.3.4",
     "ps-node": "0.0.5",
     "rimraf": "^2.5.0",
-    "tslint": "^3.3.0-dev.2",
+    "tslint": "^3.5.0-dev.1",
     "typescript": "^1.9.0-dev.20160303",
     "webpack": "^1.12.12",
     "webpack-dev-server": "^1.14.1"
