@@ -2,6 +2,7 @@
 /// <reference path="./defines.d.ts"/>
 /// <reference path='../typings/tsd.d.ts' />
 
+require('source-map-support').install();
 require('babel-polyfill');
 
 import * as promisify from 'es6-promisify';
@@ -105,6 +106,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             function transform() {
                 let resultText;
                 let resultSourceMap = null;
+                console.log(Object.keys(state.files));
                 let output = state.emit(fileName);
 
                 let result = helpers.findResultFor(output, fileName);
@@ -174,10 +176,14 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         try {
             callback(null, resultText, resultSourceMap);
         } catch (e) {
-            console.error('Error in bail mode:', e, e.stack.join('\n'));
+            console.error('Error in bail mode:', e, e.stack.join
+                ? e.stack.join ('\n')
+                : e.stack
+            );
             process.exit(1);
         }
     } catch (err) {
+        console.error(err.toString(), err.stack.toString());
         callback(err, helpers.codegenErrorReport([err]));
     } finally {
         applyDeps();

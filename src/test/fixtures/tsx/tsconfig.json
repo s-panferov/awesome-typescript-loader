@@ -6,6 +6,7 @@
         "removeComments": true,
         "jsx": "react",
         "noLib": false,
+        "noEmit": false,
         "preserveConstEnums": true,
         "experimentalDecorators": true,
         "suppressImplicitAnyIndexErrors": true,

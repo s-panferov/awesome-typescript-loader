@@ -1,32 +1,28 @@
 module.exports = function(grunt) {
     require('load-grunt-tasks')(grunt);
 
+    var options = {
+        compiler: './node_modules/typescript/bin/tsc',
+        module: "commonjs",
+        fast: 'never',
+        preserveConstEnums: true,
+        target: 'es6'
+    };
+
+    var src = ['src/**/*.ts', '!src/test/fixtures/**/*'];
+
     grunt.initConfig({
         clean: ['dist'],
         ts: {
             default : {
-                options: {
-                    compiler: './node_modules/typescript/bin/tsc',
-                    module: "commonjs",
-                    fast: 'never',
-                    preserveConstEnums: true,
-                    target: 'es6'
-                },
-                src: 'src/**/*.ts',
+                options: options,
+                src: src,
                 outDir: 'dist'
             },
             watch : {
-                options: {
-                    compiler: './node_modules/typescript/bin/tsc',
-                    module: "commonjs",
-                    fast: 'never',
-                    preserveConstEnums: true,
-                    moduleResolution: "node",
-                    target: 'es6',
-                    experimentalAsyncFunctions: true
-                },
-                src: 'src/**/*.ts',
-                watch: 'src/',
+                options: options,
+                src: src,
+                watch: ['src/'],
                 outDir: 'dist'
             }
         },

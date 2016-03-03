@@ -25,6 +25,13 @@
         "./index.ts",
         "./instance.ts",
         "./resolver.ts",
+        "./test/checker.ts",
+        "./test/fixtures/basic/basic.ts",
+        "./test/fixtures/checker/to-check.ts",
+        "./test/fixtures/errors/with-type-errors.ts",
+        "./test/index.ts",
+        "./test/salsa.ts",
+        "./test/utils.ts",
         "./tsconfig-utils.ts"
     ],
     "atom": {
