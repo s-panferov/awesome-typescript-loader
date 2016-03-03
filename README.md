@@ -1,6 +1,7 @@
 # The best TypeScript loader for Webpack
 
 [![Join the chat at https://gitter.im/s-panferov/awesome-typescript-loader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-panferov/awesome-typescript-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/s-panferov/awesome-typescript-loader.svg?branch=master)](https://travis-ci.org/s-panferov/awesome-typescript-loader)
 
 TypeScript loader for Webpack. This project was started as a fork of https://github.com/andreypopp/typescript-loader.
 Thanks @andreypopp for the great project.
