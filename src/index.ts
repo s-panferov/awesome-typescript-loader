@@ -106,7 +106,6 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             function transform() {
                 let resultText;
                 let resultSourceMap = null;
-                console.log(Object.keys(state.files));
                 let output = state.emit(fileName);
 
                 let result = helpers.findResultFor(output, fileName);

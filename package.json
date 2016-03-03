@@ -8,7 +8,7 @@
     "prepublish": "grunt",
     "babel": "babel dist --presets es2015 --out-dir dist.babel --watch --source-maps",
     "babel-compile": "babel dist --presets es2015 --out-dir dist.babel --source-maps",
-    "test": "mocha",
+    "test": "mocha dist.babel/test",
     "build": "npm run grunt && npm run babel-compile",
     "lint": "./node_modules/.bin/tslint src/*.ts"
   },

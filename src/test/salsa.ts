@@ -4,7 +4,7 @@ import {
 } from './utils';
 
 describe('salsa test', function() {
-    it('should compile js file', async function() {
+    xit('should compile js file', async function() {
         let config =  {
             entry: fixturePath(['salsa', 'index.js'])
         };

@@ -264,8 +264,6 @@ export class State {
             });
         }
 
-        console.log(this.program.getCompilerOptions());
-
         let source = this.program.getSourceFile(fileName);
         if (!source) {
             this.updateProgram();
@@ -276,8 +274,6 @@ export class State {
         }
 
         let emitResult = this.program.emit(source, writeFile);
-
-        console.log(emitResult);
 
         let output = {
             outputFiles: outputFiles,
