@@ -50,7 +50,7 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
             loaders: [
                 {
                     test: /\.(tsx?|jsx?)/,
-                    loader: loaderDir + '?target=es5' + options.loaderParams,
+                    loader: loaderDir + '?target=es6' + options.loaderParams,
                 },
             ],
         },
