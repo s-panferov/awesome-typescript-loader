@@ -6,3 +6,4 @@ tscommand
 npm-debug.log
 .awcache
 test/output
+src/test/output

@@ -44,7 +44,12 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     let callback = webpack.async();
     let fileName = state.normalizePath(webpack.resourcePath);
 
-    let resolver = createResolver(webpack._compiler.options.externals, webpack.resolve);
+    let resolver = createResolver(
+        webpack._compiler.options.externals,
+        state.options.exclude || [],
+        webpack.resolve
+    );
+
     let depsInjector = {
         add: (depFileName) => webpack.addDependency(depFileName),
         clear: webpack.clearDependencies.bind(webpack)

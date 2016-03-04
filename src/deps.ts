@@ -21,14 +21,38 @@ export interface IExternals {
     [key: string]: string;
 }
 
-export function createResolver(externals: IExternals, webpackResolver: any): IResolver {
+export type Exclude = string[];
+
+export function createResolver(
+    externals: IExternals,
+    exclude: Exclude,
+    webpackResolver: any
+): IResolver {
     let resolver: IResolver = promisify(webpackResolver) as any;
 
     function resolve(base: string, dep: string): Promise<string> {
-        if (externals && externals.hasOwnProperty(dep)) {
+        let inWebpackExternals = externals && externals.hasOwnProperty(dep);
+        let inTypeScriptExclude = false;
+
+        if ((inWebpackExternals || inTypeScriptExclude)) {
             return Promise.resolve<string>('%%ignore');
         } else {
-            return resolver(base, dep);
+            return resolver(base, dep).then(resultPath => {
+                // ignore excluded javascript
+                if (!resultPath.match(/.tsx?$/)) {
+                    let matchedExcludes = exclude.filter((excl) => {
+                        return resultPath.indexOf(excl) !== -1;
+                    });
+
+                    if (matchedExcludes.length > 0) {
+                        return '%%ignore';
+                    } else {
+                        return resultPath;
+                    }
+                } else {
+                    return resultPath;
+                }
+            });
         }
     }
 
@@ -100,7 +124,7 @@ export class FileAnalyzer {
                     this.dependencies.addTypeDeclaration(importPath);
                     tasks.push(this.checkDependencies(resolver, importPath));
                 }
-            } else if (isRequiredJs) {
+            } else if (isRequiredJs && !this.state.options.allowJs) {
                 continue;
             } else {
                 this.dependencies.addDependency(fileName, importPath);
@@ -139,7 +163,6 @@ export class FileAnalyzer {
         });
 
         let resolvedImports = await Promise.all(task);
-
         return resolvedImports.filter(Boolean);
     }
 

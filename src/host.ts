@@ -38,6 +38,7 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
     useWebpackText?: boolean;
+    exclude?: string[];
     externals?: any;
     doTypeCheck?: boolean;
     forkChecker?: boolean;
@@ -99,6 +100,16 @@ export class Host implements ts.LanguageServiceHost {
         let file = this.state.getFile(fileName);
         if (!file) {
             try {
+                // ignore excluded javascript
+                if (!fileName.match(/\.tsx?$|package[.]json?$/)) {
+                    let matchedExcludes = this.state.options.exclude.filter((excl) => {
+                        return fileName.indexOf(excl) !== -1;
+                    });
+                    if (matchedExcludes.length > 0) {
+                        return;
+                    }
+                }
+
                 let text = this.state.readFileSync(fileName);
                 file = {
                     version: 0,

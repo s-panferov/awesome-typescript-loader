@@ -2,13 +2,10 @@
     "compilerOptions": {
         "target": "es5",
         "declaration": false,
-        "noImplicitAny": false,
-        "noEmitOnError": false,
-        "allowNonTsExtensions": true,
-        "allowJs": true,
-        "noLib": true
+        "allowJs": true
     },
     "exclude": [
+        "exclude",
         "node_modules",
         "bower_components"
     ]

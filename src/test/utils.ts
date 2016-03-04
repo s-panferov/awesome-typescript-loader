@@ -25,12 +25,14 @@ export interface ConfigOptions {
     loaderParams?: string;
     watch?: boolean;
     forkChecker?: boolean;
+    include?: (string | RegExp)[];
+    exclude?: (string | RegExp)[];
 }
 
 let defaultOptions: ConfigOptions = {
     loaderParams: '',
     watch: false,
-    forkChecker: false
+    forkChecker: false,
 };
 
 export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
@@ -41,16 +43,27 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
             path: defaultOutputDir,
             filename: '[name].js'
         },
+        resolve: {
+            extensions: ['', '.ts', '.tsx', '.js', '.jsx'],
+        },
         module: {
             loaders: [
                 {
                     test: /\.(tsx?|jsx?)/,
-                    loader: loaderDir + '?doTypeCheck&target=es6' + options.loaderParams,
+                    loader: loaderDir + '?target=es5' + options.loaderParams,
                 },
             ],
         },
         plugins: []
     };
+
+    if (options.include) {
+        (defaultConfig.module.loaders[0] as any).include = options.include;
+    }
+
+    if (options.exclude) {
+        (defaultConfig.module.loaders[0] as any).exclude = options.exclude;
+    }
 
     if (options.watch) {
         defaultConfig.watch = true;

@@ -167,6 +167,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         if (configFile.compilerOptions) {
             _.extend(options, configFile.compilerOptions);
             _.extend(options, (configFile as any).awesomeTypescriptLoaderOptions);
+            options.exclude = configFile.exclude || [];
             tsFiles = configFile.files;
         }
     }
@@ -179,10 +180,11 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         sourceMap: true,
         verbose: false,
         noLib: false,
+        suppressOutputPathCheck: true,
         sourceRoot: process.cwd()
     });
 
-    options = _.omit(options, 'outDir', 'files', 'exclude') as any;
+    options = _.omit(options, 'outDir', 'files') as any;
     options.externals.push.apply(options.externals, tsFiles);
 
     let babelImpl: any;
@@ -263,9 +265,13 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
 function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', async function (watching, callback) {
         let compiler: ICompiler = watching.compiler;
-        let resolver = createResolver(compiler.options.externals, watching.compiler.resolvers.normal.resolve);
         let instance = resolveInstance(watching.compiler, instanceName);
         let state = instance.tsState;
+        let resolver = createResolver(
+            compiler.options.externals,
+            state.options.exclude || [],
+            watching.compiler.resolvers.normal.resolve
+        );
         let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         let changedFiles = Object.keys(mtimes);
 
@@ -275,7 +281,7 @@ function setupWatchRun(compiler, instanceName: string) {
 
         try {
             let tasks = changedFiles.map(async function(changedFile) {
-                if (/\.ts$|\.d\.ts|\.tsx$/.test(changedFile)) {
+                if (/\.ts$|\.d\.ts$|\.tsx$|\.js$|\.jsx$/.test(changedFile)) {
                     await state.readFileAndUpdate(changedFile);
                     await state.fileAnalyzer.checkDependencies(resolver, changedFile);
                 }
