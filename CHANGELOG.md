@@ -1,3 +1,22 @@
+<a name"0.16.0-rc.0"></a>
+### 0.16.0-rc.0 (2016-03-04)
+
+
+#### Bug Fixes
+
+* **instance:** fix error message about babel ([bd1e0b08](https://github.com/s-panferov/awesome-typescript-loader/commit/bd1e0b08))
+
+
+#### Features
+
+* ***:**
+  * allowJs works (wip) ([d7a8a641](https://github.com/s-panferov/awesome-typescript-loader/commit/d7a8a641))
+  * xit salsa test for now ([6c973b6a](https://github.com/s-panferov/awesome-typescript-loader/commit/6c973b6a))
+  * add travis to project ([0c6309a2](https://github.com/s-panferov/awesome-typescript-loader/commit/0c6309a2))
+  * loader plugins (e.g. docscript) ([76d0a548](https://github.com/s-panferov/awesome-typescript-loader/commit/76d0a548))
+  * remove bluebird, format filename for sourcemaps ([1dacfa85](https://github.com/s-panferov/awesome-typescript-loader/commit/1dacfa85))
+
+
 <a name"0.15.10"></a>
 ### 0.15.10 (2016-01-26)
 
