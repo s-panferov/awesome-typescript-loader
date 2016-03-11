@@ -128,7 +128,7 @@ Less logging from the checker.
 
 ### useBabel *(boolean) (default=false)*
 
-Invoke Babel to traspile files. Useful with ES6 target.
+Invoke Babel to transpile files. Useful with ES6 target.
 
 ### usePrecompiledFiles *(boolean) (default=false)*
 
