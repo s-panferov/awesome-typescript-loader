@@ -1,3 +1,14 @@
+<a name"0.16.0"></a>
+## 0.16.0 (2016-03-19)
+
+
+#### Features
+
+* ***:**
+  * resolve tsconfig with different name ([ebe24d98](https://github.com/s-panferov/awesome-typescript-loader/commit/ebe24d98))
+  * resolve tsconfig with different name ([0de96388](https://github.com/s-panferov/awesome-typescript-loader/commit/0de96388))
+
+
 <a name"0.16.0-rc.0"></a>
 ### 0.16.0-rc.0 (2016-03-04)
 
