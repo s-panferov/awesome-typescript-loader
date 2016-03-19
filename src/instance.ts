@@ -23,6 +23,7 @@ export interface LoaderPluginDef {
 }
 
 export interface ICompilerInstance {
+    id: number;
     tsFlow: Promise<any>;
     tsState: State;
     babelImpl?: any;
@@ -33,6 +34,7 @@ export interface ICompilerInstance {
     cacheIdentifier: any;
     plugins: LoaderPluginDef[];
     initedPlugins: LoaderPlugin[];
+    externalsInvocation: Promise<any>;
 }
 
 interface ICompiler {
@@ -101,6 +103,7 @@ const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add i
 /**
  * Creates compiler instance
  */
+let id = 0;
 export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceName: string): ICompilerInstance {
     ensureInstanceStore(webpack._compiler);
 
@@ -251,6 +254,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     }
 
     return getInstanceStore(webpack._compiler)[instanceName] = {
+        id: ++id,
         tsFlow,
         tsState,
         babelImpl,
@@ -262,7 +266,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
             : null,
         cacheIdentifier,
         plugins,
-        initedPlugins
+        initedPlugins,
+        externalsInvocation: null
     };
 }
 

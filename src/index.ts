@@ -27,8 +27,6 @@ async function loader(text) {
     }
 }
 
-let externalsInvocation: Promise<void>;
-
 async function compiler(webpack: IWebPack, text: string): Promise<void> {
     if (webpack.cacheable) {
         webpack.cacheable();
@@ -65,16 +63,19 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     });
 
     if (instance.options.externals && !instance.externalsInvoked) {
-        if (externalsInvocation) {
-            await externalsInvocation;
+        if (instance.externalsInvocation) {
+            await instance.externalsInvocation;
         } else {
-            externalsInvocation = instance.options.externals.map(async (external) => {
+            let promises = instance.options.externals.map(async (external) => {
                 await state.fileAnalyzer.checkDependencies(resolver, external);
             });
 
-            await Promise.all(externalsInvocation as any);
+            instance.externalsInvocation = Promise.all(promises).then(() => {
+                instance.externalsInvoked = true;
+            });
+
+            await instance.externalsInvocation;
         }
-        instance.externalsInvoked = true;
     }
 
     instance.compiledFiles[fileName] = true;
