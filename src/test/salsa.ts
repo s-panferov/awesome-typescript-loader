@@ -14,6 +14,9 @@ describe('salsa test', function() {
         let exclude = [ /exclude/ ];
 
         let stats = await cleanAndCompile(createConfig(config, { loaderParams, exclude }));
+
+        console.log(stats.compilation.errors);
+
         expect(stats.compilation.errors.length).eq(2);
         expect(stats.compilation.errors[0].toString()).include('Cannot find module');
         expect(stats.compilation.errors[1].toString()).include(`Argument of type 'string'`);

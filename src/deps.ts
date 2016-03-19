@@ -163,7 +163,9 @@ export class FileAnalyzer {
         });
 
         let resolvedImports = await Promise.all(task);
-        return resolvedImports.filter(Boolean);
+
+        // FIXME ts bug 
+        return resolvedImports.filter(Boolean) as any;
     }
 
     resolve(resolver: IResolver, fileName: string, defPath: string): Promise<string> {

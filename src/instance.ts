@@ -150,8 +150,12 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
 
     let configFilePath: string;
     let configFile: tsconfig.TSConfig;
-    let folder = options.tsconfig || process.cwd();
-    configFilePath = tsconfig.resolveSync(folder);
+    if (options.tsconfig && options.tsconfig.match(/\.json$/)) {
+        configFilePath = options.tsconfig;
+    } else {
+        configFilePath = tsconfig.resolveSync(options.tsconfig || process.cwd());
+    }
+
     if (configFilePath) {
         let content = fs.readFileSync(configFilePath).toString();
         configFile = parseContent(content, configFilePath);
