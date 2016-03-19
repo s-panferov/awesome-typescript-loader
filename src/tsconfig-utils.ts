@@ -17,6 +17,9 @@ const TSCONFIG_ERROR = colors.red(`\n\n[awesome-typescript-loader] You have \`re
 `);
 
 export function tsconfigSuggestions(config: TSConfig) {
+    let hasOnlyFiles = config.files && !config.filesGlob && !config.exclude;
+    if (hasOnlyFiles) { return; }
+
     let hasExclude = config.exclude && (
         config.exclude.indexOf('node_modules') !== -1
         || config.exclude.indexOf('./node_modules') !== -1
