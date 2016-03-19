@@ -191,7 +191,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         sourceRoot: process.cwd()
     });
 
-    options = _.omit(options, 'outDir', 'files') as any;
+    options = _.omit(options, 'outDir', 'files', 'out') as any;
     options.externals.push.apply(options.externals, tsFiles);
 
     let babelImpl: any;
