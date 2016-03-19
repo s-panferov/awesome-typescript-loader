@@ -1,3 +1,14 @@
+<a name"0.16.2"></a>
+### 0.16.2 (2016-03-19)
+
+
+#### Bug Fixes
+
+* ***:**
+  * don't show exclude warning when only files present, ([cf19faec](https://github.com/s-panferov/awesome-typescript-loader/commit/cf19faec), closes [#97](https://github.com/s-panferov/awesome-typescript-loader/issues/97))
+  * ignore `out` option. ([53276b03](https://github.com/s-panferov/awesome-typescript-loader/commit/53276b03), closes [#96](https://github.com/s-panferov/awesome-typescript-loader/issues/96))
+
+
 <a name"0.16.1"></a>
 ### 0.16.1 (2016-03-19)
 
