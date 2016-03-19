@@ -1,3 +1,12 @@
+<a name"0.16.1"></a>
+### 0.16.1 (2016-03-19)
+
+
+#### Bug Fixes
+
+* ***:** remove common instance lock, ([7b1a3a78](https://github.com/s-panferov/awesome-typescript-loader/commit/7b1a3a78), closes [#103](https://github.com/s-panferov/awesome-typescript-loader/issues/103))
+
+
 <a name"0.16.0"></a>
 ## 0.16.0 (2016-03-19)
 
