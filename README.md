@@ -76,9 +76,9 @@ set to the NPM name of the compiler, e.g. *ntypescript* or path to a `tsc` file.
 Note that the compiler must be installed in **your** project. You can also use
 nightly versions.
 
-### emitRequireType *(boolean) (default=true)*
+### emitRequireType *(boolean) (default=false)*
 
-Specify whether or not the loader emits webpacks's require type. You might use `emitRequireType=false` with Node, because it already has own require type in `node.d.ts` file.
+Specify whether or not the loader emits webpacks's require type.
 
 ### library *(string) (default='es5' possible='es6')*
 
