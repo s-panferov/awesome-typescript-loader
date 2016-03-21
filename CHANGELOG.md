@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.0"></a>
+### 0.17.0-rc.0 (2016-03-21)
+
+
+#### Features
+
+* ***:** prefer query-string options, ([dfb62b1d](https://github.com/s-panferov/awesome-typescript-loader/commit/dfb62b1d), closes [#107](https://github.com/s-panferov/awesome-typescript-loader/issues/107))
+
+
 <a name"0.16.2"></a>
 ### 0.16.2 (2016-03-19)
 
