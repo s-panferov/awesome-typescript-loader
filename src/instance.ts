@@ -172,8 +172,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     let tsFiles: string[] = [];
     if (configFile) {
         if (configFile.compilerOptions) {
-            _.extend(options, configFile.compilerOptions);
-            _.extend(options, (configFile as any).awesomeTypescriptLoaderOptions);
+            _.defaults(options, (configFile as any).awesomeTypescriptLoaderOptions);
+            _.defaults(options, configFile.compilerOptions);
             options.exclude = configFile.exclude || [];
             tsFiles = configFile.files;
         }
