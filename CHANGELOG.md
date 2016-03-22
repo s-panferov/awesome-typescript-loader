@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.1"></a>
+### 0.17.0-rc.1 (2016-03-22)
+
+
+#### Features
+
+* ***:** exclude noEmit option ([090f26aa](https://github.com/s-panferov/awesome-typescript-loader/commit/090f26aa))
+
+
 <a name"0.17.0-rc.0"></a>
 ### 0.17.0-rc.0 (2016-03-21)
 
