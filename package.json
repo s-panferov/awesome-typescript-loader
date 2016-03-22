@@ -64,7 +64,7 @@
     "ps-node": "0.0.5",
     "rimraf": "^2.5.0",
     "tslint": "3.5.0-dev.1",
-    "typescript": "^1.9.0-dev.20160319",
+    "typescript": "^1.9.0-dev.20160321",
     "webpack": "^1.12.12",
     "webpack-dev-server": "^1.14.1"
   }
