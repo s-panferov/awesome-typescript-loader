@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.2"></a>
+### 0.17.0-rc.2 (2016-03-23)
+
+
+#### Features
+
+* ***:** update resolver to work with webpack2, refs #109 ([680d036a](https://github.com/s-panferov/awesome-typescript-loader/commit/680d036a))
+
+
 <a name"0.17.0-rc.1"></a>
 ### 0.17.0-rc.1 (2016-03-22)
 
