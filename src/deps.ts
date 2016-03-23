@@ -38,6 +38,10 @@ export function createResolver(
             return Promise.resolve<string>('%%ignore');
         } else {
             return resolver(base, dep).then(resultPath => {
+                if (Array.isArray(resultPath)) {
+                    resultPath = resultPath[0];
+                }
+
                 // ignore excluded javascript
                 if (!resultPath.match(/.tsx?$/)) {
                     let matchedExcludes = exclude.filter((excl) => {
@@ -164,7 +168,7 @@ export class FileAnalyzer {
 
         let resolvedImports = await Promise.all(task);
 
-        // FIXME ts bug 
+        // FIXME ts bug
         return resolvedImports.filter(Boolean) as any;
     }
 
