@@ -4,10 +4,10 @@
 [![Build Status](https://travis-ci.org/s-panferov/awesome-typescript-loader.svg?branch=master)](https://travis-ci.org/s-panferov/awesome-typescript-loader)
 
 TypeScript loader for Webpack. This project was started as a fork of https://github.com/andreypopp/typescript-loader.
-Thanks @andreypopp for the great project.
+Thanks to @andreypopp for the great project.
 
 The main goal of this loader is to support the **watch** mode and *webpack-dev-server* with **incremental** compilation.
-Also there are a lot of problems in other TypeScript loaders that were fixed here.
+There are a lot of problems in other TypeScript loaders that are fixed here.
 
 ## Installation
 
@@ -25,15 +25,15 @@ npm install awesome-typescript-loader --save-dev
 ```javascript
 module.exports = {
 
-  // Currently we need to add '.ts' to resolve.extensions array.
+  // Currently we need to add '.ts' to the resolve.extensions array.
   resolve: {
     extensions: ['', '.ts', '.webpack.js', '.web.js', '.js']
   },
 
-  // Source maps support (or 'inline-source-map' also works)
+  // Source maps support ('inline-source-map' also works)
   devtool: 'source-map',
 
-  // Add loader for .ts files.
+  // Add the loader for .ts files.
   module: {
     loaders: [
       {
@@ -45,7 +45,7 @@ module.exports = {
 };
 ```
 
-After that, you would be able to build TypeScript files with webpack.
+After that, you will be able to build TypeScript files with webpack.
 
 ## TS defaults
 
@@ -53,7 +53,7 @@ After that, you would be able to build TypeScript files with webpack.
 
 ## tsconfig.json
 
-You can use tsconfig.json file to configure your compiler and loader:
+You can use the tsconfig.json file to configure your compiler and loader:
 
 ```
 {
@@ -71,8 +71,8 @@ You can use tsconfig.json file to configure your compiler and loader:
 
 ### compiler *(string) (default='typescript')*
 
-Allows use of TypeScript compilers other than the official one. Should be
-set to the NPM name of the compiler, e.g. *ntypescript* or path to a `tsc` file.
+Allows use of TypeScript compilers other than the official one. Must be
+set to the NPM name of the compiler, e.g. *ntypescript* or the path to a `tsc` file.
 Note that the compiler must be installed in **your** project. You can also use
 nightly versions.
 
@@ -82,23 +82,23 @@ Specify whether or not the loader emits webpacks's require type.
 
 ### library *(string) (default='es5' possible='es6')*
 
-Allows use of library other than the `target`'s default one. Useful when you want to use ES6 library with ES5 target. Also you might use `library=es6` with Node.
+Allows the use of libraries other than the `target`'s default one. Useful when you want to use ES6 library with ES5 target. Additionally you might use `library=es6` with Node.
 
 ### instanceName *(string) (default='default')*
 
-Allows to use several TypeScript compilers with different settings in one app. Just override `instanceName` to initialize another instance.
+Allows the use of several TypeScript compilers with different settings in one app. Override `instanceName` to initialize another instance.
 
 ### reEmitDependentFiles *(boolean) (default=false')*
 
-Collect files dependency graph and re-emit all dependent files along with changed file.
+Collect file dependency graph and re-emit all dependent files along with the changed file.
 
 ### tsconfig *(string) (default='tsconfig.json')*
 
-Specify path to a TS config file. Useful when you have multiple config files. This setting is useless *inside* TS config file.
+Specifies the path to a TS config file. This is useful when you have multiple config files. This setting is useless *inside* a TS config file.
 
 ### useWebpackText *(boolean) (default=false)*
 
-Use this setting to force loader to use webpack's way to load files. Useful only with ts-jsx-loader. Builds may become slower.
+Use this setting to force the loader to use webpack's method of loading files. Useful only with ts-jsx-loader. Builds may become slower.
 
 ### externals *(array)*
 
@@ -106,11 +106,11 @@ Array of paths to .d.ts files that must be included in program. Useful with `rew
 
 ### doTypeCheck *(boolean) (default=true)*
 
-Use this setting to disable type checking if you want.
+Use this setting to disable type checking.
 
 ### forkChecker *(boolean) (default=false)*
 
-Do type checking in a separate process, so webpack don't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
+Do type checking in a separate process, so webpack doesn't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
 
 Works only with `ForkCheckerPlugin`:
 
@@ -136,7 +136,7 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 
 ### useCache *(boolean) (default=false)*
 
-Use internal file cache. Useful with Babel, when processing takes a long time to complete. Improves warm-up time.
+Use internal file cache. This is useful with Babel, when processing takes a long time to complete. Improves warm-up time.
 
 ### cacheDirectory *(string) (default='.awcache')*
 
@@ -152,7 +152,7 @@ You can pass compiler options inside loader query string or in tsconfig file.
 
 ## Using with --watch or webpack-dev-server
 
-This loader has support of both `--watch` and `webpack-dev-server` modes. It handles file dependencies
+This loader supports both `--watch` and `webpack-dev-server` modes. It handles file dependencies
 using internal webpack dependency markers. When you change a file, the loader recompiles all the dependencies.
 
 ## External Modules
@@ -169,8 +169,7 @@ import * as React from 'react';
 
 ## Internal Modules
 
-This project doesn't aim to support internal modules, because it's hard to resolve dependencies for the watch
-mode if you use such modules. Of course, you can still use them without watch, but this function is **unstable**.
+This project doesn't aim to support internal modules, because it's hard to resolve dependencies for the watch mode. Of course, you can still use them without watch, but this function is **unstable**.
 
 ## Declaration files
 
