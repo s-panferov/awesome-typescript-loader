@@ -18,9 +18,15 @@ function isSourceMapEmit(fileName, outputFileName, sourceFileName) {
         && (outputFileName.substr(-7) === '.js.map' || outputFileName.substr(-8) === '.jsx.map');
 }
 
+function isDeclarationEmit(fileName, outputFileName, sourceFileName) {
+    return sourceFileName === fileName
+        && (outputFileName.substr(-5) === '.d.ts');
+}
+
 export function findResultFor(output: host.IEmitOutput, fileName: string) {
     let text;
     let sourceMap;
+    let declaration: host.IOutputFile;
     fileName = withoutExt(path.normalize(fileName));
 
     for (let i = 0; i < output.outputFiles.length; i++) {
@@ -33,10 +39,14 @@ export function findResultFor(output: host.IEmitOutput, fileName: string) {
         if (isSourceMapEmit(fileName, outputFileName, sourceFileName)) {
             sourceMap = o.text;
         }
+        if (isDeclarationEmit(fileName, outputFileName, sourceFileName)) {
+            declaration = o;
+        }
     }
     return {
         text: text,
-        sourceMap: sourceMap
+        sourceMap: sourceMap,
+        declaration
     };
 }
 

@@ -119,6 +119,13 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                     throw new Error('No output found for ' + fileName);
                 }
 
+                if (result.declaration) {
+                    webpack.emitFile(
+                        path.relative(process.cwd(), result.declaration.sourceName),
+                        result.declaration.text
+                    );
+                }
+
                 resultText = result.text;
 
                 let sourceFileName = fileName.replace(process.cwd() + '/', '');

@@ -57,6 +57,7 @@ export interface IWebPack {
     resolve: () => void;
     addDependency: (dep: string) => void;
     clearDependencies: () => void;
+    emitFile: (fileName: string, text: string) => void;
     options: {
         atl?: {
             plugins: LoaderPluginDef[]
@@ -357,6 +358,21 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 phantomImports.push(fileName);
             }
         });
+
+        if (instance.options.declaration) {
+            phantomImports.forEach(imp => {
+                let output = instance.tsState.services.getEmitOutput(imp);
+                let declarationFile = output.outputFiles.filter(filePath =>
+                    !!filePath.name.match(/\.d.ts$/))[0];
+                if (declarationFile) {
+                    let assetPath = path.relative(process.cwd(), declarationFile.name);
+                    compilation.assets[assetPath] = {
+                        source: () => declarationFile.text,
+                        size: () => declarationFile.text.length
+                    };
+                }
+            });
+        }
 
         instance.compiledFiles = {};
         compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
