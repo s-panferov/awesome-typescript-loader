@@ -248,6 +248,12 @@ export class State {
         return Object.keys(this.files);
     }
 
+    getSourceFile(fileName: string): ts.SourceFile {
+        let services: any = this.services;
+        // FIXME @spanferov `getNonBoundSourceFile` is internal API
+        return (services.getSourceFile || services.getNonBoundSourceFile)(fileName);
+    }
+
     /**
      * Returns all the files in this state.
      * Don't add new files using this value (eg `allFiles()[newFilePath] = ...`), just use it as a

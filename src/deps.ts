@@ -141,7 +141,7 @@ export class FileAnalyzer {
     }
 
     async findImportDeclarations(resolver: IResolver, fileName: string): Promise<string[]> {
-        let sourceFile = this.state.services.getSourceFile(fileName);
+        let sourceFile = this.state.getSourceFile(fileName);
         let isDeclaration = isTypeDeclaration(fileName);
 
         let imports = [];
