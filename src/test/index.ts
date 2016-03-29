@@ -29,14 +29,14 @@ describe('main test', function() {
     });
 
     it('should load tsx files and use tsconfig', async function() {
-        let tsConfig = fixturePath(['tsx', 'tsconfig.json']);
+        let tsconfig = fixturePath(['tsx', 'tsconfig.json']);
         let config = {
             entry: fixturePath(['tsx', 'basic.tsx'])
         };
 
-        let loaderParams = `&tsconfig=${tsConfig}`;
+        let loaderQuery = { tsconfig };
 
-        let stats = await cleanAndCompile(createConfig(config, { loaderParams }));
+        let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
         expect(stats.compilation.errors.length).eq(1);
 
         let result = await readOutputFile();

@@ -128,15 +128,21 @@ Less logging from the checker.
 
 ### useBabel *(boolean) (default=false)*
 
-Invoke Babel to transpile files. Useful with ES6 target.
+Invoke Babel to transpile files. Useful with ES6 target. Please see `useCache` option
+which can improve warm-up time.
 
-### usePrecompiledFiles *(boolean) (default=false)*
+### babelOptions *(object) (default=null)*
 
-Use pre-compiled files if any. Files must be named as `{filename}.js` and `{filename}.map`.
+Use this option to pass some options to Babel (e.g. presets). Please note that
+[`.babelrc` file](https://babeljs.io/docs/usage/babelrc/) is more universal way to do this.
 
 ### useCache *(boolean) (default=false)*
 
 Use internal file cache. This is useful with Babel, when processing takes a long time to complete. Improves warm-up time.
+
+### usePrecompiledFiles *(boolean) (default=false)*
+
+Use pre-compiled files if any. Files must be named as `{filename}.js` and `{filename}.map`.
 
 ### cacheDirectory *(string) (default='.awcache')*
 

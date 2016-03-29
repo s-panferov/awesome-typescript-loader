@@ -10,10 +10,10 @@ describe('salsa test', function() {
         };
 
         let tsconfig = fixturePath(['salsa', 'tsconfig.json']);
-        let loaderParams = `&tsconfig=${tsconfig}`;
+        let loaderQuery = { tsconfig };
         let exclude = [ /exclude/ ];
 
-        let stats = await cleanAndCompile(createConfig(config, { loaderParams, exclude }));
+        let stats = await cleanAndCompile(createConfig(config, { loaderQuery, exclude }));
 
         console.log(stats.compilation.errors);
 

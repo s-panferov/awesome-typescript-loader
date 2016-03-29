@@ -41,7 +41,9 @@ describe('checker test', function() {
         {
             watch: true,
             forkChecker: true,
-            loaderParams: '&+forkChecker'
+            loaderQuery: {
+                forkChecker: true
+            }
         }
     );
 

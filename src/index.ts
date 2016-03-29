@@ -36,7 +36,6 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     let instanceName = options.instanceName || 'default';
 
     let instance = ensureInstance(webpack, options, instanceName);
-
     let state = instance.tsState;
 
     let callback = webpack.async();
@@ -140,7 +139,9 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                         sourceMap: true
                     };
 
-                    let babelResult = instance.babelImpl.transform(resultText, defaultOptions);
+                    let babelOptions = Object.assign({}, defaultOptions, options.babelOptions);
+                    let babelResult = instance.babelImpl.transform(resultText, babelOptions);
+
                     resultText = babelResult.code;
                     resultSourceMap = babelResult.map;
                 }

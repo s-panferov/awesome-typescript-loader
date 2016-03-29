@@ -22,7 +22,7 @@ export const defaultOutputDir = path.join(process.cwd(), 'src', 'test', 'output'
 export const defaultFixturesDir = path.join(process.cwd(), 'src', 'test', 'fixtures');
 
 export interface ConfigOptions {
-    loaderParams?: string;
+    loaderQuery?: any;
     watch?: boolean;
     forkChecker?: boolean;
     include?: (string | RegExp)[];
@@ -30,7 +30,6 @@ export interface ConfigOptions {
 }
 
 let defaultOptions: ConfigOptions = {
-    loaderParams: '',
     watch: false,
     forkChecker: false,
 };
@@ -50,7 +49,8 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
             loaders: [
                 {
                     test: /\.(tsx?|jsx?)/,
-                    loader: loaderDir + '?target=es6' + options.loaderParams,
+                    loader: loaderDir,
+                    query: Object.assign({ target: 'es6' }, options.loaderQuery)
                 },
             ],
         },
