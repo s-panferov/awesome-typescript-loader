@@ -1,3 +1,19 @@
+<a name"0.17.0-rc.3"></a>
+### 0.17.0-rc.3 (2016-03-29)
+
+
+#### Bug Fixes
+
+* ***:** latest ts nightlies ([0d9e687e](https://github.com/s-panferov/awesome-typescript-loader/commit/0d9e687e))
+
+
+#### Features
+
+* ***:**
+  * impl `declaration` option basic support ([0169df57](https://github.com/s-panferov/awesome-typescript-loader/commit/0169df57))
+  * add babel options, write some tests on babel ([12c708cc](https://github.com/s-panferov/awesome-typescript-loader/commit/12c708cc))
+
+
 <a name"0.17.0-rc.2"></a>
 ### 0.17.0-rc.2 (2016-03-23)
 
