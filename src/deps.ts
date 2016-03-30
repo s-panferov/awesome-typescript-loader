@@ -28,7 +28,12 @@ export function createResolver(
     exclude: Exclude,
     webpackResolver: any
 ): IResolver {
-    let resolver: IResolver = promisify(webpackResolver) as any;
+    let finalResolver = webpackResolver;
+    if (webpackResolver.length === 4) {
+        // patch resolver for webpack2
+        finalResolver = (path, request, callback) => webpackResolver({}, path, request, callback);
+    }
+    let resolver: IResolver = promisify(finalResolver) as any;
 
     function resolve(base: string, dep: string): Promise<string> {
         let inWebpackExternals = externals && externals.hasOwnProperty(dep);

@@ -36,8 +36,6 @@
         "./test/fixtures/errors/with-type-errors.ts",
         "./test/fixtures/salsa/index.ts",
         "./test/index.ts",
-        "./test/output/src/test/fixtures/declaration/basic.d.ts",
-        "./test/output/src/test/fixtures/declaration/iface.d.ts",
         "./test/salsa.ts",
         "./test/utils.ts",
         "./tsconfig-utils.ts"
