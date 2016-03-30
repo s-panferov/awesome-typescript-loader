@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.4"></a>
+### 0.17.0-rc.4 (2016-03-30)
+
+
+#### Bug Fixes
+
+* ***:** patch resolver for webpack2 ([60ca7777](https://github.com/s-panferov/awesome-typescript-loader/commit/60ca7777))
+
+
 <a name"0.17.0-rc.3"></a>
 ### 0.17.0-rc.3 (2016-03-29)
 
