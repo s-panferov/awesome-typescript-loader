@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.5"></a>
+### 0.17.0-rc.5 (2016-04-04)
+
+
+#### Bug Fixes
+
+* ***:** bind resolver to original context for webpack2 ([f5105f6b](https://github.com/s-panferov/awesome-typescript-loader/commit/f5105f6b))
+
+
 <a name"0.17.0-rc.4"></a>
 ### 0.17.0-rc.4 (2016-03-30)
 
