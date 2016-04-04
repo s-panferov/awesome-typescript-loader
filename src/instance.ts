@@ -280,7 +280,8 @@ function setupWatchRun(compiler, instanceName: string) {
         let resolver = createResolver(
             compiler.options.externals,
             state.options.exclude || [],
-            watching.compiler.resolvers.normal.resolve
+            watching.compiler.resolvers.normal.resolve,
+            watching.compiler.resolvers.normal
         );
         let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         let changedFiles = Object.keys(mtimes);

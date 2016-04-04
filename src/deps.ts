@@ -26,12 +26,13 @@ export type Exclude = string[];
 export function createResolver(
     externals: IExternals,
     exclude: Exclude,
-    webpackResolver: any
+    webpackResolver: any,
+    ctx: any = null
 ): IResolver {
     let finalResolver = webpackResolver;
     if (webpackResolver.length === 4) {
-        // patch resolver for webpack2
-        finalResolver = (path, request, callback) => webpackResolver({}, path, request, callback);
+        // carrying resolver for webpack2
+        finalResolver = webpackResolver.bind(ctx, {});
     }
     let resolver: IResolver = promisify(finalResolver) as any;
 

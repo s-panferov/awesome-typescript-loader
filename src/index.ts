@@ -44,7 +44,8 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     let resolver = createResolver(
         webpack._compiler.options.externals,
         state.options.exclude || [],
-        webpack.resolve
+        webpack.resolve,
+        webpack
     );
 
     let depsInjector = {
