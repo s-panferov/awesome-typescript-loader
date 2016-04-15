@@ -46,6 +46,7 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     useBabel?: boolean;
     babelOptions?: any;
     usePrecompiledFiles?: boolean;
+    skipDeclarationFilesCheck?: boolean;
     useCache?: boolean;
     cacheDirectory?: string;
     files?: any;

@@ -1,8 +1,8 @@
 {
-    "version": "1.5.0-beta",
     "compilerOptions": {
         "target": "es6",
         "declaration": false,
+        "moduleResolution": "node",
         "noImplicitAny": false,
         "removeComments": true,
         "noLib": false,
@@ -10,37 +10,7 @@
         "suppressImplicitAnyIndexErrors": true
     },
     "compileOnSave": false,
-    "filesGlob": [
-        "./**/*.ts",
-        "!./node_modules/**/*.ts"
-    ],
-    "files": [
-        "./cache.ts",
-        "./checker-runtime.ts",
-        "./checker.ts",
-        "./defines.d.ts",
-        "./deps.ts",
-        "./helpers.ts",
-        "./host.ts",
-        "./index.ts",
-        "./instance.ts",
-        "./resolver.ts",
-        "./test/babel.ts",
-        "./test/checker.ts",
-        "./test/declaration.ts",
-        "./test/fixtures/babel/babel.ts",
-        "./test/fixtures/basic/basic.ts",
-        "./test/fixtures/checker/to-check.ts",
-        "./test/fixtures/declaration/basic.ts",
-        "./test/fixtures/declaration/iface.ts",
-        "./test/fixtures/errors/with-type-errors.ts",
-        "./test/fixtures/salsa/index.ts",
-        "./test/index.ts",
-        "./test/salsa.ts",
-        "./test/utils.ts",
-        "./tsconfig-utils.ts"
-    ],
     "atom": {
-        "rewriteTsconfig": true
+        "rewriteTsconfig": false
     }
 }

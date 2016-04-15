@@ -215,4 +215,4 @@ class ForkCheckerPlugin {
 
 (loader as any).ForkCheckerPlugin = ForkCheckerPlugin;
 
-export = loader;
+module.exports = loader;

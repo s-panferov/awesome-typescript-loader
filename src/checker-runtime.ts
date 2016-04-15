@@ -195,6 +195,8 @@ function processInit(payload: IInitPayload) {
     });
 }
 
+let DECLARATION_FILE = /\.d\.ts/;
+
 function processCompile(payload: ICompilePayload) {
     let instanceName = env.options.instanceName || 'default';
     let silent = !!env.options.forkCheckerSilent;
@@ -213,7 +215,21 @@ function processCompile(payload: ICompilePayload) {
     env.files = payload.files;
     env.resolutionCache = payload.resolutionCache;
     let program = env.program = env.service.getProgram();
-    let allDiagnostics = env.compiler.getPreEmitDiagnostics(program);
+
+    let allDiagnostics: ts.Diagnostic[] = [];
+    if (env.options.skipDeclarationFilesCheck) {
+        let sourceFiles = program.getSourceFiles();
+        sourceFiles.forEach(sourceFile => {
+            if (!sourceFile.fileName.match(DECLARATION_FILE)) {
+                allDiagnostics = allDiagnostics.concat(env.compiler.getPreEmitDiagnostics(program, sourceFile));
+            }
+        });
+        // FIXME internal API
+        allDiagnostics = (env.compiler as any).sortAndDeduplicateDiagnostics(allDiagnostics);
+    } else {
+        allDiagnostics = env.compiler.getPreEmitDiagnostics(program);
+    }
+
     if (allDiagnostics.length) {
         allDiagnostics.forEach(diagnostic => {
             let message = env.compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');

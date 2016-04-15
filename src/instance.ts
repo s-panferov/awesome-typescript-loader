@@ -188,6 +188,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         sourceMap: true,
         verbose: false,
         noLib: false,
+        skipDefaultLibCheck: true,
         suppressOutputPathCheck: true,
         sourceRoot: process.cwd()
     });
