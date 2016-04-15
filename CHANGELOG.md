@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.6"></a>
+### 0.17.0-rc.6 (2016-04-15)
+
+
+#### Features
+
+* ***:** add option to disable .d.ts files typechecks ([519c5543](https://github.com/s-panferov/awesome-typescript-loader/commit/519c5543))
+
+
 <a name"0.17.0-rc.5"></a>
 ### 0.17.0-rc.5 (2016-04-04)
 
