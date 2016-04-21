@@ -15,6 +15,23 @@ There are a lot of problems in other TypeScript loaders that are fixed here.
 npm install awesome-typescript-loader --save-dev
 ```
 
+## Differences between [`ts-loader`](https://github.com/TypeStrong/ts-loader)
+
+`awesome-typescript-loader` loader was created mostly to speed-up compilation in my own projects.
+Some of them are quite big and I wanted to have full control on how my files are compiled. There are three major points:
+
+1) awesome-typescript-loader (atl) uses dependency resolution to build modules dependency graph at early stages.
+This speeds up build process in some corner cases (minimizes module resoltions, mimizes `createProgram` calls),
+but adds a lot of additional complexity. Also it can re-emit all related files which is also useful in some corner cases.
+
+2) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who uses Typescript with Babel.
+When `useBabel` and `useCache` flags are enabled, typescript's emit will be transplied with Babel and cached.
+So next time if source file (+environment) has the same checksum we can totally skip typescript's and babel's transpiling.
+This significantly reduces build time in this scenario.
+
+3) atl is able to fork type-checker to a separate process, which also speeds-up some development scenarios (e.g. react with react-hot-loader)
+So your webpack compilation will end earlier and you can explore compiled version in your browser while your files are typecheked.
+
 ## Configuration
 
 1. Add `.ts` as a resolvable extension.
