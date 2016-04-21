@@ -1,3 +1,12 @@
+<a name"0.17.0-rc.7"></a>
+### 0.17.0-rc.7 (2016-04-21)
+
+
+#### Features
+
+* ***:** update compilation process, fix sourceMap bug, refs #125 ([73f575d0](https://github.com/s-panferov/awesome-typescript-loader/commit/73f575d0))
+
+
 <a name"0.17.0-rc.6"></a>
 ### 0.17.0-rc.6 (2016-04-15)
 
