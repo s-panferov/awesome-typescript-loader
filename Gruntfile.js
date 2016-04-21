@@ -13,19 +13,6 @@ module.exports = function(grunt) {
 
     grunt.initConfig({
         clean: ['dist'],
-        ts: {
-            default : {
-                options: options,
-                src: src,
-                outDir: 'dist'
-            },
-            watch : {
-                options: options,
-                src: src,
-                watch: ['src/'],
-                outDir: 'dist'
-            }
-        },
         copy: {
             main: {
                 src: './lib/runtime.d.ts',
@@ -68,5 +55,5 @@ module.exports = function(grunt) {
         return grunt.task.run("bump-only:" + target, "changelog", "shell:addChangelog", "bump-commit");
     });
 
-    grunt.registerTask('default', ['ts:default', 'copy']);
+    grunt.registerTask('default', ['copy']);
 };

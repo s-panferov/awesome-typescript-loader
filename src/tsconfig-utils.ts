@@ -1,7 +1,7 @@
 import * as path from 'path';
-import * as colors from 'colors';
 import { TSConfig } from 'tsconfig';
 
+let colors = require('colors/safe');
 let parseJson = require('parse-json');
 let stripBom = require('strip-bom');
 let stripComments = require('strip-json-comments');

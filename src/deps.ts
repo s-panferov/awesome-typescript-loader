@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as path from 'path';
-import * as promisify from 'es6-promisify';
+
+let promisify = require('es6-promisify');
 
 import { State } from './host';
 

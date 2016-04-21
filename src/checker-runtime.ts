@@ -1,9 +1,10 @@
 import { ICompilerOptions, ICompilerInfo, IFile } from './host';
 import { LoaderPlugin, LoaderPluginDef } from './instance';
 import makeResolver from './resolver';
-import * as colors from 'colors';
 import * as path from 'path';
 import * as fs from 'fs';
+
+let colors = require('colors/safe');
 
 require('babel-polyfill');
 

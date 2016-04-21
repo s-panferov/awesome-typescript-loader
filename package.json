@@ -2,12 +2,13 @@
   "name": "awesome-typescript-loader",
   "version": "0.17.0-rc.6",
   "description": "Awesome TS loader for webpack",
-  "main": "dist.babel/index.js",
+  "main": "dist.babel/entry.js",
   "scripts": {
-    "grunt": "grunt",
-    "prepublish": "grunt",
-    "babel": "babel dist --presets es2015 --out-dir dist.babel --watch --source-maps",
-    "babel-compile": "babel dist --presets es2015 --out-dir dist.babel --source-maps",
+    "prepublish": "npm run ts-build && npm run babel-build && grunt",
+    "ts": "./node_modules/.bin/tsc --project src --watch  --pretty --diagnostics",
+    "ts-build": "./node_modules/.bin/tsc --project src --pretty",
+    "babel": "babel dist --presets es2015 --out-dir dist.babel --watch",
+    "babel-build": "babel dist --presets es2015 --out-dir dist.babel",
     "test": "mocha dist.babel/test",
     "build": "npm run grunt && npm run babel-compile",
     "lint": "./node_modules/.bin/tslint src/*.ts"
@@ -65,7 +66,7 @@
     "ps-node": "0.0.5",
     "rimraf": "^2.5.0",
     "tslint": "3.5.0-dev.1",
-    "typescript": "^1.9.0-dev.20160415",
+    "typescript": "^1.9.0-dev.20160421",
     "webpack": "2.1.0-beta.4"
   }
 }

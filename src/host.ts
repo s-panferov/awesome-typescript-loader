@@ -2,11 +2,11 @@ import * as ts from "typescript";
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
-import * as promisify from 'es6-promisify';
 
 import { FileAnalyzer } from './deps';
 import { loadLib } from './helpers';
 
+let promisify = require('es6-promisify');
 let objectAssign = require('object-assign');
 
 let RUNTIME = loadLib('../lib/runtime.d.ts');

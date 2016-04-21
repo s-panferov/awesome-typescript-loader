@@ -2,10 +2,6 @@
 /// <reference path="./defines.d.ts"/>
 /// <reference path='../typings/tsd.d.ts' />
 
-require('source-map-support').install();
-require('babel-polyfill');
-
-import * as promisify from 'es6-promisify';
 import * as _ from 'lodash';
 import * as path from 'path';
 
@@ -15,6 +11,7 @@ import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
 import { IWebPack, ensureInstance } from './instance';
 
+let promisify = require('es6-promisify');
 let loaderUtils = require('loader-utils');
 let cachePromise: any = promisify(cache);
 
@@ -178,7 +175,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
 
         if (resultSourceMap) {
             let sourcePath = path.relative(
-                instance.options.sourceRoot,
+                instance.options.sourceRoot || process.cwd(),
                 loaderUtils.getRemainingRequest(webpack)
             );
 

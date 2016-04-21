@@ -1,8 +1,11 @@
 {
     "compilerOptions": {
         "target": "es6",
+        "outDir": "../dist",
         "declaration": false,
         "moduleResolution": "node",
+        "skipDefaultLibCheck": true,
+        "allowSyntheticDefaultImports": true,
         "noImplicitAny": false,
         "removeComments": true,
         "noLib": false,
@@ -10,6 +13,10 @@
         "suppressImplicitAnyIndexErrors": true
     },
     "compileOnSave": false,
+    "exclude": [
+        "test/fixtures",
+        "test/output/*"
+    ],
     "atom": {
         "rewriteTsconfig": false
     }

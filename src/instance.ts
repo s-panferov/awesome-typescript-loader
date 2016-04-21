@@ -1,5 +1,4 @@
 import { ICompilerOptions, State } from './host';
-import * as colors from 'colors';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
@@ -11,6 +10,7 @@ import { createChecker } from './checker';
 import { rawToTsCompilerOptions, parseContent, tsconfigSuggestions } from './tsconfig-utils';
 import makeResolver from './resolver';
 
+let colors = require('colors/safe');
 let pkg = require('../package.json');
 
 export interface LoaderPlugin {
@@ -190,7 +190,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         noLib: false,
         skipDefaultLibCheck: true,
         suppressOutputPathCheck: true,
-        sourceRoot: process.cwd()
+        sourceRoot: options.sourceMap ? process.cwd() : undefined
     });
 
     options = _.omit(options, 'outDir', 'files', 'out', 'noEmit') as any;

@@ -3,7 +3,7 @@
 // Definitions by: Bart van der Schoor <https://github.com/Bartvds>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
-declare module "colors" {
+declare module "colors/safe" {
     export function setTheme(theme:any):any;
 
     export function black(text: string): string;
@@ -16,21 +16,4 @@ declare module "colors" {
     export function white(text: string): string;
     export function gray(text: string): string;
     export function grey(text: string): string;
-}
-
-interface String {
-    italic:string;
-    underline:string;
-    inverse:string;
-    yellow:string;
-    cyan:string;
-    white:string;
-    magenta:string;
-    green:string;
-    red:string;
-    grey:string;
-    blue:string;
-    rainbow:string;
-    zebra:string;
-    random:string;
 }
