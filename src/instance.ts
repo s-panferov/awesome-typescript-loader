@@ -324,6 +324,12 @@ runChecker = _.debounce(runChecker, 200);
 
 function setupAfterCompile(compiler, instanceName, forkChecker = false) {
     compiler.plugin('after-compile', function(compilation, callback) {
+        // Don't add errors for child compilations
+        if (compilation.compiler.isChild()) {
+            callback();
+            return;
+        }
+
         let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
         let state = instance.tsState;
 
