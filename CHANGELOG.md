@@ -1,3 +1,12 @@
+<a name"0.17.1-rc.0"></a>
+### 0.17.1-rc.0 (2016-04-24)
+
+
+#### Features
+
+* ***:** speed-up compilation of dynamic requires + total speedup ([d3d740b5](https://github.com/s-panferov/awesome-typescript-loader/commit/d3d740b5))
+
+
 <a name"0.17.0"></a>
 ## 0.17.0 (2016-04-24)
 
