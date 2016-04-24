@@ -306,6 +306,26 @@ export class State {
         }
     }
 
+    fastEmit(fileName: string) {
+        fileName = this.normalizePath(fileName);
+
+        let file = this.getFile(fileName);
+        if (!file) {
+            throw new Error(`Unknown file ${ fileName }`);
+        }
+
+        let transpileResult = this.ts.transpileModule(file.text, {
+            compilerOptions: this.options,
+            reportDiagnostics: false,
+            fileName
+        });
+
+        return {
+            text: transpileResult.outputText,
+            sourceMap: transpileResult.sourceMapText
+        };
+    }
+
     updateFile(fileName: string, text: string, checked: boolean = false): boolean {
         fileName = this.normalizePath(fileName);
         let prevFile = this.files[fileName];
@@ -349,7 +369,8 @@ export class State {
     async readFile(fileName: string): Promise<string> {
         fileName = this.normalizePath(fileName);
         let buf = await this.readFileImpl(fileName);
-        return buf.toString('utf8');
+        let string = buf.toString('utf8');
+        return string;
     }
 
     readFileSync(fileName: string): string {

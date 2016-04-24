@@ -87,6 +87,8 @@ function isIgnoreDependency(absulutePath: string) {
     return absulutePath == '%%ignore';
 }
 
+let lock: Promise<any>;
+
 export class FileAnalyzer {
     dependencies = new DependencyManager();
     validFiles = new ValidFilesManager();
@@ -96,9 +98,35 @@ export class FileAnalyzer {
         this.state = state;
     }
 
+    async checkDependenciesLocked(resolver: IResolver, fileName: string): Promise<boolean> {
+        let isValid = this.validFiles.isFileValid(fileName);
+        if (isValid) {
+            return isValid;
+        }
+
+        if (lock) {
+            return lock
+                .then(() => {
+                    return this.checkDependenciesLocked(resolver, fileName);
+                });
+        }
+
+        let resolveLock;
+        lock = new Promise((res, rej) => { resolveLock = res; });
+
+        try {
+            let checked = await this.checkDependencies(resolver, fileName);
+            return checked;
+        } finally {
+            lock = null;
+            resolveLock();
+        }
+    }
+
     async checkDependencies(resolver: IResolver, fileName: string): Promise<boolean> {
-        if (this.validFiles.isFileValid(fileName)) {
-            return false;
+        let isValid = this.validFiles.isFileValid(fileName);
+        if (isValid) {
+            return isValid;
         }
 
         this.validFiles.markFileValid(fileName);
@@ -110,7 +138,6 @@ export class FileAnalyzer {
             if (!this.state.hasFile(fileName)) {
                 changed = await this.state.readFileAndUpdate(fileName);
             }
-
             await this.checkDependenciesInternal(resolver, fileName);
         } catch (err) {
             this.validFiles.markFileInvalid(fileName);
@@ -350,8 +377,8 @@ export class DependencyManager {
 export class ValidFilesManager {
     files: {[fileName: string]: boolean} = {};
 
-    isFileValid(fileName: string): boolean {
-        return !!this.files[fileName];
+    isFileValid(fileName: string): Promise<boolean> | boolean {
+        return this.files[fileName];
     }
 
     markFileValid(fileName: string) {

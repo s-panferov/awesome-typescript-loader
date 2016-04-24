@@ -35,6 +35,7 @@ export interface ICompilerInstance {
     plugins: LoaderPluginDef[];
     initedPlugins: LoaderPlugin[];
     externalsInvocation: Promise<any>;
+    shouldUpdateProgram: boolean;
 }
 
 interface ICompiler {
@@ -109,6 +110,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     ensureInstanceStore(webpack._compiler);
 
     let exInstance = resolveInstance(webpack._compiler, instanceName);
+
     if (exInstance) {
         return exInstance;
     }
@@ -269,7 +271,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         cacheIdentifier,
         plugins,
         initedPlugins,
-        externalsInvocation: null
+        externalsInvocation: null,
+        shouldUpdateProgram: true
     };
 }
 
@@ -298,13 +301,15 @@ function setupWatchRun(compiler, instanceName: string) {
                 if (EXTENSIONS.test(changedFile)) {
                     if (state.hasFile(changedFile)) {
                         await state.readFileAndUpdate(changedFile);
-                        await state.fileAnalyzer.checkDependencies(resolver, changedFile);
+                        await state.fileAnalyzer.checkDependenciesLocked(resolver, changedFile);
                     }
                 }
             });
 
             await Promise.all(tasks);
-            state.updateProgram();
+            if (!state.options.forkChecker) {
+                state.updateProgram();
+            }
             callback();
         } catch (err) {
             console.error(err.toString());
@@ -341,10 +346,11 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
             runChecker(instance, payload);
         } else {
-            if (!state.program) {
+            if (!state.program || instance.shouldUpdateProgram) {
                 // program may be undefined here, if all files
                 // will be loaded by tsconfig
                 state.updateProgram();
+                instance.shouldUpdateProgram = false;
             }
 
             let diagnostics = state.ts.getPreEmitDiagnostics(state.program);

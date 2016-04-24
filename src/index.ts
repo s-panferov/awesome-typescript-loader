@@ -84,9 +84,9 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     }
 
     try {
-        let wasChanged = await state.fileAnalyzer.checkDependencies(resolver, fileName);
+        let wasChanged = await state.fileAnalyzer.checkDependenciesLocked(resolver, fileName);
         if (wasChanged || doUpdate) {
-            state.updateProgram();
+            instance.shouldUpdateProgram = true;
         }
 
         let compiledModule;
@@ -109,26 +109,37 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             function transform() {
                 let resultText;
                 let resultSourceMap = null;
-                let output = state.emit(fileName);
 
-                let result = helpers.findResultFor(output, fileName);
+                if (state.options.declaration) {
+                    // can't use fastEmit with declaration generation
 
-                if (result.text === undefined) {
-                    throw new Error('No output found for ' + fileName);
+                    let output = state.emit(fileName);
+                    let result = helpers.findResultFor(output, fileName);
+
+                    if (result.text === undefined) {
+                        throw new Error('No output found for ' + fileName);
+                    }
+
+                    if (result.declaration) {
+                        webpack.emitFile(
+                            path.relative(process.cwd(), result.declaration.sourceName),
+                            result.declaration.text
+                        );
+                    }
+
+                    resultText = result.text;
+                    resultSourceMap = result.sourceMap;
+                } else {
+                    // Use super-fast emit
+
+                    let result = state.fastEmit(fileName);
+                    resultText = result.text;
+                    resultSourceMap = result.sourceMap;
                 }
-
-                if (result.declaration) {
-                    webpack.emitFile(
-                        path.relative(process.cwd(), result.declaration.sourceName),
-                        result.declaration.text
-                    );
-                }
-
-                resultText = result.text;
 
                 let sourceFileName = fileName.replace(process.cwd() + '/', '');
-                if (result.sourceMap) {
-                    resultSourceMap = JSON.parse(result.sourceMap);
+                if (resultSourceMap) {
+                    resultSourceMap = JSON.parse(resultSourceMap);
                     resultSourceMap.sources = [ sourceFileName ];
                     resultSourceMap.file = sourceFileName;
                     resultSourceMap.sourcesContent = [ text ];
