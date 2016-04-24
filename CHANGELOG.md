@@ -1,3 +1,21 @@
+<a name"0.17.0"></a>
+## 0.17.0 (2016-04-24)
+
+
+#### Bug Fixes
+
+* ***:**
+  * small style fixes ([d9a65c7d](https://github.com/s-panferov/awesome-typescript-loader/commit/d9a65c7d))
+  * duplicated errors, refs #116 ([de6629d5](https://github.com/s-panferov/awesome-typescript-loader/commit/de6629d5))
+
+
+#### Features
+
+* ***:**
+  * watch fixes, refs #129 ([f0bcf43b](https://github.com/s-panferov/awesome-typescript-loader/commit/f0bcf43b))
+  * format line number, refs #128 ([490c0f19](https://github.com/s-panferov/awesome-typescript-loader/commit/490c0f19))
+
+
 <a name"0.17.0-rc.7"></a>
 ### 0.17.0-rc.7 (2016-04-21)
 
