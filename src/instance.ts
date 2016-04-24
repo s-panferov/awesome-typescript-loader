@@ -273,6 +273,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     };
 }
 
+let EXTENSIONS = /\.tsx?$|\.jsx?$/;
+
 function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', async function (watching, callback) {
         let compiler: ICompiler = watching.compiler;
@@ -293,9 +295,11 @@ function setupWatchRun(compiler, instanceName: string) {
 
         try {
             let tasks = changedFiles.map(async function(changedFile) {
-                if (/\.ts$|\.d\.ts$|\.tsx$|\.js$|\.jsx$/.test(changedFile)) {
-                    await state.readFileAndUpdate(changedFile);
-                    await state.fileAnalyzer.checkDependencies(resolver, changedFile);
+                if (EXTENSIONS.test(changedFile)) {
+                    if (state.hasFile(changedFile)) {
+                        await state.readFileAndUpdate(changedFile);
+                        await state.fileAnalyzer.checkDependencies(resolver, changedFile);
+                    }
                 }
             });
 
