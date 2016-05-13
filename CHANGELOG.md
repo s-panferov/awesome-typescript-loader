@@ -1,3 +1,15 @@
+<a name"0.18.0"></a>
+## 0.18.0 (2016-05-13)
+
+
+#### Bug Fixes
+
+* ***:**
+  * babel polyfill require guard, refs #121, #133 ([e71f1555](https://github.com/s-panferov/awesome-typescript-loader/commit/e71f1555))
+  * node6 compat, refs #134 ([4b66ab78](https://github.com/s-panferov/awesome-typescript-loader/commit/4b66ab78))
+* **cache:** deprecation warning ([c56fe459](https://github.com/s-panferov/awesome-typescript-loader/commit/c56fe459))
+
+
 <a name"0.18.0-rc.0"></a>
 ### 0.18.0-rc.0 (2016-04-24)
 
