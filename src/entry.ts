@@ -1,4 +1,7 @@
 require('source-map-support').install();
-require('babel-polyfill');
+
+if (!global._babelPolyfill) {
+    require('babel-polyfill');
+}
 
 module.exports = require('./index');
