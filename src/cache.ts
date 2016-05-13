@@ -1,8 +1,8 @@
 import * as fs from 'fs';
-import * as crypto from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
 import * as zlib from 'zlib';
+import { createHash } from 'crypto';
 
 export interface CompiledModule {
     fileName: string;
@@ -86,7 +86,7 @@ function write(filename: string, result: any, callback) {
  * @return {String}
  */
 function filename(source: string, identifier, options) {
-    let hash = crypto.createHash('sha512') as any;
+    let hash = createHash('sha512') as any;
     let contents = JSON.stringify({
         identifier: identifier,
         options: options,
