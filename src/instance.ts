@@ -182,7 +182,11 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         }
     }
 
-    options = rawToTsCompilerOptions(options, path.dirname(configFilePath), tsImpl);
+    let projDir = configFilePath
+        ? path.dirname(configFilePath)
+        : process.cwd();
+
+    options = rawToTsCompilerOptions(options, projDir, tsImpl);
 
     _.defaults(options, {
         externals: [],
