@@ -60,6 +60,7 @@ export interface IWebPack {
     clearDependencies: () => void;
     emitFile: (fileName: string, text: string) => void;
     options: {
+        context: string;
         atl?: {
             plugins: LoaderPluginDef[]
         }
