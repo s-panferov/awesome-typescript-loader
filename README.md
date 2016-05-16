@@ -169,7 +169,7 @@ Directory when cache is stored.
 
 Invoke glob resolver using 'filesGlob' and 'exclude' sections of `tsconfig`.
 
-### skipDeclarationFilesCheck *(string) (default=fase)*
+### skipDeclarationFilesCheck *(string) (default=false)*
 
 Skip declaration files typechecking. Use this only if you understand consequences.
 
