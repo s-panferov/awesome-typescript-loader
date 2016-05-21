@@ -21,11 +21,11 @@ npm install awesome-typescript-loader --save-dev
 Some of them are quite big and I wanted to have full control on how my files are compiled. There are three major points:
 
 1) awesome-typescript-loader (atl) uses dependency resolution to build modules dependency graph at early stages.
-This speeds up build process in some corner cases (minimizes module resoltions, mimizes `createProgram` calls),
+This speeds up build process in some corner cases (minimizes module resolutions, minimizes `createProgram` calls),
 but adds a lot of additional complexity. Also it can re-emit all related files which is also useful in some corner cases.
 
-2) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who uses Typescript with Babel.
-When `useBabel` and `useCache` flags are enabled, typescript's emit will be transplied with Babel and cached.
+2) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who use Typescript with Babel.
+When `useBabel` and `useCache` flags are enabled, typescript's emit will be transpiled with Babel and cached.
 So next time if source file (+environment) has the same checksum we can totally skip typescript's and babel's transpiling.
 This significantly reduces build time in this scenario.
 
