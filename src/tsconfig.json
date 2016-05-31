@@ -2,13 +2,11 @@
     "compilerOptions": {
         "target": "es6",
         "outDir": "../dist",
-        "declaration": false,
         "moduleResolution": "node",
         "skipDefaultLibCheck": true,
         "allowSyntheticDefaultImports": true,
         "noImplicitAny": false,
         "removeComments": true,
-        "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true
     },
