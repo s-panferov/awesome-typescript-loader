@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
 import * as tsconfig from 'tsconfig';
-import { loadLib, formatErrors } from './helpers';
+import { loadLib, formatError } from './helpers';
 import { ICompilerInfo } from './host';
 import { createResolver } from './deps';
 import { createChecker } from './checker';
@@ -358,16 +358,19 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             }
 
             let diagnostics = state.ts.getPreEmitDiagnostics(state.program);
-            let emitError = (err) => {
+            let emitError = (msg) => {
                 if (compilation.bail) {
-                    console.error('Error in bail mode:', err);
+                    console.error('Error in bail mode:', msg);
                     process.exit(1);
                 }
-                compilation.errors.push(new Error(err));
+                compilation.errors.push(new Error(msg));
             };
 
-            let errors = formatErrors(instanceName, diagnostics);
-            errors.forEach(emitError);
+            let {options: {ignoreDiagnostics}} = instance;
+            diagnostics
+                .filter(err => ignoreDiagnostics.indexOf(err.code) == -1)
+                .map(err => `[${ instanceName }] ` + formatError(err))
+                .forEach(emitError);
 
             instance.initedPlugins.forEach(plugin => {
                 plugin.processProgram(state.program);
