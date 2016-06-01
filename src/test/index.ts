@@ -28,6 +28,17 @@ describe('main test', function() {
         expect(stats.compilation.errors.length).eq(1);
     });
 
+    it('should ignore diagnostics', async function() {
+        let config = {
+            entry: fixturePath(['errors', 'with-type-errors.ts'])
+        };
+
+        let loaderQuery = { ignoreDiagnostics: [2345] };
+
+        let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
+        expect(stats.compilation.errors.length).eq(0);
+    });
+
     it('should load tsx files and use tsconfig', async function() {
         let tsconfig = fixturePath(['tsx', 'tsconfig.json']);
         let config = {
