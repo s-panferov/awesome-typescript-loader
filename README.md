@@ -125,6 +125,11 @@ Array of paths to .d.ts files that must be included in program. Useful with `rew
 
 Use this setting to disable type checking.
 
+### ignoreDiagnostics *(number[]) (default=[])*
+
+You can squelch certain TypeScript errors by specifying an array of [diagnostic codes](https://github.com/Microsoft/TypeScript/blob/master/src/compiler/diagnosticMessages.json) to ignore.
+For example, you can transpile [stage 1 properties](https://github.com/jeffmo/es-class-fields-and-static-properties) from `*.js` using `"ignoreDiagnostics": [8014]`.
+
 ### forkChecker *(boolean) (default=false)*
 
 Do type checking in a separate process, so webpack doesn't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
@@ -169,7 +174,7 @@ Directory when cache is stored.
 
 Invoke glob resolver using 'filesGlob' and 'exclude' sections of `tsconfig`.
 
-### skipDeclarationFilesCheck *(string) (default=fase)*
+### skipDeclarationFilesCheck *(string) (default=false)*
 
 Skip declaration files typechecking. Use this only if you understand consequences.
 
