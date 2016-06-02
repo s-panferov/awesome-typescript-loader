@@ -368,7 +368,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
             let {options: {ignoreDiagnostics}} = instance;
             diagnostics
-                .filter(err => ignoreDiagnostics.indexOf(err.code) == -1)
+                .filter(err => !ignoreDiagnostics || ignoreDiagnostics.indexOf(err.code) == -1)
                 .map(err => `[${ instanceName }] ` + formatError(err))
                 .forEach(emitError);
 
