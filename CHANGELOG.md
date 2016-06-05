@@ -1,3 +1,12 @@
+<a name"0.19.1"></a>
+### 0.19.1 (2016-06-05)
+
+
+#### Features
+
+* ***:** check if module is internal before processing it ([c2e2cc29](https://github.com/s-panferov/awesome-typescript-loader/commit/c2e2cc29))
+
+
 <a name"0.19.0"></a>
 ## 0.19.0 (2016-06-05)
 
