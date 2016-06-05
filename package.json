@@ -4,14 +4,17 @@
   "description": "Awesome TS loader for webpack",
   "main": "dist.babel/entry.js",
   "scripts": {
-    "prepublish": "npm run ts-build && npm run babel-build && grunt",
-    "ts": "./node_modules/.bin/tsc --project src --watch  --pretty --diagnostics",
-    "ts-build": "./node_modules/.bin/tsc --project src --pretty",
-    "babel": "babel dist --presets es2015 --out-dir dist.babel --watch",
-    "babel-build": "babel dist --presets es2015 --out-dir dist.babel",
+    "prepublish": "npm run test && grunt",
+    "pretest": "npm run build",
     "test": "mocha dist.babel/test",
-    "build": "npm run grunt && npm run babel-compile",
-    "lint": "./node_modules/.bin/tslint src/*.ts"
+    "watch": "npm run watch:ts && npm run watch:babel",
+    "watch:ts": "npm run build:ts -- --watch --diagnostics",
+    "watch:babel": "npm run build:babel -- --watch",
+    "prebuild": "npm run lint",
+    "build": "npm run build:ts && npm run build:babel",
+    "build:ts": "tsc -p src --pretty",
+    "build:babel": "babel dist -d dist.babel",
+    "lint": "tslint src/*.ts"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -59,7 +62,6 @@
     "grunt-contrib-copy": "^0.7.0",
     "grunt-conventional-changelog": "^1.2.1",
     "grunt-shell": "^1.1.2",
-    "grunt-ts": "^3.0.0",
     "load-grunt-tasks": "^0.6.0",
     "mkdirp": "^0.5.1",
     "mocha": "^2.3.4",
