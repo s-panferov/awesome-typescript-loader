@@ -165,8 +165,10 @@ export class FileAnalyzer {
             } else if (isRequiredJs && !this.state.options.allowJs) {
                 continue;
             } else {
-                this.dependencies.addDependency(fileName, importPath);
-                tasks.push(this.checkDependencies(resolver, importPath));
+                if (!checkIfModuleBuiltInCached(importPath)) {
+                    this.dependencies.addDependency(fileName, importPath);
+                    tasks.push(this.checkDependencies(resolver, importPath));
+                }
             }
         }
 
@@ -222,13 +224,9 @@ export class FileAnalyzer {
             result = resolver(path.dirname(fileName), defPath)
                 .catch(function (error) {
                     // Node builtin modules
-                    try {
-                        if (require.resolve(defPath) == defPath) {
-                            return defPath;
-                        } else {
-                            throw error;
-                        }
-                    } catch (e) {
+                    if (checkIfModuleBuiltIn(defPath)) {
+                        return defPath;
+                    } else {
                         throw error;
                     }
                 });
@@ -244,6 +242,28 @@ export class FileAnalyzer {
                 throw detailedError;
             });
     }
+}
+
+let builtInCache = {};
+
+function checkIfModuleBuiltInCached(modPath: string): boolean {
+    return !!builtInCache[modPath];
+}
+
+function checkIfModuleBuiltIn(modPath: string): boolean {
+    if (builtInCache[modPath]) {
+        return true;
+    }
+
+    try {
+        if (require.resolve(modPath) === modPath) {
+            builtInCache[modPath] = true;
+            return true;
+        }
+    } catch (e) {
+    }
+
+    return false;
 }
 
 export interface IDependencyGraphItem {
