@@ -2,6 +2,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 
+const temp = require('temp').track();
+
 require('babel-polyfill');
 require('source-map-support').install();
 
@@ -133,17 +135,64 @@ export function compile(config): Promise<any> {
     });
 }
 
-export function watch(config, cb: (err, stats) => void): Promise<{ close(): void }> {
+export function watch(config, cb?: (err, stats) => void): Watch {
     let compiler = webpack(config);
-    return new Promise((resolve, reject) => {
-        let watcher = compiler.watch({}, (err, stats) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(watcher);
-            }
-
+    let watch = new Watch();
+    let webpackWatcher = compiler.watch({}, (err, stats) => {
+        watch.call(err, stats);
+        if (cb) {
             cb(err, stats);
-        });
+        }
     });
+
+    watch.close = webpackWatcher.close;
+    return watch;
+}
+
+class Watch {
+    resolves: ((arg: any[]) => void)[] = [];
+    close: () => void;
+
+    call(err, stats) {
+        this.resolves.forEach(resolver => {
+            resolver([err, stats]);
+        });
+        this.resolves = [];
+    }
+
+    wait(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.resolves.push(resolve);
+        });
+    }
+}
+
+export class Fixture {
+    private text: string;
+    private fileName: string;
+    constructor(text: string, ext = '.tsx') {
+        this.text = text;
+        let tmpobj = temp.openSync({
+            prefix: 'atl-',
+            suffix: '.tsx'
+        });
+
+        this.fileName = tmpobj.path;
+
+        fs.writeFileSync(this.fileName, text);
+    }
+
+    path() {
+        return this.fileName;
+    }
+
+    touch() {
+        touchFile(this.fileName);
+    }
+
+    update(updater: (text: string) => string) {
+        let newText = updater(this.text);
+        this.text = newText;
+        fs.writeFileSync(this.fileName, newText);
+    }
 }

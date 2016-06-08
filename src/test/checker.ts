@@ -49,7 +49,10 @@ describe('checker test', function() {
 
     it('should fork checker in separate process', async function() {
         await cleanOutputDir();
-        let watcher = await watch(config, () => {});
+
+        let watcher = watch(config);
+        await watcher.wait();
+
         let pid = await getCheckerRuntimeProcess();
         expect(pid).ok;
         watcher.close();
@@ -60,7 +63,10 @@ describe('checker test', function() {
         // I didn't get how to test it more precise, so it's more like a proof of work
 
         await cleanOutputDir();
-        let watcher = await watch(config, () => {});
+
+        let watcher = watch(config, () => {});
+        await watcher.wait();
+
         let pid = await getCheckerRuntimeProcess();
 
         expect(pid).ok;
