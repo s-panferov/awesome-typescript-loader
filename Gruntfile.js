@@ -42,8 +42,15 @@ module.exports = function(grunt) {
                 command : 'git add CHANGELOG.md'
             }
         },
-        changelog : {
-            options : {
+        conventionalChangelog : {
+            options: {
+                changelogOpts: {
+                    // conventional-changelog options go here
+                    preset: 'angular'
+                }
+            },
+            release: {
+            	src: 'CHANGELOG.md'
             }
         }
     });
