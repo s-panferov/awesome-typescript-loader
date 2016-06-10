@@ -1,3 +1,13 @@
+<a name="1.0.0"></a>
+# [1.0.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v0.19.1...v1.0.0) (2016-06-10)
+
+
+### Features
+
+* update deps ([635c9d3](https://github.com/s-panferov/awesome-typescript-loader/commit/635c9d3))
+
+
+
 <a name"0.19.1"></a>
 ### 0.19.1 (2016-06-05)
 
