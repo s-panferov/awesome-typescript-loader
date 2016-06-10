@@ -184,7 +184,7 @@ export class Host implements ts.LanguageServiceHost {
 }
 
 function processInit(payload: IInitPayload) {
-    env.compiler = require(payload.compilerInfo.compilerName);
+    env.compiler = require(payload.compilerInfo.compilerPath);
     env.compilerInfo = payload.compilerInfo;
     env.options = payload.compilerOptions;
     env.webpackOptions = payload.webpackOptions;

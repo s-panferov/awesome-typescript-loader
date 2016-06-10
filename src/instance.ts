@@ -116,12 +116,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     }
 
     let tsFlow = Promise.resolve();
-
-    let compilerName = options.compiler || 'typescript';
-    let compilerPath = path.dirname(compilerName);
-    if (compilerPath == '.') {
-        compilerPath = compilerName;
-    }
+    let compilerPath = options.compiler || 'typescript';
 
     let tsImpl: typeof ts;
     try {
@@ -143,7 +138,6 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     }
 
     let compilerInfo: ICompilerInfo = {
-        compilerName,
         compilerPath,
         tsImpl,
         lib5: loadLib(libPath),
@@ -366,7 +360,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 compilation.errors.push(new Error(msg));
             };
 
-            let {options: {ignoreDiagnostics}} = instance;
+            let { options: { ignoreDiagnostics } } = instance;
             diagnostics
                 .filter(err => !ignoreDiagnostics || ignoreDiagnostics.indexOf(err.code) == -1)
                 .map(err => `[${ instanceName }] ` + formatError(err))
@@ -402,6 +396,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         instance.compiledFiles = {};
         compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
         compilation.fileDependencies = _.uniq(compilation.fileDependencies);
+
         callback();
     });
 }

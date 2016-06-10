@@ -3,4 +3,5 @@ language: node_js
 before_script:
   - npm run build
 node_js:
-  - "4.1"
+  - "4"
+  - "6"

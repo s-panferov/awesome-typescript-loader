@@ -8,8 +8,7 @@ let ps = require('ps-node');
 function getCheckerRuntimeProcess(): Promise<any> {
     let opts = {
         command: /node/,
-        arguments: /checker-runtime/,
-        psargs: 'aux'
+        arguments: /checker-runtime.js/,
     };
     return new Promise((resolve, reject) => {
         ps.lookup(opts, (err, resultList ) => {

@@ -17,7 +17,6 @@ export interface IFile {
 }
 
 export interface ICompilerInfo {
-    compilerName: string;
     compilerPath: string;
     tsImpl: typeof ts;
     lib5: { fileName: string, text: string };
