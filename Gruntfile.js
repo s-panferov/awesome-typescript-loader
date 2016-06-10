@@ -59,7 +59,7 @@ module.exports = function(grunt) {
         if(!target) {
             target = "minor";
         }
-        return grunt.task.run("bump-only:" + target, "changelog", "shell:addChangelog", "bump-commit");
+        return grunt.task.run("bump-only:" + target, "conventionalChangelog", "shell:addChangelog", "bump-commit");
     });
 
     grunt.registerTask('default', ['copy']);
