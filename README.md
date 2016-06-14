@@ -89,7 +89,7 @@ You can use the tsconfig.json file to configure your compiler and loader:
 ### compiler *(string) (default='typescript')*
 
 Allows use of TypeScript compilers other than the official one. Must be
-set to the NPM name of the compiler, e.g. *ntypescript* or the path to a `tsc` file.
+set to the NPM name of the compiler, e.g. *ntypescript* or the path to a package folder.
 Note that the compiler must be installed in **your** project. You can also use
 nightly versions.
 
