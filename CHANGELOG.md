@@ -1,3 +1,13 @@
+<a name="1.1.1"></a>
+## [1.1.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v1.1.0...v1.1.1) (2016-06-16)
+
+
+### Bug Fixes
+
+* downgrade strip-bom ([1e18134](https://github.com/s-panferov/awesome-typescript-loader/commit/1e18134))
+
+
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v1.0.0...v1.1.0) (2016-06-16)
 
