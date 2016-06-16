@@ -44,6 +44,7 @@ export interface ICompilerOptions extends ts.CompilerOptions {
     forkChecker?: boolean;
     forkCheckerSilent?: boolean;
     useBabel?: boolean;
+    babelCore?: string;
     babelOptions?: any;
     usePrecompiledFiles?: boolean;
     skipDeclarationFilesCheck?: boolean;

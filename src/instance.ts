@@ -199,7 +199,8 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     let babelImpl: any;
     if (options.useBabel) {
         try {
-            babelImpl = require(path.join(process.cwd(), 'node_modules', 'babel-core'));
+            let babelPath = options.babelCore || path.join(process.cwd(), 'node_modules', 'babel-core');
+            babelImpl = require(babelPath);
         } catch (e) {
             console.error(BABEL_ERROR);
             process.exit(1);
