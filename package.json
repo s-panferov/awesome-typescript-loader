@@ -42,7 +42,7 @@
     "object-assign": "^4.1.0",
     "parse-json": "^2.2.0",
     "source-map-support": "^0.4.0",
-    "strip-bom": "^3.0.0",
+    "strip-bom": "^1.0.0",
     "strip-json-comments": "^2.0.0",
     "tsconfig": "^3.0.0"
   },
