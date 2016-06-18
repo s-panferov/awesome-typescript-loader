@@ -1,13 +1,11 @@
-import { ICompilerOptions, State } from './host';
+import { State } from './host';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
-import * as tsconfig from 'tsconfig';
 import { loadLib, formatError } from './helpers';
 import { ICompilerInfo } from './host';
 import { createResolver } from './deps';
 import { createChecker } from './checker';
-import { rawToTsCompilerOptions, parseContent, tsconfigSuggestions } from './tsconfig-utils';
 import makeResolver from './resolver';
 
 let colors = require('colors/safe');
@@ -28,7 +26,8 @@ export interface ICompilerInstance {
     tsState: State;
     babelImpl?: any;
     compiledFiles: {[key:string]: boolean};
-    options: ICompilerOptions;
+    compilerConfig: TsConfig;
+    loaderConfig: LoaderConfig;
     externalsInvoked: boolean;
     checker: any;
     cacheIdentifier: any;
@@ -65,6 +64,33 @@ export interface IWebPack {
         }
     };
 }
+
+export interface LoaderConfig {
+    instanceName?: string;
+    showRecompileReason?: boolean;
+    compiler?: string;
+    emitRequireType?: boolean;
+    reEmitDependentFiles?: boolean;
+    tsconfig?: string;
+    useWebpackText?: boolean;
+    externals?: any;
+    doTypeCheck?: boolean;
+    ignoreDiagnostics?: number[];
+    forkChecker?: boolean;
+    forkCheckerSilent?: boolean;
+    useBabel?: boolean;
+    babelCore?: string;
+    babelOptions?: any;
+    usePrecompiledFiles?: boolean;
+    skipDeclarationFilesCheck?: boolean;
+    useCache?: boolean;
+    cacheDirectory?: string;
+    resolveGlobs?: boolean;
+    library: string;
+}
+
+export type QueryOptions = LoaderConfig & ts.CompilerOptions;
+export type TsConfig = ts.ParsedCommandLine;
 
 function getRootCompiler(compiler) {
     if (compiler.parentCompilation) {
@@ -106,7 +132,7 @@ const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add i
  * Creates compiler instance
  */
 let id = 0;
-export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, instanceName: string): ICompilerInstance {
+export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceName: string): ICompilerInstance {
     ensureInstanceStore(webpack._compiler);
 
     let exInstance = resolveInstance(webpack._compiler, instanceName);
@@ -116,7 +142,7 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
     }
 
     let tsFlow = Promise.resolve();
-    let compilerPath = options.compiler || 'typescript';
+    let compilerPath = query.compiler || 'typescript';
 
     let tsImpl: typeof ts;
     try {
@@ -144,99 +170,30 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         lib6: loadLib(lib6Path)
     };
 
-    _.defaults(options, {
-        resolveGlobs: true
-    });
+    let { compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
-    let configFilePath: string;
-    let configFile: tsconfig.TSConfig;
-    if (options.tsconfig && options.tsconfig.match(/\.json$/)) {
-        configFilePath = options.tsconfig;
-    } else {
-        configFilePath = tsconfig.resolveSync(options.tsconfig || process.cwd());
-    }
+    console.log(compilerConfig, loaderConfig)
 
-    if (configFilePath) {
-        let content = fs.readFileSync(configFilePath).toString();
-        configFile = parseContent(content, configFilePath);
+    applyDefaults(compilerConfig, loaderConfig);
+    let babelImpl = setupBabel(loaderConfig);
+    let cacheIdentifier = setupCache(loaderConfig, tsImpl, webpack, babelImpl);
 
-        if (options.resolveGlobs) {
-            tsconfigSuggestions(configFile);
-            configFile = tsconfig.readFileSync(configFilePath, { filterDefinitions: true });
-        }
-    }
+    let forkChecker = loaderConfig.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
+    let syncResolver = makeResolver(webpack._compiler.options);
 
-    let tsFiles: string[] = [];
-    if (configFile) {
-        if (configFile.compilerOptions) {
-            _.defaults(options, (configFile as any).awesomeTypescriptLoaderOptions);
-            _.defaults(options, configFile.compilerOptions);
-            options.exclude = configFile.exclude || [];
-            tsFiles = configFile.files;
-        }
-    }
+    let tsState = new State(
+        loaderConfig,
+        compilerConfig,
+        webpack._compiler.inputFileSystem,
+        compilerInfo,
+        syncResolver
+    );
 
-    let projDir = configFilePath
-        ? path.dirname(configFilePath)
-        : process.cwd();
-
-    options = rawToTsCompilerOptions(options, projDir, tsImpl);
-
-    _.defaults(options, {
-        externals: [],
-        doTypeCheck: true,
-        sourceMap: true,
-        verbose: false,
-        noLib: false,
-        skipDefaultLibCheck: true,
-        suppressOutputPathCheck: true,
-        sourceRoot: options.sourceMap ? process.cwd() : undefined
-    });
-
-    options = _.omit(options, 'outDir', 'files', 'out', 'noEmit') as any;
-    options.externals.push.apply(options.externals, tsFiles);
-
-    let babelImpl: any;
-    if (options.useBabel) {
-        try {
-            let babelPath = options.babelCore || path.join(process.cwd(), 'node_modules', 'babel-core');
-            babelImpl = require(babelPath);
-        } catch (e) {
-            console.error(BABEL_ERROR);
-            process.exit(1);
-        }
-    }
-
-    let cacheIdentifier = null;
-    if (options.useCache) {
-        if (!options.cacheDirectory) {
-            options.cacheDirectory = path.join(process.cwd(), '.awcache');
-        }
-
-        if (!fs.existsSync(options.cacheDirectory)) {
-            fs.mkdirSync(options.cacheDirectory);
-        }
-
-        cacheIdentifier = {
-            'typescript': tsImpl.version,
-            'awesome-typescript-loader': pkg.version,
-            'awesome-typescript-loader-query': webpack.query,
-            'babel-core': babelImpl
-                ? babelImpl.version
-                : null
-        };
-    }
-
-    let forkChecker = options.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
-    let resolver = makeResolver(webpack._compiler.options);
-    let syncResolver = resolver.resolveSync.bind(resolver);
-
-    let tsState = new State(options, webpack._compiler.inputFileSystem, compilerInfo, syncResolver);
     let compiler = (<any>webpack._compiler);
 
     setupWatchRun(compiler, instanceName);
 
-    if (options.doTypeCheck) {
+    if (loaderConfig.doTypeCheck) {
         setupAfterCompile(compiler, instanceName, forkChecker);
     }
 
@@ -262,16 +219,116 @@ export function ensureInstance(webpack: IWebPack, options: ICompilerOptions, ins
         tsState,
         babelImpl,
         compiledFiles: {},
-        options,
+        loaderConfig,
+        compilerConfig,
         externalsInvoked: false,
         checker: forkChecker
-            ? createChecker(compilerInfo, options, webpackOptions, plugins)
+            ? createChecker(
+                compilerInfo,
+                loaderConfig,
+                compilerConfig.options,
+                webpackOptions,
+                plugins)
             : null,
         cacheIdentifier,
         plugins,
         initedPlugins,
         externalsInvocation: null,
         shouldUpdateProgram: true
+    };
+}
+
+function setupCache(loaderConfig: LoaderConfig, tsImpl: typeof ts, webpack: IWebPack, babelImpl: any) {
+    let cacheIdentifier = null;
+    if (loaderConfig.useCache) {
+        if (!loaderConfig.cacheDirectory) {
+            loaderConfig.cacheDirectory = path.join(process.cwd(), '.awcache');
+        }
+
+        if (!fs.existsSync(loaderConfig.cacheDirectory)) {
+            fs.mkdirSync(loaderConfig.cacheDirectory);
+        }
+
+        cacheIdentifier = {
+            'typescript': tsImpl.version,
+            'awesome-typescript-loader': pkg.version,
+            'awesome-typescript-loader-query': webpack.query,
+            'babel-core': babelImpl
+                ? babelImpl.version
+                : null
+        };
+    }
+}
+
+function setupBabel(loaderConfig: LoaderConfig): any {
+    let babelImpl: any;
+    if (loaderConfig.useBabel) {
+        try {
+            let babelPath = loaderConfig.babelCore || path.join(process.cwd(), 'node_modules', 'babel-core');
+            babelImpl = require(babelPath);
+        } catch (e) {
+            console.error(BABEL_ERROR);
+            process.exit(1);
+        }
+    }
+}
+
+function applyDefaults(compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
+    compilerConfig.typingOptions.exclude = compilerConfig.typingOptions.exclude || [];
+    let initialFiles = compilerConfig.fileNames;
+
+    _.defaults(compilerConfig.options, {
+        sourceMap: true,
+        verbose: false,
+        skipDefaultLibCheck: true,
+        suppressOutputPathCheck: true,
+    });
+
+    _.defaults(compilerConfig.options, {
+        sourceRoot: compilerConfig.options.sourceMap ? process.cwd() : undefined
+    });
+
+    _.defaults(loaderConfig, {
+        externals: [],
+        doTypeCheck: true,
+        sourceMap: true,
+        verbose: false,
+    });
+
+    delete compilerConfig.options.outDir;
+    delete compilerConfig.options.outFile;
+    delete compilerConfig.options.out;
+    delete compilerConfig.options.noEmit;
+
+    loaderConfig.externals.push.apply(loaderConfig.externals, initialFiles);
+}
+
+function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): { compilerConfig: TsConfig, loaderConfig } {
+    let configFilePath: string;
+    if (query.tsconfig && query.tsconfig.match(/\.json$/)) {
+        configFilePath = query.tsconfig;
+    } else {
+        configFilePath = tsImpl.findConfigFile(process.cwd(), tsImpl.sys.fileExists);
+    }
+
+    if (!configFilePath) {
+        return null;
+    }
+
+    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, process.cwd(), 'atl.query');
+    let jsonConfigFile = tsImpl.readConfigFile(configFilePath, tsImpl.sys.readFile);
+
+    let compilerConfig = tsImpl.parseJsonConfigFileContent(
+        jsonConfigFile.config,
+        tsImpl.sys,
+        process.cwd(),
+        existingOptions.options,
+        configFilePath
+    );
+
+    return {
+        compilerConfig,
+        loaderConfig: _.defaults(query, jsonConfigFile.config.awesomeTypescriptLoaderOptions)
     };
 }
 
@@ -284,7 +341,7 @@ function setupWatchRun(compiler, instanceName: string) {
         let state = instance.tsState;
         let resolver = createResolver(
             compiler.options.externals,
-            state.options.exclude || [],
+            state.compilerConfig.typingOptions.exclude || [],
             watching.compiler.resolvers.normal.resolve,
             watching.compiler.resolvers.normal
         );
@@ -306,7 +363,7 @@ function setupWatchRun(compiler, instanceName: string) {
             });
 
             await Promise.all(tasks);
-            if (!state.options.forkChecker) {
+            if (!state.loaderConfig.forkChecker) {
                 state.updateProgram();
             }
             callback();
@@ -361,7 +418,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 compilation.errors.push(new Error(msg));
             };
 
-            let { options: { ignoreDiagnostics } } = instance;
+            let { loaderConfig: { ignoreDiagnostics } } = instance;
             diagnostics
                 .filter(err => !ignoreDiagnostics || ignoreDiagnostics.indexOf(err.code) == -1)
                 .map(err => `[${ instanceName }] ` + formatError(err))
@@ -379,7 +436,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             }
         });
 
-        if (instance.options.declaration) {
+        if (instance.compilerConfig.options.declaration) {
             phantomImports.forEach(imp => {
                 let output = instance.tsState.services.getEmitOutput(imp);
                 let declarationFile = output.outputFiles.filter(filePath =>

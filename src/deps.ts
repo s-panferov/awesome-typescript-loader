@@ -1,10 +1,8 @@
 import * as _ from 'lodash';
 import * as path from 'path';
-
-let promisify = require('es6-promisify');
-
 import { State } from './host';
 
+let promisify = require('es6-promisify');
 let objectAssign = require('object-assign');
 
 type FileSet = {[fileName: string]: boolean};
@@ -162,7 +160,7 @@ export class FileAnalyzer {
                     this.dependencies.addTypeDeclaration(importPath);
                     tasks.push(this.checkDependencies(resolver, importPath));
                 }
-            } else if (isRequiredJs && !this.state.options.allowJs) {
+            } else if (isRequiredJs && !this.state.compilerConfig.options.allowJs) {
                 continue;
             } else {
                 if (!checkIfModuleBuiltInCached(importPath)) {

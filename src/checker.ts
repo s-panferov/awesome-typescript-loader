@@ -1,20 +1,22 @@
 import * as _ from 'lodash';
 import * as childProcess from 'child_process';
 import * as path from 'path';
-import { ICompilerInfo, ICompilerOptions } from './host';
-import { LoaderPluginDef } from './instance';
+import { ICompilerInfo } from './host';
+import { LoaderPluginDef, LoaderConfig } from './instance';
 
 interface ChildProcess extends childProcess.ChildProcess {
     inProgress?: boolean;
     compilerInfo?: ICompilerInfo;
-    compilerOptions?: ICompilerOptions;
+    loaderConfig?: LoaderConfig;
+    compilerOptions?: ts.CompilerOptions;
     webpackOptions?: any;
     plugins?: LoaderPluginDef[];
 }
 
 export function createChecker(
     compilerInfo: ICompilerInfo,
-    compilerOptions: ICompilerOptions,
+    loaderConfig: LoaderConfig,
+    compilerOptions: ts.CompilerOptions,
     webpackOptions: any,
     plugins: LoaderPluginDef[]
 ): ChildProcess {
@@ -24,6 +26,7 @@ export function createChecker(
         messageType: 'init',
         payload: {
             compilerInfo: _.omit(compilerInfo, 'tsImpl'),
+            loaderConfig,
             compilerOptions,
             webpackOptions,
             plugins
@@ -32,6 +35,7 @@ export function createChecker(
 
     checker.inProgress = false;
     checker.compilerInfo = compilerInfo;
+    checker.loaderConfig = loaderConfig;
     checker.compilerOptions = compilerOptions;
     checker.webpackOptions = webpackOptions;
     checker.on('message', function(msg) {
@@ -48,6 +52,7 @@ export function resetChecker(checker: ChildProcess) {
         checker.kill('SIGKILL');
         return createChecker(
             checker.compilerInfo,
+            checker.loaderConfig,
             checker.compilerOptions,
             checker.webpackOptions,
             checker.plugins
