@@ -35,16 +35,11 @@
   "dependencies": {
     "babel-polyfill": "^6.1.19",
     "colors": "^1.1.2",
-    "enhanced-resolve": "^0.9.1",
+    "enhanced-resolve": "^2.2.2",
     "es6-promisify": "^4.1.0",
     "loader-utils": "^0.2.6",
     "lodash": "^4.13.1",
-    "object-assign": "^4.1.0",
-    "parse-json": "^2.2.0",
-    "source-map-support": "^0.4.0",
-    "strip-bom": "^1.0.0",
-    "strip-json-comments": "^2.0.0",
-    "tsconfig": "^3.0.0"
+    "source-map-support": "^0.4.0"
   },
   "devDependencies": {
     "babel-cli": "^6.3.17",
@@ -63,6 +58,7 @@
     "grunt-conventional-changelog": "^6.1.0",
     "grunt-shell": "^1.1.2",
     "load-grunt-tasks": "^3.5.0",
+    "loader": "^2.1.1",
     "mkdirp": "^0.5.1",
     "mocha": "^2.3.4",
     "ps-node": "^0.1.1",
@@ -70,7 +66,7 @@
     "sinon": "^1.17.4",
     "temp": "^0.8.3",
     "tslint": "3.11.0-dev.0",
-    "typescript": "1.9.0-dev.20160610-1.0",
+    "typescript": "^1.9.0-dev.20160618-1.0",
     "webpack": "2.1.0-beta.4"
   }
 }

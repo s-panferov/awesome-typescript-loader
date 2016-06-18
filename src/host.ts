@@ -5,10 +5,9 @@ import * as path from 'path';
 
 import { FileAnalyzer } from './deps';
 import { loadLib } from './helpers';
+import { LoaderConfig, TsConfig } from './instance';
 
 let promisify = require('es6-promisify');
-let objectAssign = require('object-assign');
-
 let RUNTIME = loadLib('../lib/runtime.d.ts');
 
 export interface IFile {
@@ -25,33 +24,6 @@ export interface ICompilerInfo {
 
 export interface SyncResolver {
     (context: string, fileName: string): string;
-}
-
-export interface ICompilerOptions extends ts.CompilerOptions {
-    noLib?: boolean;
-    instanceName?: string;
-    showRecompileReason?: boolean;
-    compiler?: string;
-    emitRequireType?: boolean;
-    library?: string;
-    reEmitDependentFiles?: boolean;
-    tsconfig?: string;
-    useWebpackText?: boolean;
-    exclude?: string[];
-    externals?: any;
-    doTypeCheck?: boolean;
-    ignoreDiagnostics?: number[];
-    forkChecker?: boolean;
-    forkCheckerSilent?: boolean;
-    useBabel?: boolean;
-    babelCore?: string;
-    babelOptions?: any;
-    usePrecompiledFiles?: boolean;
-    skipDeclarationFilesCheck?: boolean;
-    useCache?: boolean;
-    cacheDirectory?: string;
-    files?: any;
-    resolveGlobs?: boolean;
 }
 
 export interface IOutputFile extends ts.OutputFile {
@@ -105,7 +77,7 @@ export class Host implements ts.LanguageServiceHost {
             try {
                 // ignore excluded javascript
                 if (!fileName.match(/\.tsx?$|package[.]json?$/)) {
-                    let matchedExcludes = this.state.options.exclude.filter((excl) => {
+                    let matchedExcludes = this.state.compilerConfig.typingOptions.exclude.filter((excl) => {
                         return fileName.indexOf(excl) !== -1;
                     });
                     if (matchedExcludes.length > 0) {
@@ -140,7 +112,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getCompilationSettings() {
-        return this.state.options;
+        return this.state.compilerConfig.options;
     }
 
     getDefaultLibFileName(options) {
@@ -172,7 +144,7 @@ export class Host implements ts.LanguageServiceHost {
             let tsResolved = this.state.ts.resolveModuleName(
                 resolvedFileName || moduleName,
                 containingFile,
-                this.state.options,
+                this.state.compilerConfig.options,
                 this.moduleResolutionHost
             );
 
@@ -205,14 +177,16 @@ export class State {
     host: Host;
     files: {[fileName: string]: IFile} = {};
     services: ts.LanguageService;
-    options: ICompilerOptions;
+    loaderConfig: LoaderConfig;
+    compilerConfig: TsConfig;
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
     resolver: SyncResolver;
     readFileImpl: (fileName: string) => Promise<Buffer>;
 
     constructor(
-        options: ICompilerOptions,
+        loaderConfig: LoaderConfig,
+        compilerConfig: TsConfig,
         fsImpl: typeof fs,
         compilerInfo: ICompilerInfo,
         resolver: SyncResolver
@@ -226,16 +200,15 @@ export class State {
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.fileAnalyzer = new FileAnalyzer(this);
 
-        this.options = {};
+        this.loaderConfig = loaderConfig;
+        this.compilerConfig = compilerConfig;
 
-        objectAssign(this.options, options);
-
-        if (this.options.emitRequireType) {
+        if (loaderConfig.emitRequireType) {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }
 
-        if (!this.options.noLib) {
-            if (this.options.target === this.ts.ScriptTarget.ES6 || this.options.library === 'es6') {
+        if (!compilerConfig.options.noLib) {
+            if (compilerConfig.options.target === this.ts.ScriptTarget.ES6 || loaderConfig.library === 'es6') {
                 this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
             } else {
                 this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
@@ -316,7 +289,7 @@ export class State {
         }
 
         let transpileResult = this.ts.transpileModule(file.text, {
-            compilerOptions: this.options,
+            compilerOptions: this.compilerConfig.options,
             reportDiagnostics: false,
             fileName
         });

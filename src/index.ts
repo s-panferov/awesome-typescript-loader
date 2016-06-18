@@ -5,11 +5,10 @@
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { ICompilerOptions } from './host';
 import { createResolver } from './deps';
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
-import { IWebPack, ensureInstance } from './instance';
+import { QueryOptions, IWebPack, ensureInstance } from './instance';
 
 let promisify = require('es6-promisify');
 let loaderUtils = require('loader-utils');
@@ -29,7 +28,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         webpack.cacheable();
     }
 
-    let options = <ICompilerOptions>loaderUtils.parseQuery(webpack.query);
+    let options = <QueryOptions>loaderUtils.parseQuery(webpack.query);
     let instanceName = options.instanceName || 'default';
 
     let instance = ensureInstance(webpack, options, instanceName);
@@ -40,7 +39,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
 
     let resolver = createResolver(
         webpack._compiler.options.externals,
-        state.options.exclude || [],
+        state.compilerConfig.typingOptions.exclude || [],
         webpack.resolve,
         webpack
     );
@@ -54,16 +53,16 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         depsInjector.clear();
         depsInjector.add(fileName);
         state.fileAnalyzer.dependencies.applyCompiledFiles(fileName, depsInjector);
-        if (state.options.reEmitDependentFiles) {
+        if (state.loaderConfig.reEmitDependentFiles) {
             state.fileAnalyzer.dependencies.applyChain(fileName, depsInjector);
         }
     });
 
-    if (instance.options.externals && !instance.externalsInvoked) {
+    if (instance.loaderConfig.externals && !instance.externalsInvoked) {
         if (instance.externalsInvocation) {
             await instance.externalsInvocation;
         } else {
-            let promises = instance.options.externals.map(async (external) => {
+            let promises = instance.loaderConfig.externals.map(async (external) => {
                 await state.fileAnalyzer.checkDependencies(resolver, external);
             });
 
@@ -77,7 +76,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
 
     instance.compiledFiles[fileName] = true;
     let doUpdate = false;
-    if (instance.options.useWebpackText) {
+    if (instance.loaderConfig.useWebpackText) {
         if (state.updateFile(fileName, text, true)) {
             doUpdate = true;
         }
@@ -90,7 +89,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         }
 
         let compiledModule;
-        if (instance.options.usePrecompiledFiles) {
+        if (instance.loaderConfig.usePrecompiledFiles) {
             compiledModule = findCompiledModule(fileName);
         }
 
@@ -110,7 +109,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                 let resultText;
                 let resultSourceMap = null;
 
-                if (state.options.declaration) {
+                if (state.compilerConfig.options.declaration) {
                     // can't use fastEmit with declaration generation
 
                     let output = state.emit(fileName);
@@ -147,7 +146,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                     resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');
                 }
 
-                if (instance.options.useBabel) {
+                if (instance.loaderConfig.useBabel) {
                     let defaultOptions = {
                         inputSourceMap: resultSourceMap,
                         sourceRoot: process.cwd(),
@@ -168,11 +167,11 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                 };
             }
 
-            if (instance.options.useCache) {
+            if (instance.loaderConfig.useCache) {
                 transformation = await cachePromise({
                     source: text,
                     identifier: instance.cacheIdentifier,
-                    directory: instance.options.cacheDirectory,
+                    directory: instance.loaderConfig.cacheDirectory,
                     options: webpack.query,
                     transform: transform
                 } as any);
@@ -186,7 +185,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
 
         if (resultSourceMap) {
             let sourcePath = path.relative(
-                instance.options.sourceRoot || process.cwd(),
+                instance.compilerConfig.options.sourceRoot || process.cwd(),
                 loaderUtils.getRemainingRequest(webpack)
             );
 

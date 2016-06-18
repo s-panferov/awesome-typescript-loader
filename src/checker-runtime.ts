@@ -1,5 +1,5 @@
-import { ICompilerOptions, ICompilerInfo, IFile } from './host';
-import { LoaderPlugin, LoaderPluginDef } from './instance';
+import { ICompilerInfo, IFile } from './host';
+import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
 import makeResolver from './resolver';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -19,7 +19,8 @@ export interface IMessage {
 }
 
 export interface IInitPayload {
-    compilerOptions: ICompilerOptions;
+    loaderConfig: LoaderConfig;
+    compilerOptions: ts.CompilerOptions;
     compilerInfo: ICompilerInfo;
     webpackOptions: any;
     plugins: LoaderPluginDef[];
@@ -31,7 +32,8 @@ export interface ICompilePayload {
 }
 
 export interface IEnv {
-    options?: ICompilerOptions;
+    loaderConfig?: LoaderConfig;
+    compilerOptions?: ts.CompilerOptions;
     webpackOptions?: any;
     compiler?: typeof ts;
     compilerInfo?: ICompilerInfo;
@@ -45,7 +47,7 @@ export interface IEnv {
 }
 
 export interface SyncResolver {
-    resolveSync(context: string, fileName: string): string;
+    (context: string, fileName: string): string;
 }
 
 let env: IEnv = {};
@@ -122,7 +124,7 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getCompilationSettings() {
-        return env.options;
+        return env.compilerOptions;
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
@@ -137,7 +139,7 @@ export class Host implements ts.LanguageServiceHost {
                 let resolvedModule: ts.ResolvedModule;
 
                 try {
-                    resolvedFileName = this.resolver.resolveSync(
+                    resolvedFileName = this.resolver(
                         this.normalizePath(path.dirname(containingFile)),
                         moduleName
                     );
@@ -153,7 +155,7 @@ export class Host implements ts.LanguageServiceHost {
                 let tsResolved = env.compiler.resolveModuleName(
                     resolvedFileName || moduleName,
                     containingFile,
-                    env.options,
+                    env.compilerOptions,
                     this.moduleResolutionHost
                 );
 
@@ -186,7 +188,8 @@ export class Host implements ts.LanguageServiceHost {
 function processInit(payload: IInitPayload) {
     env.compiler = require(payload.compilerInfo.compilerPath);
     env.compilerInfo = payload.compilerInfo;
-    env.options = payload.compilerOptions;
+    env.loaderConfig = payload.loaderConfig;
+    env.compilerOptions = payload.compilerOptions;
     env.webpackOptions = payload.webpackOptions;
     env.host = new Host();
     env.service = env.compiler.createLanguageService(env.host, env.compiler.createDocumentRegistry());
@@ -199,8 +202,8 @@ function processInit(payload: IInitPayload) {
 let DECLARATION_FILE = /\.d\.ts/;
 
 function processCompile(payload: ICompilePayload) {
-    let instanceName = env.options.instanceName || 'default';
-    let silent = !!env.options.forkCheckerSilent;
+    let instanceName = env.loaderConfig.instanceName || 'default';
+    let silent = !!env.loaderConfig.forkCheckerSilent;
     if (!silent) {
         console.log(colors.cyan(`[${ instanceName }] Checking started in a separate process...`));
     }
@@ -218,7 +221,7 @@ function processCompile(payload: ICompilePayload) {
     let program = env.program = env.service.getProgram();
 
     let allDiagnostics: ts.Diagnostic[] = [];
-    if (env.options.skipDeclarationFilesCheck) {
+    if (env.loaderConfig.skipDeclarationFilesCheck) {
         let sourceFiles = program.getSourceFiles();
         sourceFiles.forEach(sourceFile => {
             if (!sourceFile.fileName.match(DECLARATION_FILE)) {
