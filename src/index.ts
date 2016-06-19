@@ -121,10 +121,17 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
                     }
 
                     if (result.declaration) {
-                        webpack.emitFile(
-                            path.relative(process.cwd(), result.declaration.sourceName),
-                            result.declaration.text
+                        const dtsPath: string = loaderUtils.interpolateName(
+                            {
+                                resourcePath: result.declaration.sourceName,
+                                options: webpack.options
+                            },
+                            '[path][name].[ext]',
+                            {
+                                context: webpack.options.context
+                            }
                         );
+                        webpack.emitFile(dtsPath, result.declaration.text);
                     }
 
                     resultText = result.text;
