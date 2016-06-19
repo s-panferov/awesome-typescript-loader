@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
 
-import { FileAnalyzer } from './deps';
+import { FileAnalyzer, SyncResolver } from './deps';
 import { loadLib } from './helpers';
 import { LoaderConfig, TsConfig } from './instance';
 
@@ -22,10 +22,6 @@ export interface ICompilerInfo {
     lib6: { fileName: string, text: string };
 }
 
-export interface SyncResolver {
-    (context: string, fileName: string): string;
-}
-
 export interface IOutputFile extends ts.OutputFile {
     sourceName: string;
 }
@@ -34,31 +30,11 @@ export interface IEmitOutput extends ts.EmitOutput {
     outputFiles: IOutputFile[];
 }
 
-export class ModuleResolutionHost implements ts.ModuleResolutionHost {
-    servicesHost: Host;
-    resolutionCache: {[fileName: string]: ts.ResolvedModule} = {};
-
-    constructor(servicesHost: Host) {
-        this.servicesHost = servicesHost;
-    }
-
-    fileExists(fileName: string)  {
-        return this.servicesHost.getScriptSnapshot(fileName) !== undefined;
-    }
-
-    readFile(fileName: string): string {
-        let snapshot = this.servicesHost.getScriptSnapshot(fileName);
-        return snapshot && snapshot.getText(0, snapshot.getLength());
-    }
-}
-
 export class Host implements ts.LanguageServiceHost {
     state: State;
-    moduleResolutionHost: ModuleResolutionHost;
 
     constructor(state: State) {
         this.state = state;
-        this.moduleResolutionHost = new ModuleResolutionHost(this);
     }
 
     getScriptFileNames() {
@@ -85,7 +61,7 @@ export class Host implements ts.LanguageServiceHost {
                     }
                 }
 
-                let text = this.state.readFileSync(fileName);
+                let text = this.state.readFile(fileName);
                 file = {
                     version: 0,
                     text
@@ -122,45 +98,9 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let resolvedModules: ts.ResolvedModule[] = [];
-
-        for (let moduleName of moduleNames) {
-            let resolvedFileName: string;
-            let resolvedModule: ts.ResolvedModule;
-
-            try {
-                resolvedFileName = this.state.resolver(
-                    this.state.normalizePath(path.dirname(containingFile)),
-                    moduleName
-                );
-                if (!resolvedFileName.match(/\.tsx?$/)) {
-                    resolvedFileName = null;
-                }
-            }
-            catch (e) {
-                resolvedFileName = null;
-            }
-
-            let tsResolved = this.state.ts.resolveModuleName(
-                resolvedFileName || moduleName,
-                containingFile,
-                this.state.compilerConfig.options,
-                this.moduleResolutionHost
-            );
-
-            if (tsResolved.resolvedModule) {
-                resolvedModule = tsResolved.resolvedModule;
-            } else {
-                resolvedModule = {
-                    resolvedFileName: resolvedFileName || ''
-                };
-            }
-
-            this.moduleResolutionHost.resolutionCache[`${containingFile}::${moduleName}`] = resolvedModule;
-            resolvedModules.push(resolvedModule);
-        }
-
-        return resolvedModules;
+        return moduleNames.map(moduleName => {
+            return this.state.fileAnalyzer.dependencies.getResolution(containingFile, moduleName);
+        });
     }
 
     log(message) {
@@ -182,7 +122,6 @@ export class State {
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
     resolver: SyncResolver;
-    readFileImpl: (fileName: string) => Promise<Buffer>;
 
     constructor(
         loaderConfig: LoaderConfig,
@@ -195,7 +134,6 @@ export class State {
         this.compilerInfo = compilerInfo;
         this.resolver = resolver;
         this.fs = fsImpl;
-        this.readFileImpl = promisify(this.fs.readFile.bind(this.fs)) as any;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.fileAnalyzer = new FileAnalyzer(this);
@@ -340,34 +278,21 @@ export class State {
         return this.files.hasOwnProperty(fileName);
     }
 
-    async readFile(fileName: string): Promise<string> {
-        fileName = this.normalizePath(fileName);
-        let buf = await this.readFileImpl(fileName);
-        let string = buf.toString('utf8');
-        return string;
-    }
-
-    readFileSync(fileName: string): string {
+    readFile(fileName: string): string {
         fileName = this.normalizePath(fileName);
         // Use global fs here, because local doesn't contain `readFileSync`
         return fs.readFileSync(fileName, {encoding: 'utf-8'});
     }
 
-    async readFileAndAdd(fileName: string): Promise<any> {
+    readFileAndAdd(fileName: string) {
         fileName = this.normalizePath(fileName);
-        let text = await this.readFile(fileName);
+        let text = this.readFile(fileName);
         this.addFile(fileName, text);
     }
 
-    async readFileAndUpdate(fileName: string, checked: boolean = false): Promise<boolean> {
+    readFileAndUpdate(fileName: string, checked: boolean = false): boolean {
         fileName = this.normalizePath(fileName);
-        let text = await this.readFile(fileName);
-        return this.updateFile(fileName, text, checked);
-    }
-
-    readFileAndUpdateSync(fileName: string, checked: boolean = false): boolean {
-        fileName = this.normalizePath(fileName);
-        let text = this.readFileSync(fileName);
+        let text = this.readFile(fileName);
         return this.updateFile(fileName, text, checked);
     }
 
