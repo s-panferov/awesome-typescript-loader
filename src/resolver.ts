@@ -1,7 +1,7 @@
 let enhancedResolve = require('enhanced-resolve');
 
-function makeResolver(options) {
+function createSyncResolver(options) {
 	return enhancedResolve.create.sync(options.resolve);
 }
 
-export default makeResolver;
+export default createSyncResolver;

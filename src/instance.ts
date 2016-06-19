@@ -4,9 +4,9 @@ import * as path from 'path';
 import * as _ from 'lodash';
 import { loadLib, formatError } from './helpers';
 import { ICompilerInfo } from './host';
-import { createResolver } from './deps';
+import { createIgnoringResolver } from './deps';
 import { createChecker } from './checker';
-import makeResolver from './resolver';
+import createSyncResolver from './resolver';
 
 let colors = require('colors/safe');
 let pkg = require('../package.json');
@@ -22,7 +22,6 @@ export interface LoaderPluginDef {
 
 export interface ICompilerInstance {
     id: number;
-    tsFlow: Promise<any>;
     tsState: State;
     babelImpl?: any;
     compiledFiles: {[key:string]: boolean};
@@ -33,7 +32,6 @@ export interface ICompilerInstance {
     cacheIdentifier: any;
     plugins: LoaderPluginDef[];
     initedPlugins: LoaderPlugin[];
-    externalsInvocation: Promise<any>;
     shouldUpdateProgram: boolean;
 }
 
@@ -73,7 +71,7 @@ export interface LoaderConfig {
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
     useWebpackText?: boolean;
-    externals?: any;
+    externals?: string[];
     doTypeCheck?: boolean;
     ignoreDiagnostics?: number[];
     forkChecker?: boolean;
@@ -141,7 +139,6 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         return exInstance;
     }
 
-    let tsFlow = Promise.resolve();
     let compilerPath = query.compiler || 'typescript';
 
     let tsImpl: typeof ts;
@@ -172,14 +169,12 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
 
     let { compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
-    console.log(compilerConfig, loaderConfig)
-
     applyDefaults(compilerConfig, loaderConfig);
     let babelImpl = setupBabel(loaderConfig);
     let cacheIdentifier = setupCache(loaderConfig, tsImpl, webpack, babelImpl);
 
     let forkChecker = loaderConfig.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
-    let syncResolver = makeResolver(webpack._compiler.options);
+    let syncResolver = createSyncResolver(webpack._compiler.options);
 
     let tsState = new State(
         loaderConfig,
@@ -215,7 +210,6 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
 
     return getInstanceStore(webpack._compiler)[instanceName] = {
         id: ++id,
-        tsFlow,
         tsState,
         babelImpl,
         compiledFiles: {},
@@ -233,7 +227,6 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         cacheIdentifier,
         plugins,
         initedPlugins,
-        externalsInvocation: null,
         shouldUpdateProgram: true
     };
 }
@@ -271,6 +264,8 @@ function setupBabel(loaderConfig: LoaderConfig): any {
             process.exit(1);
         }
     }
+
+    return babelImpl;
 }
 
 function applyDefaults(compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
@@ -335,16 +330,9 @@ function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts)
 let EXTENSIONS = /\.tsx?$|\.jsx?$/;
 
 function setupWatchRun(compiler, instanceName: string) {
-    compiler.plugin('watch-run', async function (watching, callback) {
-        let compiler: ICompiler = watching.compiler;
+    compiler.plugin('watch-run', function (watching, callback) {
         let instance = resolveInstance(watching.compiler, instanceName);
         let state = instance.tsState;
-        let resolver = createResolver(
-            compiler.options.externals,
-            state.compilerConfig.typingOptions.exclude || [],
-            watching.compiler.resolvers.normal.resolve,
-            watching.compiler.resolvers.normal
-        );
         let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
         let changedFiles = Object.keys(mtimes);
 
@@ -353,16 +341,15 @@ function setupWatchRun(compiler, instanceName: string) {
         });
 
         try {
-            let tasks = changedFiles.map(async function(changedFile) {
+            changedFiles.forEach(changedFile => {
                 if (EXTENSIONS.test(changedFile)) {
                     if (state.hasFile(changedFile)) {
-                        await state.readFileAndUpdate(changedFile);
-                        await state.fileAnalyzer.checkDependenciesLocked(resolver, changedFile);
+                        state.readFileAndUpdate(changedFile);
+                        state.fileAnalyzer.checkDependencies(changedFile);
                     }
                 }
             });
 
-            await Promise.all(tasks);
             if (!state.loaderConfig.forkChecker) {
                 state.updateProgram();
             }
@@ -397,7 +384,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         if (forkChecker) {
             let payload = {
                 files: state.allFiles(),
-                resolutionCache: state.host.moduleResolutionHost.resolutionCache
+                resolutionCache: state.fileAnalyzer.dependencies.resolutions
             };
 
             runChecker(instance, payload);

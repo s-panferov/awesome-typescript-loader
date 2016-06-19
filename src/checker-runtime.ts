@@ -1,12 +1,10 @@
 import { ICompilerInfo, IFile } from './host';
 import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
-import makeResolver from './resolver';
+import createSyncResolver from './resolver';
 import * as path from 'path';
 import * as fs from 'fs';
 
 let colors = require('colors/safe');
-
-require('babel-polyfill');
 
 export enum MessageType {
     Init = <any>'init',
@@ -75,7 +73,7 @@ export class Host implements ts.LanguageServiceHost {
 
     constructor() {
         this.moduleResolutionHost = new ModuleResolutionHost(this);
-        this.resolver = makeResolver(env.webpackOptions);
+        this.resolver = createSyncResolver(env.webpackOptions);
     }
 
     normalizePath(filePath: string): string {
@@ -128,50 +126,9 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let resolvedModules: ts.ResolvedModule[] = [];
-
-        for (let moduleName of moduleNames) {
-            let cached = env.resolutionCache[`${containingFile}::${moduleName}`];
-            if (cached) {
-                resolvedModules.push(cached);
-            } else {
-                let resolvedFileName: string;
-                let resolvedModule: ts.ResolvedModule;
-
-                try {
-                    resolvedFileName = this.resolver(
-                        this.normalizePath(path.dirname(containingFile)),
-                        moduleName
-                    );
-
-                    if (!resolvedFileName.match(/\.tsx?$/)) {
-                        resolvedFileName = null;
-                    }
-                }
-                catch (e) {
-                    resolvedFileName = null;
-                }
-
-                let tsResolved = env.compiler.resolveModuleName(
-                    resolvedFileName || moduleName,
-                    containingFile,
-                    env.compilerOptions,
-                    this.moduleResolutionHost
-                );
-
-                if (tsResolved.resolvedModule) {
-                    resolvedModule = tsResolved.resolvedModule;
-                } else {
-                    resolvedModule = {
-                        resolvedFileName: resolvedFileName || ''
-                    };
-                }
-
-                resolvedModules.push(resolvedModule);
-            }
-        }
-
-        return resolvedModules;
+        return moduleNames.map(moduleName => {
+            return env.resolutionCache[`${containingFile}::${moduleName}`];
+        });
     }
 
     getDefaultLibFileName(options) {

@@ -5,44 +5,35 @@
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { createResolver } from './deps';
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
-import { QueryOptions, IWebPack, ensureInstance } from './instance';
+import { isTypeDeclaration } from './deps';
+import { QueryOptions, IWebPack, ensureInstance, ICompilerInstance } from './instance';
 
 let promisify = require('es6-promisify');
 let loaderUtils = require('loader-utils');
 let cachePromise: any = promisify(cache);
 
-async function loader(text) {
+function loader(text) {
     try {
-        await compiler.call(undefined, this, text);
+        compiler.call(undefined, this, text);
     } catch(e) {
         console.error(e, e.stack);
         throw e;
     }
 }
 
-async function compiler(webpack: IWebPack, text: string): Promise<void> {
+function compiler(webpack: IWebPack, text: string): void {
     if (webpack.cacheable) {
         webpack.cacheable();
     }
 
     let options = <QueryOptions>loaderUtils.parseQuery(webpack.query);
     let instanceName = options.instanceName || 'default';
-
     let instance = ensureInstance(webpack, options, instanceName);
     let state = instance.tsState;
-
     let callback = webpack.async();
     let fileName = state.normalizePath(webpack.resourcePath);
-
-    let resolver = createResolver(
-        webpack._compiler.options.externals,
-        state.compilerConfig.typingOptions.exclude || [],
-        webpack.resolve,
-        webpack
-    );
 
     let depsInjector = {
         add: (depFileName) => webpack.addDependency(depFileName),
@@ -58,21 +49,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         }
     });
 
-    if (instance.loaderConfig.externals && !instance.externalsInvoked) {
-        if (instance.externalsInvocation) {
-            await instance.externalsInvocation;
-        } else {
-            let promises = instance.loaderConfig.externals.map(async (external) => {
-                await state.fileAnalyzer.checkDependencies(resolver, external);
-            });
-
-            instance.externalsInvocation = Promise.all(promises).then(() => {
-                instance.externalsInvoked = true;
-            });
-
-            await instance.externalsInvocation;
-        }
-    }
+    invokeKnownFilesTime(instance);
 
     instance.compiledFiles[fileName] = true;
     let doUpdate = false;
@@ -83,7 +60,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
     }
 
     try {
-        let wasChanged = await state.fileAnalyzer.checkDependenciesLocked(resolver, fileName);
+        let wasChanged = state.fileAnalyzer.checkDependencies(fileName);
         if (wasChanged || doUpdate) {
             instance.shouldUpdateProgram = true;
         }
@@ -168,7 +145,7 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
             }
 
             if (instance.loaderConfig.useCache) {
-                transformation = await cachePromise({
+                transformation = cachePromise({
                     source: text,
                     identifier: instance.cacheIdentifier,
                     directory: instance.loaderConfig.cacheDirectory,
@@ -208,6 +185,16 @@ async function compiler(webpack: IWebPack, text: string): Promise<void> {
         callback(err, helpers.codegenErrorReport([err]));
     } finally {
         applyDeps();
+    }
+}
+
+function invokeKnownFilesTime(instance: ICompilerInstance) {
+     if (instance.loaderConfig.externals && !instance.externalsInvoked) {
+        instance.loaderConfig.externals
+            .filter(isTypeDeclaration)
+            .forEach(ext => instance.tsState.fileAnalyzer.checkDependencies(ext));
+
+        instance.externalsInvoked = true;
     }
 }
 
