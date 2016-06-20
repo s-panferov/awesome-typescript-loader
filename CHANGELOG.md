@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.5"></a>
+# [2.0.0-rc.5](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.4...v2.0.0-rc.5) (2016-06-20)
+
+
+### Bug Fixes
+
+* search all nodes for modules (can be optimized) ([dacee2d](https://github.com/s-panferov/awesome-typescript-loader/commit/dacee2d))
+
+
+
 <a name="2.0.0-rc.4"></a>
 # [2.0.0-rc.4](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.3...v2.0.0-rc.4) (2016-06-20)
 
