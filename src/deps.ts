@@ -74,6 +74,7 @@ export class FileAnalyzer {
 
     findImportDeclarations(fileName: string): ts.ResolvedModule[] {
         let sourceFile = this.state.getSourceFile(fileName);
+        let ts = this.state.ts;
 
         let imports = [];
         let visit = (node: ts.Node) => {
@@ -85,11 +86,12 @@ export class FileAnalyzer {
                 let importPath = (<any>node).moduleSpecifier.text;
                 imports.push(importPath);
             }
+
+            ts.forEachChild(node, visit);
         };
 
         imports.push.apply(imports, sourceFile.referencedFiles.map(file => file.fileName));
-
-        this.state.ts.forEachChild(sourceFile, visit);
+        ts.forEachChild(sourceFile, visit);
 
         let resolvedImports = imports.map((importPath) => {
             return this.resolve(fileName, importPath);
