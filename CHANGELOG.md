@@ -1,3 +1,14 @@
+<a name="2.0.0-rc.0"></a>
+# [2.0.0-rc.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v1.1.1...v2.0.0-rc.0) (2016-06-20)
+
+
+### Features
+
+* fixed module resolution; add `lib` option support ([6fe51a9](https://github.com/s-panferov/awesome-typescript-loader/commit/6fe51a9))
+* no more async, simplify module resolution ([a8e867e](https://github.com/s-panferov/awesome-typescript-loader/commit/a8e867e))
+
+
+
 <a name="1.1.1"></a>
 ## [1.1.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v1.1.0...v1.1.1) (2016-06-16)
 
