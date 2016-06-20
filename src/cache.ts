@@ -76,10 +76,10 @@ function filename(source: string, identifier, options) {
     return hash.read().toString('hex') + '.json.gzip';
 };
 
-interface CacheParams {
+interface CacheParams<T> {
     source: string;
     options: any;
-    transform: (source: string, options: any) => string;
+    transform: () => T;
     identifier: any;
     directory: string;
 }
@@ -87,7 +87,7 @@ interface CacheParams {
 /**
  * Retrieve file from cache, or create a new one for future reads
  */
-export function cache(params: CacheParams) {
+export function cache<T>(params: CacheParams<T>): T {
     // Spread params into named variables
     // Forgive user whenever possible
     let source = params.source;
@@ -106,7 +106,7 @@ export function cache(params: CacheParams) {
     } catch(e) {
         // Otherwise just transform the file
         // return it to the user asap and write it in cache
-        let result = transform(source, options);
+        let result = transform();
         write(file, result);
         return result;
     }

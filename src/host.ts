@@ -7,19 +7,17 @@ import { FileAnalyzer, SyncResolver } from './deps';
 import { loadLib } from './helpers';
 import { LoaderConfig, TsConfig } from './instance';
 
-let promisify = require('es6-promisify');
 let RUNTIME = loadLib('../lib/runtime.d.ts');
 
 export interface IFile {
     text: string;
+    isDefaultLib: boolean;
     version: number;
 }
 
 export interface ICompilerInfo {
     compilerPath: string;
     tsImpl: typeof ts;
-    lib5: { fileName: string, text: string };
-    lib6: { fileName: string, text: string };
 }
 
 export interface IOutputFile extends ts.OutputFile {
@@ -49,33 +47,7 @@ export class Host implements ts.LanguageServiceHost {
 
     getScriptSnapshot(fileName) {
         let file = this.state.getFile(fileName);
-        if (!file) {
-            try {
-                // ignore excluded javascript
-                if (!fileName.match(/\.tsx?$|package[.]json?$/)) {
-                    let matchedExcludes = this.state.compilerConfig.typingOptions.exclude.filter((excl) => {
-                        return fileName.indexOf(excl) !== -1;
-                    });
-                    if (matchedExcludes.length > 0) {
-                        return;
-                    }
-                }
-
-                let text = this.state.readFile(fileName);
-                file = {
-                    version: 0,
-                    text
-                };
-
-                if (path.basename(fileName) !== 'package.json') {
-                    file = this.state.addFile(fileName, text);
-                }
-            }
-            catch (e) {
-                return;
-            }
-        }
-
+        !file && console.log(fileName, file)
         return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
 
@@ -91,16 +63,18 @@ export class Host implements ts.LanguageServiceHost {
         return this.state.compilerConfig.options;
     }
 
-    getDefaultLibFileName(options) {
-        return options.target === this.state.ts.ScriptTarget.ES6 ?
-            this.state.compilerInfo.lib6.fileName :
-            this.state.compilerInfo.lib5.fileName;
+    getDefaultLibFileName(options: ts.CompilerOptions) {
+       return this.state.defaultLib;
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
         return moduleNames.map(moduleName => {
             return this.state.fileAnalyzer.dependencies.getResolution(containingFile, moduleName);
         });
+    }
+
+    getDefaultLibLocation(): string {
+        return path.dirname(this.state.ts.sys.getExecutingFilePath());
     }
 
     log(message) {
@@ -121,35 +95,46 @@ export class State {
     compilerConfig: TsConfig;
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
-    resolver: SyncResolver;
+    defaultLib: string;
 
     constructor(
         loaderConfig: LoaderConfig,
         compilerConfig: TsConfig,
-        fsImpl: typeof fs,
-        compilerInfo: ICompilerInfo,
-        resolver: SyncResolver
+        compilerInfo: ICompilerInfo
     ) {
         this.ts = compilerInfo.tsImpl;
         this.compilerInfo = compilerInfo;
-        this.resolver = resolver;
-        this.fs = fsImpl;
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
-        this.fileAnalyzer = new FileAnalyzer(this);
-
         this.loaderConfig = loaderConfig;
         this.compilerConfig = compilerConfig;
+        this.fileAnalyzer = new FileAnalyzer(this);
 
         if (loaderConfig.emitRequireType) {
             this.addFile(RUNTIME.fileName, RUNTIME.text);
         }
 
-        if (!compilerConfig.options.noLib) {
-            if (compilerConfig.options.target === this.ts.ScriptTarget.ES6 || loaderConfig.library === 'es6') {
-                this.addFile(this.compilerInfo.lib6.fileName, this.compilerInfo.lib6.text);
+        this.loadDefaultLib();
+    }
+
+    loadDefaultLib() {
+        let { options } = this.compilerConfig;
+        if (!options.noLib) {
+            if (options.lib && options.lib.length > 0) {
+                let libraryDir = this.host.getDefaultLibLocation();
+                options.lib.forEach((libName, i) => {
+                    let fileName = path.join(libraryDir, libName);
+                    this.fileAnalyzer.checkDependencies(fileName, true);
+                    if (i === 0) {
+                        this.defaultLib = fileName;
+                    }
+                });
             } else {
-                this.addFile(this.compilerInfo.lib5.fileName, this.compilerInfo.lib5.text);
+                let defaultLib = this.ts.getDefaultLibFilePath(options);
+                if (defaultLib) {
+                    this.defaultLib = defaultLib;
+                    this.fileAnalyzer.checkDependencies(defaultLib, true);
+                }
             }
         }
     }
@@ -243,8 +228,10 @@ export class State {
         let prevFile = this.files[fileName];
         let version = 0;
         let changed = true;
+        let isDefaultLib = false;
 
         if (prevFile) {
+            isDefaultLib = prevFile.isDefaultLib;
             if (!checked || (checked && text !== prevFile.text)) {
                 version = prevFile.version + 1;
             } else {
@@ -253,22 +240,24 @@ export class State {
         }
 
         this.files[fileName] = {
-            text: text,
-            version: version
+            text,
+            version,
+            isDefaultLib
         };
 
         return changed;
     }
 
-    addFile(fileName: string, text: string): IFile {
+    addFile(fileName: string, text: string, isDefaultLib = false): IFile {
         fileName = this.normalizePath(fileName);
         return this.files[fileName] = {
-            text: text,
+            text,
+            isDefaultLib,
             version: 0
         };
     }
 
-    getFile(fileName: string) {
+    getFile(fileName: string): IFile {
         fileName = this.normalizePath(fileName);
         return this.files[fileName];
     }
@@ -284,10 +273,10 @@ export class State {
         return fs.readFileSync(fileName, {encoding: 'utf-8'});
     }
 
-    readFileAndAdd(fileName: string) {
+    readFileAndAdd(fileName: string, isDefaultLib = false) {
         fileName = this.normalizePath(fileName);
         let text = this.readFile(fileName);
-        this.addFile(fileName, text);
+        this.addFile(fileName, text, isDefaultLib);
     }
 
     readFileAndUpdate(fileName: string, checked: boolean = false): boolean {

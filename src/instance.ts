@@ -2,11 +2,9 @@ import { State } from './host';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
-import { loadLib, formatError } from './helpers';
+import { formatError } from './helpers';
 import { ICompilerInfo } from './host';
-import { createIgnoringResolver } from './deps';
 import { createChecker } from './checker';
-import createSyncResolver from './resolver';
 
 let colors = require('colors/safe');
 let pkg = require('../package.json');
@@ -150,38 +148,24 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         process.exit(1);
     }
 
-    let libPath = path.join(compilerPath, 'lib', 'lib.d.ts');
-    let lib6Path = path.join(compilerPath, 'lib', 'lib.es6.d.ts');
-
-    try {
-        require.resolve(libPath);
-    } catch(e) {
-        libPath = path.join(compilerPath, 'bin', 'lib.d.ts');
-        lib6Path = path.join(compilerPath, 'bin', 'lib.es6.d.ts');
-    }
-
     let compilerInfo: ICompilerInfo = {
         compilerPath,
         tsImpl,
-        lib5: loadLib(libPath),
-        lib6: loadLib(lib6Path)
     };
 
     let { compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
+
+    console.log(compilerConfig, loaderConfig);
 
     applyDefaults(compilerConfig, loaderConfig);
     let babelImpl = setupBabel(loaderConfig);
     let cacheIdentifier = setupCache(loaderConfig, tsImpl, webpack, babelImpl);
 
     let forkChecker = loaderConfig.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
-    let syncResolver = createSyncResolver(webpack._compiler.options);
-
     let tsState = new State(
         loaderConfig,
         compilerConfig,
-        webpack._compiler.inputFileSystem,
-        compilerInfo,
-        syncResolver
+        compilerInfo
     );
 
     let compiler = (<any>webpack._compiler);
@@ -222,6 +206,7 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
                 loaderConfig,
                 compilerConfig.options,
                 webpackOptions,
+                tsState.defaultLib,
                 plugins)
             : null,
         cacheIdentifier,

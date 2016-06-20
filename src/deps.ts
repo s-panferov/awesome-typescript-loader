@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-import * as path from 'path';
 import { State } from './host';
 
 let objectAssign = require('object-assign');
@@ -21,43 +19,6 @@ export interface IExternals {
 
 export type Exclude = string[];
 
-export function createIgnoringResolver(
-    externals: IExternals,
-    exclude: Exclude,
-    resolver: SyncResolver,
-): SyncResolver {
-    function resolve(base: string, dep: string): string {
-        let inWebpackExternals = externals && externals.hasOwnProperty(dep);
-        let inTypeScriptExclude = false;
-
-        if ((inWebpackExternals || inTypeScriptExclude)) {
-            return '%%ignore';
-        } else {
-            let resultPath = resolver(base, dep);
-            if (Array.isArray(resultPath)) {
-                resultPath = resultPath[0];
-            }
-
-            // ignore excluded javascript
-            if (!resultPath.match(/.tsx?$/)) {
-                let matchedExcludes = exclude.filter((excl) => {
-                    return resultPath.indexOf(excl) !== -1;
-                });
-
-                if (matchedExcludes.length > 0) {
-                    return '%%ignore';
-                } else {
-                    return resultPath;
-                }
-            } else {
-               return resultPath;
-            }
-        }
-    }
-
-    return resolve;
-}
-
 export function isTypeDeclaration(fileName: string): boolean {
     return /\.d.ts$/.test(fileName);
 }
@@ -71,10 +32,6 @@ function isImportEqualsDeclaration(node: ts.Node) {
     return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression');
 }
 
-function isIgnoreDependency(absulutePath: string) {
-    return absulutePath == '%%ignore';
-}
-
 export class FileAnalyzer {
     dependencies = new DependencyManager();
     validFiles = new ValidFilesManager();
@@ -84,7 +41,7 @@ export class FileAnalyzer {
         this.state = state;
     }
 
-    checkDependencies(fileName: string): boolean {
+    checkDependencies(fileName: string, isDefaultLib = false): boolean {
         let isValid = this.validFiles.isFileValid(fileName);
         if (isValid) {
             return isValid;
@@ -97,7 +54,8 @@ export class FileAnalyzer {
 
         try {
             if (!this.state.hasFile(fileName)) {
-                changed = this.state.readFileAndUpdate(fileName);
+                this.state.readFileAndAdd(fileName, isDefaultLib);
+                changed = true;
             }
             this.checkDependenciesInternal(fileName);
         } catch (err) {
@@ -146,6 +104,17 @@ export class FileAnalyzer {
     }
 
     resolve(fileName: string, depName: string): ts.ResolvedModule {
+
+        if (/^[a-z0-9].*\.d\.ts$/.test(depName)) {
+            // Make import relative
+            // We need this to be able to resolve directives like
+            //
+            //      <reference path="lib.d.ts" />
+            //
+            // with resolver.
+            depName = './' + depName;
+        }
+
         let resolution = this.state.ts.resolveModuleName(
             depName,
             fileName,
@@ -159,36 +128,16 @@ export class FileAnalyzer {
             this.state.fileAnalyzer.dependencies.addResolution(fileName, depName, resolvedModule);
         }
 
-        console.log(
-            fileName,'\n',
-            depName, '\n',
-            resolvedModule && resolvedModule.resolvedFileName, '\n',
-            !resolvedModule && resolution.failedLookupLocations, '\n\n');
+        if (this.state.compilerConfig.options.traceResolution) {
+            console.log(
+                'Resolve', depName, '\n',
+                'from', fileName,'\n',
+                'resolved', resolvedModule && resolvedModule.resolvedFileName, '\n',
+                'failedLookupLocations', resolution.failedLookupLocations, '\n\n');
+        }
 
         return resolvedModule;
     }
-}
-
-let builtInCache = {};
-
-function checkIfModuleBuiltInCached(modPath: string): boolean {
-    return !!builtInCache[modPath];
-}
-
-function checkIfModuleBuiltIn(modPath: string): boolean {
-    if (builtInCache[modPath]) {
-        return true;
-    }
-
-    try {
-        if (require.resolve(modPath) === modPath) {
-            builtInCache[modPath] = true;
-            return true;
-        }
-    } catch (e) {
-    }
-
-    return false;
 }
 
 export interface IDependencyGraphItem {
