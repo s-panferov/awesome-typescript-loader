@@ -7,10 +7,10 @@
     "prepublish": "npm run build",
     "pretest": "npm run build",
     "test": "mocha dist/test",
-    "watch": "npm run watch:ts && npm run watch:babel",
+    "watch": "npm run watch:ts",
     "watch:ts": "npm run build:ts -- --watch --diagnostics",
     "prebuild": "npm run lint",
-    "build": "npm run build:ts && npm run build:babel",
+    "build": "npm run build:ts",
     "build:ts": "tsc -p src --pretty",
     "lint": "tslint src/*.ts"
   },
