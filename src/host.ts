@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
 
-import { FileAnalyzer, SyncResolver } from './deps';
+import { FileAnalyzer } from './deps';
 import { loadLib } from './helpers';
 import { LoaderConfig, TsConfig } from './instance';
 
@@ -182,11 +182,7 @@ export class State {
 
         let source = this.program.getSourceFile(fileName);
         if (!source) {
-            this.updateProgram();
-            source = this.program.getSourceFile(fileName);
-            if (!source) {
-                throw new Error(`File ${fileName} was not found in program`);
-            }
+            throw new Error(`File ${fileName} was not found in program`);
         }
 
         let emitResult = this.program.emit(source, writeFile);
