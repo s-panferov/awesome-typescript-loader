@@ -4,9 +4,9 @@
   "description": "Awesome TS loader for webpack",
   "main": "dist/entry.js",
   "scripts": {
-    "prepublish": "npm run test && grunt",
+    "prepublish": "npm run build",
     "pretest": "npm run build",
-    "test": "mocha dist.babel/test",
+    "test": "mocha dist/test",
     "watch": "npm run watch:ts && npm run watch:babel",
     "watch:ts": "npm run build:ts -- --watch --diagnostics",
     "prebuild": "npm run lint",
