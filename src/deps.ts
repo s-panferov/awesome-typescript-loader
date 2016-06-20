@@ -20,8 +20,7 @@ export function isTypeDeclaration(fileName: string): boolean {
 }
 
 function isImportOrExportDeclaration(node: ts.Node) {
-    return (!!(<any>node).exportClause || !!(<any>node).importClause)
-        && (<any>node).moduleSpecifier;
+    return !!(<any>node).moduleSpecifier;
 }
 
 function isImportEqualsDeclaration(node: ts.Node) {
@@ -75,21 +74,21 @@ export class FileAnalyzer {
 
     findImportDeclarations(fileName: string): ts.ResolvedModule[] {
         let sourceFile = this.state.getSourceFile(fileName);
-        let isDeclaration = isTypeDeclaration(fileName);
 
         let imports = [];
         let visit = (node: ts.Node) => {
-            if (!isDeclaration && isImportEqualsDeclaration(node)) {
+            if (isImportEqualsDeclaration(node)) {
                 // we need this check to ensure that we have an external import
                 let importPath = (<any>node).moduleReference.expression.text;
                 imports.push(importPath);
-            } else if (!isDeclaration && isImportOrExportDeclaration(node)) {
+            } else if (isImportOrExportDeclaration(node)) {
                 let importPath = (<any>node).moduleSpecifier.text;
                 imports.push(importPath);
             }
         };
 
         imports.push.apply(imports, sourceFile.referencedFiles.map(file => file.fileName));
+
         this.state.ts.forEachChild(sourceFile, visit);
 
         let resolvedImports = imports.map((importPath) => {
