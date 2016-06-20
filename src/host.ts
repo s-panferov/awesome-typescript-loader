@@ -47,7 +47,6 @@ export class Host implements ts.LanguageServiceHost {
 
     getScriptSnapshot(fileName) {
         let file = this.state.getFile(fileName);
-        !file && console.log(fileName, file)
         return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
 

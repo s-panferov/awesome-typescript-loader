@@ -92,7 +92,6 @@ export class Host implements ts.LanguageServiceHost {
     getScriptSnapshot(fileName: string) {
         let fileName_ = path.normalize(fileName);
         let file = env.files[fileName_];
-        !file && console.log(fileName, file)
         return env.compiler.ScriptSnapshot.fromString(file.text);
     }
 
