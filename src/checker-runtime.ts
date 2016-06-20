@@ -1,8 +1,6 @@
 import { ICompilerInfo, IFile } from './host';
 import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
-import createSyncResolver from './resolver';
 import * as path from 'path';
-import * as fs from 'fs';
 
 let colors = require('colors/safe');
 
@@ -21,6 +19,7 @@ export interface IInitPayload {
     compilerOptions: ts.CompilerOptions;
     compilerInfo: ICompilerInfo;
     webpackOptions: any;
+    defaultLib: string;
     plugins: LoaderPluginDef[];
 }
 
@@ -41,6 +40,7 @@ export interface IEnv {
     program?: ts.Program;
     service?: ts.LanguageService;
     plugins?: LoaderPluginDef[];
+    defaultLib?: string;
     initedPlugins?: LoaderPlugin[];
 }
 
@@ -73,7 +73,6 @@ export class Host implements ts.LanguageServiceHost {
 
     constructor() {
         this.moduleResolutionHost = new ModuleResolutionHost(this);
-        this.resolver = createSyncResolver(env.webpackOptions);
     }
 
     normalizePath(filePath: string): string {
@@ -90,26 +89,10 @@ export class Host implements ts.LanguageServiceHost {
         }
     }
 
-    getScriptSnapshot(fileName) {
+    getScriptSnapshot(fileName: string) {
         let fileName_ = path.normalize(fileName);
         let file = env.files[fileName_];
-
-        if (!file) {
-            try {
-                file = {
-                    version: 0,
-                    text: fs.readFileSync(fileName, { encoding: 'utf8' }).toString()
-                };
-
-                if (path.basename(fileName) !== 'package.json') {
-                    env.files[fileName_] = file;
-                }
-            }
-            catch (e) {
-                return;
-            }
-        }
-
+        !file && console.log(fileName, file)
         return env.compiler.ScriptSnapshot.fromString(file.text);
     }
 
@@ -131,10 +114,8 @@ export class Host implements ts.LanguageServiceHost {
         });
     }
 
-    getDefaultLibFileName(options) {
-        return options.target === env.compiler.ScriptTarget.ES6 ?
-            env.compilerInfo.lib6.fileName :
-            env.compilerInfo.lib5.fileName;
+    getDefaultLibFileName(options: ts.CompilerOptions) {
+        return env.defaultLib;
     }
 
     log(message) {
@@ -148,6 +129,7 @@ function processInit(payload: IInitPayload) {
     env.loaderConfig = payload.loaderConfig;
     env.compilerOptions = payload.compilerOptions;
     env.webpackOptions = payload.webpackOptions;
+    env.defaultLib = payload.defaultLib;
     env.host = new Host();
     env.service = env.compiler.createLanguageService(env.host, env.compiler.createDocumentRegistry());
     env.plugins = payload.plugins;
@@ -175,6 +157,7 @@ function processCompile(payload: ICompilePayload) {
 
     env.files = payload.files;
     env.resolutionCache = payload.resolutionCache;
+
     let program = env.program = env.service.getProgram();
 
     let allDiagnostics: ts.Diagnostic[] = [];

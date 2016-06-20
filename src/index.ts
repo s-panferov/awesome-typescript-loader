@@ -5,14 +5,14 @@
 import * as _ from 'lodash';
 import * as path from 'path';
 
+let objectAssign = require('object-assign');
+
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
 import { isTypeDeclaration } from './deps';
 import { QueryOptions, IWebPack, ensureInstance, ICompilerInstance } from './instance';
 
-let promisify = require('es6-promisify');
 let loaderUtils = require('loader-utils');
-let cachePromise: any = promisify(cache);
 
 function loader(text) {
     try {
@@ -21,6 +21,11 @@ function loader(text) {
         console.error(e, e.stack);
         throw e;
     }
+}
+
+interface Transformation {
+    text: string;
+    map: any;
 }
 
 function compiler(webpack: IWebPack, text: string): void {
@@ -70,7 +75,7 @@ function compiler(webpack: IWebPack, text: string): void {
             compiledModule = findCompiledModule(fileName);
         }
 
-        let transformation = null;
+        let transformation: Transformation = null;
 
         if (compiledModule) {
             state.fileAnalyzer.dependencies.addCompiledModule(fileName, compiledModule.fileName);
@@ -82,78 +87,23 @@ function compiler(webpack: IWebPack, text: string): void {
             };
         } else {
 
-            function transform() {
-                let resultText;
-                let resultSourceMap = null;
-
-                if (state.compilerConfig.options.declaration) {
-                    // can't use fastEmit with declaration generation
-
-                    let output = state.emit(fileName);
-                    let result = helpers.findResultFor(output, fileName);
-
-                    if (result.text === undefined) {
-                        throw new Error('No output found for ' + fileName);
-                    }
-
-                    if (result.declaration) {
-                        webpack.emitFile(
-                            path.relative(process.cwd(), result.declaration.sourceName),
-                            result.declaration.text
-                        );
-                    }
-
-                    resultText = result.text;
-                    resultSourceMap = result.sourceMap;
-                } else {
-                    // Use super-fast emit
-
-                    let result = state.fastEmit(fileName);
-                    resultText = result.text;
-                    resultSourceMap = result.sourceMap;
-                }
-
-                let sourceFileName = fileName.replace(process.cwd() + '/', '');
-                if (resultSourceMap) {
-                    resultSourceMap = JSON.parse(resultSourceMap);
-                    resultSourceMap.sources = [ sourceFileName ];
-                    resultSourceMap.file = sourceFileName;
-                    resultSourceMap.sourcesContent = [ text ];
-
-                    resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');
-                }
-
-                if (instance.loaderConfig.useBabel) {
-                    let defaultOptions = {
-                        inputSourceMap: resultSourceMap,
-                        sourceRoot: process.cwd(),
-                        filename: fileName,
-                        sourceMap: true
-                    };
-
-                    let babelOptions = Object.assign({}, defaultOptions, options.babelOptions);
-                    let babelResult = instance.babelImpl.transform(resultText, babelOptions);
-
-                    resultText = babelResult.code;
-                    resultSourceMap = babelResult.map;
-                }
-
-                return {
-                    text: resultText,
-                    map: resultSourceMap
-                };
-            }
+            let transformationFunction = () => transform(
+                webpack,
+                instance,
+                fileName,
+                text
+            );
 
             if (instance.loaderConfig.useCache) {
-                transformation = cachePromise({
+                transformation = cache<Transformation>({
                     source: text,
                     identifier: instance.cacheIdentifier,
                     directory: instance.loaderConfig.cacheDirectory,
                     options: webpack.query,
-                    transform: transform
-                } as any);
+                    transform: transformationFunction
+                });
             } else {
-                transformation = transform();
+                transformation = transformationFunction();
             }
         }
 
@@ -186,6 +136,69 @@ function compiler(webpack: IWebPack, text: string): void {
     } finally {
         applyDeps();
     }
+}
+
+function transform(webpack: IWebPack, instance: ICompilerInstance, fileName: string, text: string): Transformation {
+    let resultText;
+    let resultSourceMap = null;
+    let state = instance.tsState;
+
+    if (state.compilerConfig.options.declaration) {
+        // can't use fastEmit with declaration generation
+
+        let output = state.emit(fileName);
+        let result = helpers.findResultFor(output, fileName);
+
+        if (result.text === undefined) {
+            throw new Error('No output found for ' + fileName);
+        }
+
+        if (result.declaration) {
+            webpack.emitFile(
+                path.relative(process.cwd(), result.declaration.sourceName),
+                result.declaration.text
+            );
+        }
+
+        resultText = result.text;
+        resultSourceMap = result.sourceMap;
+    } else {
+        // Use fast emit
+
+        let result = state.fastEmit(fileName);
+        resultText = result.text;
+        resultSourceMap = result.sourceMap;
+    }
+
+    let sourceFileName = fileName.replace(process.cwd() + '/', '');
+    if (resultSourceMap) {
+        resultSourceMap = JSON.parse(resultSourceMap);
+        resultSourceMap.sources = [ sourceFileName ];
+        resultSourceMap.file = sourceFileName;
+        resultSourceMap.sourcesContent = [ text ];
+
+        resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');
+    }
+
+    if (instance.loaderConfig.useBabel) {
+        let defaultOptions = {
+            inputSourceMap: resultSourceMap,
+            sourceRoot: process.cwd(),
+            filename: fileName,
+            sourceMap: true
+        };
+
+        let babelOptions = objectAssign({}, defaultOptions, instance.loaderConfig.babelOptions);
+        let babelResult = instance.babelImpl.transform(resultText, babelOptions);
+
+        resultText = babelResult.code;
+        resultSourceMap = babelResult.map;
+    }
+
+    return {
+        text: resultText,
+        map: resultSourceMap
+    };
 }
 
 function invokeKnownFilesTime(instance: ICompilerInstance) {

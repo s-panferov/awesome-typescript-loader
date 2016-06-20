@@ -9,6 +9,7 @@ interface ChildProcess extends childProcess.ChildProcess {
     compilerInfo?: ICompilerInfo;
     loaderConfig?: LoaderConfig;
     compilerOptions?: ts.CompilerOptions;
+    defaultLib?: string;
     webpackOptions?: any;
     plugins?: LoaderPluginDef[];
 }
@@ -18,6 +19,7 @@ export function createChecker(
     loaderConfig: LoaderConfig,
     compilerOptions: ts.CompilerOptions,
     webpackOptions: any,
+    defaultLib: string,
     plugins: LoaderPluginDef[]
 ): ChildProcess {
     let checker: ChildProcess = childProcess.fork(path.join(__dirname, 'checker-runtime.js'));
@@ -29,6 +31,7 @@ export function createChecker(
             loaderConfig,
             compilerOptions,
             webpackOptions,
+            defaultLib,
             plugins
         }
     }, null);
@@ -55,6 +58,7 @@ export function resetChecker(checker: ChildProcess) {
             checker.loaderConfig,
             checker.compilerOptions,
             checker.webpackOptions,
+            checker.defaultLib,
             checker.plugins
         );
     } else {
