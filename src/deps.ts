@@ -4,10 +4,6 @@ let objectAssign = require('object-assign');
 
 type FileSet = {[fileName: string]: boolean};
 
-export interface SyncResolver {
-    (base: string, dep: string): string;
-}
-
 export interface IDependency {
     add(fileName: string): void;
     clear(): void;
