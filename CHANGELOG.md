@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.4"></a>
+# [2.0.0-rc.4](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.3...v2.0.0-rc.4) (2016-06-20)
+
+
+### Bug Fixes
+
+* proper module resolution for .d.ts files ([9752d72](https://github.com/s-panferov/awesome-typescript-loader/commit/9752d72))
+
+
+
 <a name="2.0.0-rc.3"></a>
 # [2.0.0-rc.3](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.2...v2.0.0-rc.3) (2016-06-20)
 
