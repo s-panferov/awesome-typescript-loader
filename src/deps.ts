@@ -1,17 +1,8 @@
-import * as _ from 'lodash';
-import * as path from 'path';
-
-let promisify = require('es6-promisify');
-
 import { State } from './host';
 
 let objectAssign = require('object-assign');
 
 type FileSet = {[fileName: string]: boolean};
-
-export interface IResolver {
-    (base: string, dep: string): Promise<string>;
-}
 
 export interface IDependency {
     add(fileName: string): void;
@@ -24,53 +15,7 @@ export interface IExternals {
 
 export type Exclude = string[];
 
-export function createResolver(
-    externals: IExternals,
-    exclude: Exclude,
-    webpackResolver: any,
-    ctx: any = null
-): IResolver {
-    let finalResolver = webpackResolver;
-    if (webpackResolver.length === 4) {
-        // carrying resolver for webpack2
-        finalResolver = webpackResolver.bind(ctx, {});
-    }
-    let resolver: IResolver = promisify(finalResolver) as any;
-
-    function resolve(base: string, dep: string): Promise<string> {
-        let inWebpackExternals = externals && externals.hasOwnProperty(dep);
-        let inTypeScriptExclude = false;
-
-        if ((inWebpackExternals || inTypeScriptExclude)) {
-            return Promise.resolve<string>('%%ignore');
-        } else {
-            return resolver(base, dep).then(resultPath => {
-                if (Array.isArray(resultPath)) {
-                    resultPath = resultPath[0];
-                }
-
-                // ignore excluded javascript
-                if (!resultPath.match(/.tsx?$/)) {
-                    let matchedExcludes = exclude.filter((excl) => {
-                        return resultPath.indexOf(excl) !== -1;
-                    });
-
-                    if (matchedExcludes.length > 0) {
-                        return '%%ignore';
-                    } else {
-                        return resultPath;
-                    }
-                } else {
-                    return resultPath;
-                }
-            });
-        }
-    }
-
-    return resolve;
-}
-
-function isTypeDeclaration(fileName: string): boolean {
+export function isTypeDeclaration(fileName: string): boolean {
     return /\.d.ts$/.test(fileName);
 }
 
@@ -83,12 +28,6 @@ function isImportEqualsDeclaration(node: ts.Node) {
     return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression');
 }
 
-function isIgnoreDependency(absulutePath: string) {
-    return absulutePath == '%%ignore';
-}
-
-let lock: Promise<any>;
-
 export class FileAnalyzer {
     dependencies = new DependencyManager();
     validFiles = new ValidFilesManager();
@@ -98,32 +37,7 @@ export class FileAnalyzer {
         this.state = state;
     }
 
-    async checkDependenciesLocked(resolver: IResolver, fileName: string): Promise<boolean> {
-        let isValid = this.validFiles.isFileValid(fileName);
-        if (isValid) {
-            return isValid;
-        }
-
-        if (lock) {
-            return lock
-                .then(() => {
-                    return this.checkDependenciesLocked(resolver, fileName);
-                });
-        }
-
-        let resolveLock;
-        lock = new Promise((res, rej) => { resolveLock = res; });
-
-        try {
-            let checked = await this.checkDependencies(resolver, fileName);
-            return checked;
-        } finally {
-            lock = null;
-            resolveLock();
-        }
-    }
-
-    async checkDependencies(resolver: IResolver, fileName: string): Promise<boolean> {
+    checkDependencies(fileName: string, isDefaultLib = false): boolean {
         let isValid = this.validFiles.isFileValid(fileName);
         if (isValid) {
             return isValid;
@@ -136,9 +50,10 @@ export class FileAnalyzer {
 
         try {
             if (!this.state.hasFile(fileName)) {
-                changed = await this.state.readFileAndUpdate(fileName);
+                this.state.readFileAndAdd(fileName, isDefaultLib);
+                changed = true;
             }
-            await this.checkDependenciesInternal(resolver, fileName);
+            this.checkDependenciesInternal(fileName);
         } catch (err) {
             this.validFiles.markFileInvalid(fileName);
             throw err;
@@ -147,36 +62,18 @@ export class FileAnalyzer {
         return changed;
     }
 
-    async checkDependenciesInternal(resolver: IResolver, fileName: string): Promise<void> {
-        let imports = await this.findImportDeclarations(resolver, fileName);
-        let tasks: Promise<any>[] = [];
+    checkDependenciesInternal(fileName: string): void {
+        let imports = this.findImportDeclarations(fileName);
 
-        for (let i = 0; i < imports.length; i++) {
-            let importPath = imports[i];
-            let isDeclaration = isTypeDeclaration(importPath);
-            let isRequiredJs = /\.js$/.exec(importPath) || importPath.indexOf('.') === -1;
+        imports.forEach(imp => {
+            this.dependencies.addDependency(fileName, imp);
+            this.checkDependencies(imp.resolvedFileName);
+        });
 
-            if (isDeclaration) {
-                let hasDeclaration = this.dependencies.hasTypeDeclaration(importPath);
-                if (!hasDeclaration) {
-                    this.dependencies.addTypeDeclaration(importPath);
-                    tasks.push(this.checkDependencies(resolver, importPath));
-                }
-            } else if (isRequiredJs && !this.state.options.allowJs) {
-                continue;
-            } else {
-                if (!checkIfModuleBuiltInCached(importPath)) {
-                    this.dependencies.addDependency(fileName, importPath);
-                    tasks.push(this.checkDependencies(resolver, importPath));
-                }
-            }
-        }
-
-        await Promise.all(tasks);
         return null;
     }
 
-    async findImportDeclarations(resolver: IResolver, fileName: string): Promise<string[]> {
+    findImportDeclarations(fileName: string): ts.ResolvedModule[] {
         let sourceFile = this.state.getSourceFile(fileName);
         let isDeclaration = isTypeDeclaration(fileName);
 
@@ -195,75 +92,48 @@ export class FileAnalyzer {
         imports.push.apply(imports, sourceFile.referencedFiles.map(file => file.fileName));
         this.state.ts.forEachChild(sourceFile, visit);
 
-        let task = imports.map(async (importPath) => {
-            let absolutePath: string = await this.resolve(resolver, fileName, importPath);
-            if (!isIgnoreDependency(absolutePath)) {
-                return absolutePath;
-            }
+        let resolvedImports = imports.map((importPath) => {
+            return this.resolve(fileName, importPath);
         });
 
-        let resolvedImports = await Promise.all(task);
-
-        // FIXME ts bug
-        return resolvedImports.filter(Boolean) as any;
+        return resolvedImports.filter(Boolean);
     }
 
-    resolve(resolver: IResolver, fileName: string, defPath: string): Promise<string> {
-        let result: Promise<string>;
+    resolve(fileName: string, depName: string): ts.ResolvedModule {
 
-        if (/^[a-z0-9].*\.d\.ts$/.test(defPath)) {
+        if (/^[a-z0-9].*\.d\.ts$/.test(depName)) {
             // Make import relative
-            defPath = './' + defPath;
+            // We need this to be able to resolve directives like
+            //
+            //      <reference path="lib.d.ts" />
+            //
+            // with resolver.
+            depName = './' + depName;
         }
 
-        if (isTypeDeclaration(defPath)) {
-            // We MUST NOT resolve symlinks when working with .d.ts files, because/
-            // they work whithout module resolution.
-            result = Promise.resolve(path.resolve(path.dirname(fileName), defPath));
-        } else {
-            result = resolver(path.dirname(fileName), defPath)
-                .catch(function (error) {
-                    // Node builtin modules
-                    if (checkIfModuleBuiltIn(defPath)) {
-                        return defPath;
-                    } else {
-                        throw error;
-                    }
-                });
+        let resolution = this.state.ts.resolveModuleName(
+            depName,
+            fileName,
+            this.state.compilerConfig.options,
+            this.state.ts.sys
+        );
+
+        let { resolvedModule } = resolution;
+
+        if (resolvedModule) {
+            this.state.fileAnalyzer.dependencies.addResolution(fileName, depName, resolvedModule);
         }
 
-        return result
-            .catch(function (error) {
-                let detailedError: any = new ResolutionError();
-                detailedError.message = error.message + "\n    Required in " + fileName;
-                detailedError.cause = error;
-                detailedError.fileName = fileName;
-
-                throw detailedError;
-            });
-    }
-}
-
-let builtInCache = {};
-
-function checkIfModuleBuiltInCached(modPath: string): boolean {
-    return !!builtInCache[modPath];
-}
-
-function checkIfModuleBuiltIn(modPath: string): boolean {
-    if (builtInCache[modPath]) {
-        return true;
-    }
-
-    try {
-        if (require.resolve(modPath) === modPath) {
-            builtInCache[modPath] = true;
-            return true;
+        if (this.state.compilerConfig.options.traceResolution) {
+            console.log(
+                'Resolve', depName, '\n',
+                'from', fileName,'\n',
+                'resolved', resolvedModule && resolvedModule.resolvedFileName, '\n',
+                'failedLookupLocations', resolution.failedLookupLocations, '\n\n');
         }
-    } catch (e) {
-    }
 
-    return false;
+        return resolvedModule;
+    }
 }
 
 export interface IDependencyGraphItem {
@@ -272,29 +142,32 @@ export interface IDependencyGraphItem {
 }
 
 export class DependencyManager {
-    dependencies: {[fileName: string]: string[]};
+    dependencies: {[fileName: string]: ts.ResolvedModule[]};
+    resolutions: {[cacheKey: string]: ts.ResolvedModule};
     knownTypeDeclarations: FileSet;
     compiledModules: {[fileName: string]: string[]};
 
-    constructor(dependencies: {[fileName: string]: string[]} = {}, knownTypeDeclarations: FileSet = {}) {
-        this.dependencies = dependencies;
-        this.knownTypeDeclarations = knownTypeDeclarations;
+    constructor() {
+        this.dependencies = {};
+        this.knownTypeDeclarations = {};
         this.compiledModules = {};
+        this.resolutions = {};
     }
 
-    clone(): DependencyManager {
-        return new DependencyManager(
-            _.cloneDeep(this.dependencies),
-            _.cloneDeep(this.knownTypeDeclarations)
-        );
+    addResolution(fileName: string, depName: string, resolvedModule: ts.ResolvedModule) {
+        this.resolutions[`${fileName}::${depName}`] = resolvedModule;
     }
 
-    addDependency(fileName: string, depFileName: string): void {
+    getResolution(fileName: string, depName: string): ts.ResolvedModule {
+        return this.resolutions[`${fileName}::${depName}`];
+    }
+
+    addDependency(fileName: string, dep: ts.ResolvedModule): void {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
 
-        this.dependencies[fileName].push(depFileName);
+        this.dependencies[fileName].push(dep);
     }
 
     addCompiledModule(fileName: string, depFileName: string): void {
@@ -317,7 +190,7 @@ export class DependencyManager {
         this.compiledModules[fileName] = [];
     }
 
-    getDependencies(fileName: string): string[] {
+    getDependencies(fileName: string): ts.ResolvedModule[] {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
@@ -345,16 +218,17 @@ export class DependencyManager {
         };
 
         let walk = (fileName: string, context: IDependencyGraphItem) => {
-            this.getDependencies(fileName).forEach((depFileName) => {
+            this.getDependencies(fileName).forEach((dep) => {
+                let fileName = dep.resolvedFileName;
                 let depContext = {
-                    fileName: depFileName,
+                    fileName: dep.resolvedFileName,
                     dependencies: []
                 };
                 context.dependencies.push(depContext);
 
-                if (!appliedDeps[depFileName]) {
-                    appliedDeps[depFileName] = true;
-                    walk(depFileName, depContext);
+                if (!appliedDeps[fileName]) {
+                    appliedDeps[fileName] = true;
+                    walk(fileName, depContext);
                 }
             });
         };
@@ -397,7 +271,7 @@ export class DependencyManager {
 export class ValidFilesManager {
     files: {[fileName: string]: boolean} = {};
 
-    isFileValid(fileName: string): Promise<boolean> | boolean {
+    isFileValid(fileName: string): boolean {
         return this.files[fileName];
     }
 

@@ -85,7 +85,7 @@ export function expectSource(source: string, fragment: string) {
 }
 
 export function fixturePath(fileName: string | string[], fixturesDir: string = defaultFixturesDir): string {
-    return path.join.apply(path, [fixturesDir].concat(fileName));
+    return path.join.apply(path, [fixturesDir].concat(fileName as any));
 }
 
 export function readFixture(fileName: string | string[], fixturesDir: string = defaultFixturesDir): Promise<string> {

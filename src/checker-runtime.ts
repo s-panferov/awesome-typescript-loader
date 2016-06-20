@@ -1,12 +1,8 @@
-import { ICompilerOptions, ICompilerInfo, IFile } from './host';
-import { LoaderPlugin, LoaderPluginDef } from './instance';
-import makeResolver from './resolver';
+import { ICompilerInfo, IFile } from './host';
+import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
 import * as path from 'path';
-import * as fs from 'fs';
 
 let colors = require('colors/safe');
-
-require('babel-polyfill');
 
 export enum MessageType {
     Init = <any>'init',
@@ -19,9 +15,11 @@ export interface IMessage {
 }
 
 export interface IInitPayload {
-    compilerOptions: ICompilerOptions;
+    loaderConfig: LoaderConfig;
+    compilerOptions: ts.CompilerOptions;
     compilerInfo: ICompilerInfo;
     webpackOptions: any;
+    defaultLib: string;
     plugins: LoaderPluginDef[];
 }
 
@@ -31,7 +29,8 @@ export interface ICompilePayload {
 }
 
 export interface IEnv {
-    options?: ICompilerOptions;
+    loaderConfig?: LoaderConfig;
+    compilerOptions?: ts.CompilerOptions;
     webpackOptions?: any;
     compiler?: typeof ts;
     compilerInfo?: ICompilerInfo;
@@ -41,11 +40,12 @@ export interface IEnv {
     program?: ts.Program;
     service?: ts.LanguageService;
     plugins?: LoaderPluginDef[];
+    defaultLib?: string;
     initedPlugins?: LoaderPlugin[];
 }
 
 export interface SyncResolver {
-    resolveSync(context: string, fileName: string): string;
+    (context: string, fileName: string): string;
 }
 
 let env: IEnv = {};
@@ -73,7 +73,6 @@ export class Host implements ts.LanguageServiceHost {
 
     constructor() {
         this.moduleResolutionHost = new ModuleResolutionHost(this);
-        this.resolver = makeResolver(env.webpackOptions);
     }
 
     normalizePath(filePath: string): string {
@@ -90,26 +89,10 @@ export class Host implements ts.LanguageServiceHost {
         }
     }
 
-    getScriptSnapshot(fileName) {
+    getScriptSnapshot(fileName: string) {
         let fileName_ = path.normalize(fileName);
         let file = env.files[fileName_];
-
-        if (!file) {
-            try {
-                file = {
-                    version: 0,
-                    text: fs.readFileSync(fileName, { encoding: 'utf8' }).toString()
-                };
-
-                if (path.basename(fileName) !== 'package.json') {
-                    env.files[fileName_] = file;
-                }
-            }
-            catch (e) {
-                return;
-            }
-        }
-
+        !file && console.log(fileName, file)
         return env.compiler.ScriptSnapshot.fromString(file.text);
     }
 
@@ -122,60 +105,17 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getCompilationSettings() {
-        return env.options;
+        return env.compilerOptions;
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let resolvedModules: ts.ResolvedModule[] = [];
-
-        for (let moduleName of moduleNames) {
-            let cached = env.resolutionCache[`${containingFile}::${moduleName}`];
-            if (cached) {
-                resolvedModules.push(cached);
-            } else {
-                let resolvedFileName: string;
-                let resolvedModule: ts.ResolvedModule;
-
-                try {
-                    resolvedFileName = this.resolver.resolveSync(
-                        this.normalizePath(path.dirname(containingFile)),
-                        moduleName
-                    );
-
-                    if (!resolvedFileName.match(/\.tsx?$/)) {
-                        resolvedFileName = null;
-                    }
-                }
-                catch (e) {
-                    resolvedFileName = null;
-                }
-
-                let tsResolved = env.compiler.resolveModuleName(
-                    resolvedFileName || moduleName,
-                    containingFile,
-                    env.options,
-                    this.moduleResolutionHost
-                );
-
-                if (tsResolved.resolvedModule) {
-                    resolvedModule = tsResolved.resolvedModule;
-                } else {
-                    resolvedModule = {
-                        resolvedFileName: resolvedFileName || ''
-                    };
-                }
-
-                resolvedModules.push(resolvedModule);
-            }
-        }
-
-        return resolvedModules;
+        return moduleNames.map(moduleName => {
+            return env.resolutionCache[`${containingFile}::${moduleName}`];
+        });
     }
 
-    getDefaultLibFileName(options) {
-        return options.target === env.compiler.ScriptTarget.ES6 ?
-            env.compilerInfo.lib6.fileName :
-            env.compilerInfo.lib5.fileName;
+    getDefaultLibFileName(options: ts.CompilerOptions) {
+        return env.defaultLib;
     }
 
     log(message) {
@@ -186,8 +126,10 @@ export class Host implements ts.LanguageServiceHost {
 function processInit(payload: IInitPayload) {
     env.compiler = require(payload.compilerInfo.compilerPath);
     env.compilerInfo = payload.compilerInfo;
-    env.options = payload.compilerOptions;
+    env.loaderConfig = payload.loaderConfig;
+    env.compilerOptions = payload.compilerOptions;
     env.webpackOptions = payload.webpackOptions;
+    env.defaultLib = payload.defaultLib;
     env.host = new Host();
     env.service = env.compiler.createLanguageService(env.host, env.compiler.createDocumentRegistry());
     env.plugins = payload.plugins;
@@ -199,8 +141,8 @@ function processInit(payload: IInitPayload) {
 let DECLARATION_FILE = /\.d\.ts/;
 
 function processCompile(payload: ICompilePayload) {
-    let instanceName = env.options.instanceName || 'default';
-    let silent = !!env.options.forkCheckerSilent;
+    let instanceName = env.loaderConfig.instanceName || 'default';
+    let silent = !!env.loaderConfig.forkCheckerSilent;
     if (!silent) {
         console.log(colors.cyan(`[${ instanceName }] Checking started in a separate process...`));
     }
@@ -215,10 +157,11 @@ function processCompile(payload: ICompilePayload) {
 
     env.files = payload.files;
     env.resolutionCache = payload.resolutionCache;
+
     let program = env.program = env.service.getProgram();
 
     let allDiagnostics: ts.Diagnostic[] = [];
-    if (env.options.skipDeclarationFilesCheck) {
+    if (env.loaderConfig.skipDeclarationFilesCheck) {
         let sourceFiles = program.getSourceFiles();
         sourceFiles.forEach(sourceFile => {
             if (!sourceFile.fileName.match(DECLARATION_FILE)) {
