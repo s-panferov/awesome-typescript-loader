@@ -40,13 +40,18 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptVersion(fileName: string) {
-        if (this.state.getFile(fileName)) {
-            return this.state.getFile(fileName).version.toString();
+        let fileName_ = path.normalize(fileName);
+        if (this.state.getFile(fileName_)) {
+            return this.state.getFile(fileName_).version.toString();
         }
     }
 
     getScriptSnapshot(fileName) {
-        let file = this.state.getFile(fileName);
+        let fileName_ = path.normalize(fileName);
+        let file = this.state.getFile(fileName_);
+        if (!file) {
+            throw new Error(`Requested file is unknown: ${ fileName_ }`);
+        }
         return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
 
@@ -67,9 +72,11 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        return moduleNames.map(moduleName => {
+        let resolutions = moduleNames.map(moduleName => {
             return this.state.fileAnalyzer.dependencies.getResolution(containingFile, moduleName);
         });
+
+        return resolutions;
     }
 
     getDefaultLibLocation(): string {

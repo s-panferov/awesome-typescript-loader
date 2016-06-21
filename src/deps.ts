@@ -19,14 +19,6 @@ export function isTypeDeclaration(fileName: string): boolean {
     return /\.d.ts$/.test(fileName);
 }
 
-function isImportOrExportDeclaration(node: ts.Node) {
-    return !!(<any>node).moduleSpecifier;
-}
-
-function isImportEqualsDeclaration(node: ts.Node) {
-    return !!(<any>node).moduleReference && (<any>node).moduleReference.hasOwnProperty('expression');
-}
-
 export class FileAnalyzer {
     dependencies = new DependencyManager();
     validFiles = new ValidFilesManager();
@@ -74,30 +66,13 @@ export class FileAnalyzer {
 
     findImportDeclarations(fileName: string): ts.ResolvedModule[] {
         let sourceFile = this.state.getSourceFile(fileName);
-        let ts = this.state.ts;
+        let isJavaScript = sourceFile.flags & this.state.ts.NodeFlags.JavaScriptFile;
+        let info = this.state.ts.preProcessFile(sourceFile.text, true, !!isJavaScript);
 
-        let imports = [];
-        let visit = (node: ts.Node) => {
-            if (isImportEqualsDeclaration(node)) {
-                // we need this check to ensure that we have an external import
-                let importPath = (<any>node).moduleReference.expression.text;
-                imports.push(importPath);
-            } else if (isImportOrExportDeclaration(node)) {
-                let importPath = (<any>node).moduleSpecifier.text;
-                imports.push(importPath);
-            }
-
-            ts.forEachChild(node, visit);
-        };
-
-        imports.push.apply(imports, sourceFile.referencedFiles.map(file => file.fileName));
-        ts.forEachChild(sourceFile, visit);
-
-        let resolvedImports = imports.map((importPath) => {
-            return this.resolve(fileName, importPath);
-        });
-
-        return resolvedImports.filter(Boolean);
+        return info.importedFiles
+            .map(file => file.fileName)
+            .map(depName => this.resolve(fileName, depName))
+            .filter(Boolean);
     }
 
     resolve(fileName: string, depName: string): ts.ResolvedModule {
@@ -123,14 +98,6 @@ export class FileAnalyzer {
 
         if (resolvedModule) {
             this.state.fileAnalyzer.dependencies.addResolution(fileName, depName, resolvedModule);
-        }
-
-        if (this.state.compilerConfig.options.traceResolution) {
-            console.log(
-                'Resolve', depName, '\n',
-                'from', fileName,'\n',
-                'resolved', resolvedModule && resolvedModule.resolvedFileName, '\n',
-                'failedLookupLocations', resolution.failedLookupLocations, '\n\n');
         }
 
         return resolvedModule;

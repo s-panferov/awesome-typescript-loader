@@ -84,14 +84,18 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptVersion(fileName: string) {
-        if (env.files[fileName]) {
-            return env.files[fileName].version.toString();
+        let fileName_ = path.normalize(fileName);
+        if (env.files[fileName_]) {
+            return env.files[fileName_].version.toString();
         }
     }
 
     getScriptSnapshot(fileName: string) {
         let fileName_ = path.normalize(fileName);
         let file = env.files[fileName_];
+        if (!file) {
+            throw new Error(`Requested file is unknown: ${ fileName_ }`);
+        }
         return env.compiler.ScriptSnapshot.fromString(file.text);
     }
 
