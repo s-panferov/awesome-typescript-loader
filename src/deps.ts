@@ -1,7 +1,4 @@
 import { State } from './host';
-
-let objectAssign = require('object-assign');
-
 type FileSet = {[fileName: string]: boolean};
 
 export interface IDependency {

@@ -115,7 +115,6 @@ export class Host implements ts.LanguageServiceHost {
 
     resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
         return typeDirectiveNames.map(moduleName => {
-            console.log('resolve type ref', containingFile, typeDirectiveNames, env.typeReferenceResolutionCache[`${containingFile}::${moduleName}`]);
             return env.typeReferenceResolutionCache[`${containingFile}::${moduleName}`];
         });
     }
