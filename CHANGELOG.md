@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.7"></a>
+# [2.0.0-rc.7](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.6...v2.0.0-rc.7) (2016-06-21)
+
+
+### Features
+
+* use TS's preProcessFile to extract deps, refs [#168](https://github.com/s-panferov/awesome-typescript-loader/issues/168) ([0a064e7](https://github.com/s-panferov/awesome-typescript-loader/commit/0a064e7))
+
+
+
 <a name="2.0.0-rc.6"></a>
 # [2.0.0-rc.6](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.5...v2.0.0-rc.6) (2016-06-20)
 
