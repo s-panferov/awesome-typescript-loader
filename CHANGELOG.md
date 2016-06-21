@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.10"></a>
+# [2.0.0-rc.10](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.9...v2.0.0-rc.10) (2016-06-21)
+
+
+### Bug Fixes
+
+* guard for 1.8.10 ([27c3fde](https://github.com/s-panferov/awesome-typescript-loader/commit/27c3fde))
+
+
+
 <a name="2.0.0-rc.9"></a>
 # [2.0.0-rc.9](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.8...v2.0.0-rc.9) (2016-06-21)
 
