@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.8"></a>
+# [2.0.0-rc.8](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.7...v2.0.0-rc.8) (2016-06-21)
+
+
+### Features
+
+* resolve type reference directives ([27b4f9f](https://github.com/s-panferov/awesome-typescript-loader/commit/27b4f9f))
+
+
+
 <a name="2.0.0-rc.7"></a>
 # [2.0.0-rc.7](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.6...v2.0.0-rc.7) (2016-06-21)
 
