@@ -365,11 +365,13 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
         let instance: ICompilerInstance = resolveInstance(compilation.compiler, instanceName);
         let state = instance.tsState;
+        let deps = state.fileAnalyzer.dependencies;
 
         if (forkChecker) {
             let payload = {
                 files: state.allFiles(),
-                resolutionCache: state.fileAnalyzer.dependencies.resolutions
+                moduleResolutionCache: deps.moduleResolutions,
+                typeReferenceResolutionCache: deps.typeReferenceResolutions
             };
 
             runChecker(instance, payload);

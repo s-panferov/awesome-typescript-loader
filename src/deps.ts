@@ -58,49 +58,59 @@ export class FileAnalyzer {
 
         imports.forEach(imp => {
             this.dependencies.addDependency(fileName, imp);
-            this.checkDependencies(imp.resolvedFileName);
+            this.checkDependencies(imp);
         });
 
         return null;
     }
 
-    findImportDeclarations(fileName: string): ts.ResolvedModule[] {
+    findImportDeclarations(fileName: string)  {
         let sourceFile = this.state.getSourceFile(fileName);
         let isJavaScript = sourceFile.flags & this.state.ts.NodeFlags.JavaScriptFile;
         let info = this.state.ts.preProcessFile(sourceFile.text, true, !!isJavaScript);
+        let options = this.state.compilerConfig.options;
+        let ts = this.state.ts;
+        let deps = this.state.fileAnalyzer.dependencies;
 
-        return info.importedFiles
+        let imports: string[] = [];
+
+        imports.push.apply(imports, info.importedFiles
             .map(file => file.fileName)
-            .map(depName => this.resolve(fileName, depName))
-            .filter(Boolean);
-    }
+            .map(depName => {
+                let { resolvedModule } = ts.resolveModuleName(depName, fileName, options, ts.sys);
+                if (resolvedModule) {
+                    deps.addModuleResolution(fileName, depName, resolvedModule);
+                    return resolvedModule.resolvedFileName;
+                }
+            })
+            .filter(Boolean));
 
-    resolve(fileName: string, depName: string): ts.ResolvedModule {
+        imports.push.apply(imports, info.referencedFiles
+            .map(file => file.fileName)
+            .map(depName => {
+                return /^[a-z0-9].*\.d\.ts$/.test(depName) ? './' + depName : depName;
+            })
+            .map(depName => {
+                let { resolvedModule } = ts.resolveModuleName(depName, fileName, options, ts.sys);
+                if (resolvedModule) {
+                    deps.addModuleResolution(fileName, depName, resolvedModule);
+                    return resolvedModule.resolvedFileName;
+                }
+            })
+            .filter(Boolean));
 
-        if (/^[a-z0-9].*\.d\.ts$/.test(depName)) {
-            // Make import relative
-            // We need this to be able to resolve directives like
-            //
-            //      <reference path="lib.d.ts" />
-            //
-            // with resolver.
-            depName = './' + depName;
-        }
+        imports.push.apply(imports, info.typeReferenceDirectives
+            .map(file => file.fileName)
+            .map(depName => {
+                let { resolvedTypeReferenceDirective } = ts.resolveTypeReferenceDirective(depName, fileName, options, ts.sys);
+                if (resolvedTypeReferenceDirective) {
+                    deps.addTypeReferenceResolution(fileName, depName, resolvedTypeReferenceDirective);
+                    return resolvedTypeReferenceDirective.resolvedFileName;
+                }
+            })
+            .filter(Boolean));
 
-        let resolution = this.state.ts.resolveModuleName(
-            depName,
-            fileName,
-            this.state.compilerConfig.options,
-            this.state.ts.sys
-        );
-
-        let { resolvedModule } = resolution;
-
-        if (resolvedModule) {
-            this.state.fileAnalyzer.dependencies.addResolution(fileName, depName, resolvedModule);
-        }
-
-        return resolvedModule;
+        return imports;
     }
 }
 
@@ -110,27 +120,35 @@ export interface IDependencyGraphItem {
 }
 
 export class DependencyManager {
-    dependencies: {[fileName: string]: ts.ResolvedModule[]};
-    resolutions: {[cacheKey: string]: ts.ResolvedModule};
-    knownTypeDeclarations: FileSet;
+    dependencies: {[fileName: string]: string[]};
+    moduleResolutions: {[cacheKey: string]: ts.ResolvedModule};
+    typeReferenceResolutions: {[cacheKey: string]: ts.ResolvedTypeReferenceDirective};
     compiledModules: {[fileName: string]: string[]};
 
     constructor() {
         this.dependencies = {};
-        this.knownTypeDeclarations = {};
         this.compiledModules = {};
-        this.resolutions = {};
+        this.moduleResolutions = {};
+        this.typeReferenceResolutions = {};
     }
 
-    addResolution(fileName: string, depName: string, resolvedModule: ts.ResolvedModule) {
-        this.resolutions[`${fileName}::${depName}`] = resolvedModule;
+    addModuleResolution(fileName: string, depName: string, resolvedModule: ts.ResolvedModule) {
+        this.moduleResolutions[`${fileName}::${depName}`] = resolvedModule;
     }
 
-    getResolution(fileName: string, depName: string): ts.ResolvedModule {
-        return this.resolutions[`${fileName}::${depName}`];
+    addTypeReferenceResolution(fileName: string, depName: string, resolvedModule: ts.ResolvedTypeReferenceDirective) {
+        this.typeReferenceResolutions[`${fileName}::${depName}`] = resolvedModule;
     }
 
-    addDependency(fileName: string, dep: ts.ResolvedModule): void {
+    getModuleResolution(fileName: string, depName: string): ts.ResolvedModule {
+        return this.moduleResolutions[`${fileName}::${depName}`];
+    }
+
+    getTypeReferenceResolution(fileName: string, depName: string): ts.ResolvedTypeReferenceDirective {
+        return this.typeReferenceResolutions[`${fileName}::${depName}`];
+    }
+
+    addDependency(fileName: string, dep: string): void {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
@@ -158,24 +176,12 @@ export class DependencyManager {
         this.compiledModules[fileName] = [];
     }
 
-    getDependencies(fileName: string): ts.ResolvedModule[] {
+    getDependencies(fileName: string): string[] {
         if (!this.dependencies.hasOwnProperty(fileName)) {
             this.clearDependencies(fileName);
         }
 
         return this.dependencies[fileName].slice();
-    }
-
-    addTypeDeclaration(fileName: string) {
-        this.knownTypeDeclarations[fileName] = true;
-    }
-
-    hasTypeDeclaration(fileName: string): boolean {
-        return this.knownTypeDeclarations.hasOwnProperty(fileName);
-    }
-
-    getTypeDeclarations(): {[fileName: string]: boolean} {
-        return objectAssign({}, this.knownTypeDeclarations);
     }
 
     getDependencyGraph(fileName: string): IDependencyGraphItem {
@@ -186,10 +192,9 @@ export class DependencyManager {
         };
 
         let walk = (fileName: string, context: IDependencyGraphItem) => {
-            this.getDependencies(fileName).forEach((dep) => {
-                let fileName = dep.resolvedFileName;
+            this.getDependencies(fileName).forEach((depFileName) => {
                 let depContext = {
-                    fileName: dep.resolvedFileName,
+                    fileName: depFileName,
                     dependencies: []
                 };
                 context.dependencies.push(depContext);

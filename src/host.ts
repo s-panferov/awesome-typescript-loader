@@ -71,12 +71,18 @@ export class Host implements ts.LanguageServiceHost {
        return this.state.defaultLib;
     }
 
-    resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let resolutions = moduleNames.map(moduleName => {
-            return this.state.fileAnalyzer.dependencies.getResolution(containingFile, moduleName);
+    resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
+        let deps = this.state.fileAnalyzer.dependencies;
+        return typeDirectiveNames.map(moduleName => {
+            return deps.getTypeReferenceResolution(containingFile, moduleName);
         });
+    }
 
-        return resolutions;
+    resolveModuleNames(moduleNames: string[], containingFile: string) {
+        let deps = this.state.fileAnalyzer.dependencies;
+        return moduleNames.map(moduleName => {
+            return deps.getModuleResolution(containingFile, moduleName);
+        });
     }
 
     getDefaultLibLocation(): string {
@@ -188,7 +194,11 @@ export class State {
 
         let source = this.program.getSourceFile(fileName);
         if (!source) {
-            throw new Error(`File ${fileName} was not found in program`);
+            this.updateProgram();
+            source = this.program.getSourceFile(fileName);
+            if (!source) {
+                throw new Error(`File ${fileName} was not found in program`);
+            }
         }
 
         let emitResult = this.program.emit(source, writeFile);

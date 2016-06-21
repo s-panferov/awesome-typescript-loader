@@ -54,7 +54,7 @@ function compiler(webpack: IWebPack, text: string): void {
         }
     });
 
-    invokeKnownFilesTime(instance);
+    invokeKnownFilesOneTime(instance);
 
     instance.compiledFiles[fileName] = true;
     let doUpdate = false;
@@ -201,7 +201,7 @@ function transform(webpack: IWebPack, instance: ICompilerInstance, fileName: str
     };
 }
 
-function invokeKnownFilesTime(instance: ICompilerInstance) {
+function invokeKnownFilesOneTime(instance: ICompilerInstance) {
      if (instance.loaderConfig.externals && !instance.externalsInvoked) {
         instance.loaderConfig.externals
             .filter(isTypeDeclaration)

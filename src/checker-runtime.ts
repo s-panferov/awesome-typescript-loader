@@ -25,7 +25,8 @@ export interface IInitPayload {
 
 export interface ICompilePayload {
     files: {[fileName: string]: IFile};
-    resolutionCache: {[fileName: string]: ts.ResolvedModule};
+    moduleResolutionCache: {[fileName: string]: ts.ResolvedModule};
+    typeReferenceResolutionCache: {[fileName: string]: ts.ResolvedTypeReferenceDirective};
 }
 
 export interface IEnv {
@@ -36,7 +37,8 @@ export interface IEnv {
     compilerInfo?: ICompilerInfo;
     host?: Host;
     files?: {[fileName: string]: IFile};
-    resolutionCache?: {[fileName: string]: ts.ResolvedModule};
+    moduleResolutionCache?: {[fileName: string]: ts.ResolvedModule};
+    typeReferenceResolutionCache?: {[fileName: string]: ts.ResolvedTypeReferenceDirective};
     program?: ts.Program;
     service?: ts.LanguageService;
     plugins?: LoaderPluginDef[];
@@ -111,9 +113,16 @@ export class Host implements ts.LanguageServiceHost {
         return env.compilerOptions;
     }
 
+    resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
+        return typeDirectiveNames.map(moduleName => {
+            console.log('resolve type ref', containingFile, typeDirectiveNames, env.typeReferenceResolutionCache[`${containingFile}::${moduleName}`]);
+            return env.typeReferenceResolutionCache[`${containingFile}::${moduleName}`];
+        });
+    }
+
     resolveModuleNames(moduleNames: string[], containingFile: string) {
         return moduleNames.map(moduleName => {
-            return env.resolutionCache[`${containingFile}::${moduleName}`];
+            return env.moduleResolutionCache[`${containingFile}::${moduleName}`];
         });
     }
 
@@ -159,7 +168,8 @@ function processCompile(payload: ICompilePayload) {
     });
 
     env.files = payload.files;
-    env.resolutionCache = payload.resolutionCache;
+    env.moduleResolutionCache = payload.moduleResolutionCache;
+    env.typeReferenceResolutionCache = payload.typeReferenceResolutionCache;
 
     let program = env.program = env.service.getProgram();
 
