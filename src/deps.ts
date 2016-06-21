@@ -96,16 +96,18 @@ export class FileAnalyzer {
             })
             .filter(Boolean));
 
-        imports.push.apply(imports, info.typeReferenceDirectives
-            .map(file => file.fileName)
-            .map(depName => {
-                let { resolvedTypeReferenceDirective } = ts.resolveTypeReferenceDirective(depName, fileName, options, ts.sys);
-                if (resolvedTypeReferenceDirective) {
-                    deps.addTypeReferenceResolution(fileName, depName, resolvedTypeReferenceDirective);
-                    return resolvedTypeReferenceDirective.resolvedFileName;
-                }
-            })
-            .filter(Boolean));
+        if (info.typeReferenceDirectives) {
+            imports.push.apply(imports, info.typeReferenceDirectives
+                .map(file => file.fileName)
+                .map(depName => {
+                    let { resolvedTypeReferenceDirective } = ts.resolveTypeReferenceDirective(depName, fileName, options, ts.sys);
+                    if (resolvedTypeReferenceDirective) {
+                        deps.addTypeReferenceResolution(fileName, depName, resolvedTypeReferenceDirective);
+                        return resolvedTypeReferenceDirective.resolvedFileName;
+                    }
+                })
+                .filter(Boolean));
+        }
 
         return imports;
     }
