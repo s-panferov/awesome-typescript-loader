@@ -140,8 +140,10 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
     let compilerPath = query.compiler || 'typescript';
 
     let tsImpl: typeof ts;
+    let tsImplPath: string;
     try {
-        tsImpl = require(compilerPath);
+        tsImplPath = require.resolve(compilerPath);
+        tsImpl = require(tsImplPath);
     } catch (e) {
         console.error(e);
         console.error(COMPILER_ERROR);
@@ -154,8 +156,6 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
     };
 
     let { compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
-
-    console.log(compilerConfig, loaderConfig);
 
     applyDefaults(compilerConfig, loaderConfig);
     let babelImpl = setupBabel(loaderConfig);
