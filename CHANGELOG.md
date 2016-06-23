@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.12"></a>
+# [2.0.0-rc.12](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.11...v2.0.0-rc.12) (2016-06-23)
+
+
+### Bug Fixes
+
+* process watch files with `toUnix` ([045ffd8](https://github.com/s-panferov/awesome-typescript-loader/commit/045ffd8))
+
+
+
 <a name="2.0.0-rc.11"></a>
 # [2.0.0-rc.11](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.10...v2.0.0-rc.11) (2016-06-23)
 
