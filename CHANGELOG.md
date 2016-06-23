@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.11"></a>
+# [2.0.0-rc.11](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.10...v2.0.0-rc.11) (2016-06-23)
+
+
+### Features
+
+* rework path normalization for new TS ([76ada5d](https://github.com/s-panferov/awesome-typescript-loader/commit/76ada5d))
+
+
+
 <a name="2.0.0-rc.10"></a>
 # [2.0.0-rc.10](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.9...v2.0.0-rc.10) (2016-06-21)
 
