@@ -27,12 +27,12 @@ export function findResultFor(output: host.IEmitOutput, fileName: string) {
     let text;
     let sourceMap;
     let declaration: host.IOutputFile;
-    fileName = withoutExt(path.normalize(fileName));
+    fileName = withoutExt(fileName);
 
     for (let i = 0; i < output.outputFiles.length; i++) {
         let o = output.outputFiles[i];
-        let outputFileName = path.normalize(o.name);
-        let sourceFileName = withoutExt(path.normalize(o.sourceName));
+        let outputFileName = o.name;
+        let sourceFileName = withoutExt(o.sourceName);
         if (isFileEmit(fileName, outputFileName, sourceFileName)) {
             text = o.text;
         }

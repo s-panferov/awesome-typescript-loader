@@ -1,6 +1,5 @@
 import { ICompilerInfo, IFile } from './host';
 import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
-import * as path from 'path';
 
 let colors = require('colors/safe');
 
@@ -77,26 +76,20 @@ export class Host implements ts.LanguageServiceHost {
         this.moduleResolutionHost = new ModuleResolutionHost(this);
     }
 
-    normalizePath(filePath: string): string {
-        return path.normalize(filePath);
-    }
-
     getScriptFileNames() {
         return Object.keys(env.files);
     }
 
     getScriptVersion(fileName: string) {
-        let fileName_ = path.normalize(fileName);
-        if (env.files[fileName_]) {
-            return env.files[fileName_].version.toString();
+        if (env.files[fileName]) {
+            return env.files[fileName].version.toString();
         }
     }
 
     getScriptSnapshot(fileName: string) {
-        let fileName_ = path.normalize(fileName);
-        let file = env.files[fileName_];
+        let file = env.files[fileName];
         if (!file) {
-            throw new Error(`Requested file is unknown: ${ fileName_ }`);
+            throw new Error(`Requested file is unknown: ${ fileName }`);
         }
         return env.compiler.ScriptSnapshot.fromString(file.text);
     }

@@ -40,17 +40,15 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     getScriptVersion(fileName: string) {
-        let fileName_ = path.normalize(fileName);
-        if (this.state.getFile(fileName_)) {
-            return this.state.getFile(fileName_).version.toString();
+        if (this.state.getFile(fileName)) {
+            return this.state.getFile(fileName).version.toString();
         }
     }
 
     getScriptSnapshot(fileName) {
-        let fileName_ = path.normalize(fileName);
-        let file = this.state.getFile(fileName_);
+        let file = this.state.getFile(fileName);
         if (!file) {
-            throw new Error(`Requested file is unknown: ${ fileName_ }`);
+            throw new Error(`Requested file is unknown: ${ fileName }`);
         }
         return this.state.ts.ScriptSnapshot.fromString(file.text);
     }
@@ -175,8 +173,6 @@ export class State {
     }
 
     emit(fileName: string): IEmitOutput {
-        fileName = this.normalizePath(fileName);
-
         if (!this.program) {
             this.program = this.services.getProgram();
         }
@@ -216,8 +212,6 @@ export class State {
     }
 
     fastEmit(fileName: string) {
-        fileName = this.normalizePath(fileName);
-
         let file = this.getFile(fileName);
         if (!file) {
             throw new Error(`Unknown file ${ fileName }`);
@@ -236,7 +230,6 @@ export class State {
     }
 
     updateFile(fileName: string, text: string, checked: boolean = false): boolean {
-        fileName = this.normalizePath(fileName);
         let prevFile = this.files[fileName];
         let version = 0;
         let changed = true;
@@ -261,7 +254,6 @@ export class State {
     }
 
     addFile(fileName: string, text: string, isDefaultLib = false): IFile {
-        fileName = this.normalizePath(fileName);
         return this.files[fileName] = {
             text,
             isDefaultLib,
@@ -270,35 +262,26 @@ export class State {
     }
 
     getFile(fileName: string): IFile {
-        fileName = this.normalizePath(fileName);
         return this.files[fileName];
     }
 
     hasFile(fileName: string): boolean {
-        fileName = this.normalizePath(fileName);
         return this.files.hasOwnProperty(fileName);
     }
 
     readFile(fileName: string): string {
-        fileName = this.normalizePath(fileName);
         // Use global fs here, because local doesn't contain `readFileSync`
         return fs.readFileSync(fileName, {encoding: 'utf-8'});
     }
 
     readFileAndAdd(fileName: string, isDefaultLib = false) {
-        fileName = this.normalizePath(fileName);
         let text = this.readFile(fileName);
         this.addFile(fileName, text, isDefaultLib);
     }
 
     readFileAndUpdate(fileName: string, checked: boolean = false): boolean {
-        fileName = this.normalizePath(fileName);
         let text = this.readFile(fileName);
         return this.updateFile(fileName, text, checked);
-    }
-
-    normalizePath(filePath: string): string {
-        return path.normalize(filePath);
     }
 }
 
