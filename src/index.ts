@@ -28,16 +28,6 @@ interface Transformation {
     map: any;
 }
 
-const double = /\/\//;
-function toUnix(fileName: string) {
-    let res: string = fileName.replace(/\\/g, '/');
-    while (res.match(double)) {
-        res = res.replace(double, '/');
-    }
-
-    return res;
-}
-
 function compiler(webpack: IWebPack, text: string): void {
     if (webpack.cacheable) {
         webpack.cacheable();
@@ -48,7 +38,7 @@ function compiler(webpack: IWebPack, text: string): void {
     let instance = ensureInstance(webpack, options, instanceName);
     let state = instance.tsState;
     let callback = webpack.async();
-    let fileName = toUnix(webpack.resourcePath);
+    let fileName = helpers.toUnix(webpack.resourcePath);
 
     let depsInjector = {
         add: (depFileName) => webpack.addDependency(depFileName),

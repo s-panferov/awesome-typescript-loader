@@ -2,7 +2,7 @@ import { State } from './host';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
-import { formatError } from './helpers';
+import { formatError, toUnix } from './helpers';
 import { ICompilerInfo } from './host';
 import { createChecker } from './checker';
 
@@ -319,7 +319,7 @@ function setupWatchRun(compiler, instanceName: string) {
         let instance = resolveInstance(watching.compiler, instanceName);
         let state = instance.tsState;
         let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
-        let changedFiles = Object.keys(mtimes);
+        let changedFiles = Object.keys(mtimes).map(toUnix);
 
         changedFiles.forEach((changedFile) => {
             state.fileAnalyzer.validFiles.markFileInvalid(changedFile);

@@ -2,6 +2,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as host from './host';
 
+const double = /\/\//;
+export function toUnix(fileName: string): string {
+    let res: string = fileName.replace(/\\/g, '/');
+    while (res.match(double)) {
+        res = res.replace(double, '/');
+    }
+
+    return res;
+}
+
 function withoutExt(fileName: string): string {
     return path.join(path.dirname(fileName), path.basename(fileName).split('.')[0]);
 }
