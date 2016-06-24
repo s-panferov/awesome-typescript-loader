@@ -74,7 +74,7 @@ export function formatError(diagnostic) {
         lineChar = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
     }
     return (
-        (diagnostic.file ? diagnostic.file.fileName : '')
+        (diagnostic.file ? path.normalize(diagnostic.file.fileName) : '')
         + (lineChar ? formatLineChar(lineChar) + ' ' : '') + "\n"
         + (typeof diagnostic.messageText == "string" ?
             diagnostic.messageText :
