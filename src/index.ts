@@ -41,7 +41,7 @@ function compiler(webpack: IWebPack, text: string): void {
     let fileName = helpers.toUnix(webpack.resourcePath);
 
     let depsInjector = {
-        add: (depFileName) => webpack.addDependency(depFileName),
+        add: (depFileName) => webpack.addDependency(path.normalize(depFileName)),
         clear: webpack.clearDependencies.bind(webpack)
     };
 

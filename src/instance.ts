@@ -416,7 +416,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 let declarationFile = output.outputFiles.filter(filePath =>
                     !!filePath.name.match(/\.d.ts$/))[0];
                 if (declarationFile) {
-                    let assetPath = path.relative(process.cwd(), declarationFile.name);
+                    let assetPath = path.normalize(path.relative(process.cwd(), declarationFile.name));
                     compilation.assets[assetPath] = {
                         source: () => declarationFile.text,
                         size: () => declarationFile.text.length
@@ -426,8 +426,10 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         }
 
         instance.compiledFiles = {};
-        compilation.fileDependencies.push.apply(compilation.fileDependencies, phantomImports);
-        compilation.fileDependencies = _.uniq(compilation.fileDependencies);
+
+        let fileDeps = compilation.fileDependencies;
+        fileDeps.push.apply(fileDeps, phantomImports.map(path.normalize));
+        compilation.fileDependencies = _.uniq(fileDeps);
 
         callback();
     });

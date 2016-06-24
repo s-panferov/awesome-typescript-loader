@@ -1,4 +1,5 @@
 import { ICompilerInfo, IFile } from './host';
+import * as path from 'path';
 import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
 
 let colors = require('colors/safe');
@@ -184,7 +185,7 @@ function processCompile(payload: ICompilePayload) {
             let message = env.compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
             if (diagnostic.file) {
                 let { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-                console.error(`[${ instanceName }] ${colors.red(diagnostic.file.fileName)}:${line + 1}:${character + 1} \n    ${colors.red(message)}`);
+                console.error(`[${ instanceName }] ${colors.red(path.normalize(diagnostic.file.fileName))}:${line + 1}:${character + 1} \n    ${colors.red(message)}`);
             } else {
                 console.error(colors.red(`[${ instanceName }] ${ message }`));
             }
