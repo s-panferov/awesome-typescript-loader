@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.15"></a>
+# [2.0.0-rc.15](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.14...v2.0.0-rc.15) (2016-06-25)
+
+
+### Features
+
+* initial impl of PathsPlugin, refs [#156](https://github.com/s-panferov/awesome-typescript-loader/issues/156) ([4ac1988](https://github.com/s-panferov/awesome-typescript-loader/commit/4ac1988))
+
+
+
 <a name="2.0.0-rc.14"></a>
 # [2.0.0-rc.14](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.13...v2.0.0-rc.14) (2016-06-25)
 
