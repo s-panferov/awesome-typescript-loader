@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.14"></a>
+# [2.0.0-rc.14](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.13...v2.0.0-rc.14) (2016-06-25)
+
+
+### Features
+
+* support `types` preventive resolution ([a74441f](https://github.com/s-panferov/awesome-typescript-loader/commit/a74441f))
+
+
+
 <a name="2.0.0-rc.13"></a>
 # [2.0.0-rc.13](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.12...v2.0.0-rc.13) (2016-06-24)
 
