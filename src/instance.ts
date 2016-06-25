@@ -316,7 +316,7 @@ export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typ
                 {},
                 tsImpl.sys,
                 process.cwd(),
-                _.extend({}, ts.getDefaultCompilerOptions(), existingOptions.options) as ts.CompilerOptions,
+                _.extend({}, tsImpl.getDefaultCompilerOptions(), existingOptions.options) as ts.CompilerOptions,
                 process.cwd()
             ),
             loaderConfig: query as LoaderConfig
