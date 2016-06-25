@@ -11,6 +11,7 @@ import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
 import { isTypeDeclaration } from './deps';
 import { QueryOptions, IWebPack, ensureInstance, ICompilerInstance } from './instance';
+import { PathsPlugin } from './paths-plugin';
 
 let loaderUtils = require('loader-utils');
 
@@ -221,5 +222,6 @@ class ForkCheckerPlugin {
 }
 
 (loader as any).ForkCheckerPlugin = ForkCheckerPlugin;
+(loader as any).TsConfigPathsPlugin = PathsPlugin;
 
 module.exports = loader;

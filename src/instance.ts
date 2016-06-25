@@ -138,23 +138,8 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         return exInstance;
     }
 
-    let compilerPath = query.compiler || 'typescript';
-
-    let tsImpl: typeof ts;
-    let tsImplPath: string;
-    try {
-        tsImplPath = require.resolve(compilerPath);
-        tsImpl = require(tsImplPath);
-    } catch (e) {
-        console.error(e);
-        console.error(COMPILER_ERROR);
-        process.exit(1);
-    }
-
-    let compilerInfo: ICompilerInfo = {
-        compilerPath,
-        tsImpl,
-    };
+    let compilerInfo = setupTs(query.compiler);
+    let { tsImpl } = compilerInfo;
 
     let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
@@ -217,6 +202,28 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         initedPlugins,
         shouldUpdateProgram: true
     };
+}
+
+export function setupTs(compiler: string): ICompilerInfo {
+    let compilerPath = compiler || 'typescript';
+
+    let tsImpl: typeof ts;
+    let tsImplPath: string;
+    try {
+        tsImplPath = require.resolve(compilerPath);
+        tsImpl = require(tsImplPath);
+    } catch (e) {
+        console.error(e);
+        console.error(COMPILER_ERROR);
+        process.exit(1);
+    }
+
+    let compilerInfo: ICompilerInfo = {
+        compilerPath,
+        tsImpl,
+    };
+
+    return compilerInfo;
 }
 
 function setupCache(loaderConfig: LoaderConfig, tsImpl: typeof ts, webpack: IWebPack, babelImpl: any) {
@@ -292,7 +299,7 @@ export interface Configs {
     loaderConfig: LoaderConfig;
 }
 
-function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): Configs {
+export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): Configs {
     let configFilePath: string;
     if (query.tsconfig && query.tsconfig.match(/\.json$/)) {
         configFilePath = query.tsconfig;
