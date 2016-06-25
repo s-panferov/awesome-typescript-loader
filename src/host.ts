@@ -28,6 +28,8 @@ export interface IEmitOutput extends ts.EmitOutput {
     outputFiles: IOutputFile[];
 }
 
+export const TSCONFIG_INFERRED = '__inferred type names__.ts';
+
 export class Host implements ts.LanguageServiceHost {
     state: State;
 
@@ -71,6 +73,10 @@ export class Host implements ts.LanguageServiceHost {
 
     resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
         let deps = this.state.fileAnalyzer.dependencies;
+        if (containingFile.indexOf(TSCONFIG_INFERRED) !== -1) {
+            containingFile = TSCONFIG_INFERRED;
+        }
+
         return typeDirectiveNames.map(moduleName => {
             return deps.getTypeReferenceResolution(containingFile, moduleName);
         });
@@ -102,6 +108,7 @@ export class State {
     files: {[fileName: string]: IFile} = {};
     services: ts.LanguageService;
     loaderConfig: LoaderConfig;
+    configFilePath: string;
     compilerConfig: TsConfig;
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
@@ -109,6 +116,7 @@ export class State {
 
     constructor(
         loaderConfig: LoaderConfig,
+        configFilePath: string,
         compilerConfig: TsConfig,
         compilerInfo: ICompilerInfo
     ) {
@@ -117,6 +125,7 @@ export class State {
         this.host = new Host(this);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.loaderConfig = loaderConfig;
+        this.configFilePath = configFilePath;
         this.compilerConfig = compilerConfig;
         this.fileAnalyzer = new FileAnalyzer(this);
 
@@ -125,6 +134,30 @@ export class State {
         }
 
         this.loadDefaultLib();
+        this.loadTypesFromConfig();
+    }
+
+    loadTypesFromConfig() {
+        let { options } = this.compilerConfig;
+        if (options.types) {
+            options.types.forEach(type => {
+                let { resolvedTypeReferenceDirective } = this.ts.resolveTypeReferenceDirective(
+                    type,
+                    this.configFilePath,
+                    options,
+                    ts.sys
+                );
+
+                if (resolvedTypeReferenceDirective) {
+                    this.readFileAndAdd(resolvedTypeReferenceDirective.resolvedFileName);
+                    this.fileAnalyzer.dependencies.addTypeReferenceResolution(
+                        TSCONFIG_INFERRED,
+                        type,
+                        resolvedTypeReferenceDirective
+                    );
+                }
+            });
+        }
     }
 
     loadDefaultLib() {

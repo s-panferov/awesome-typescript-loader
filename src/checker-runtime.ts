@@ -1,4 +1,4 @@
-import { ICompilerInfo, IFile } from './host';
+import { ICompilerInfo, IFile, TSCONFIG_INFERRED } from './host';
 import * as path from 'path';
 import { LoaderPlugin, LoaderPluginDef, LoaderConfig } from './instance';
 
@@ -108,6 +108,10 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
+        if (containingFile.indexOf(TSCONFIG_INFERRED) !== -1) {
+            containingFile = TSCONFIG_INFERRED;
+        }
+
         return typeDirectiveNames.map(moduleName => {
             return env.typeReferenceResolutionCache[`${containingFile}::${moduleName}`];
         });

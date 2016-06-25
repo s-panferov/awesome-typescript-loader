@@ -23,6 +23,7 @@ export interface ICompilerInstance {
     tsState: State;
     babelImpl?: any;
     compiledFiles: {[key:string]: boolean};
+    configFilePath: string;
     compilerConfig: TsConfig;
     loaderConfig: LoaderConfig;
     externalsInvoked: boolean;
@@ -155,7 +156,7 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         tsImpl,
     };
 
-    let { compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
+    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
     applyDefaults(compilerConfig, loaderConfig);
     let babelImpl = setupBabel(loaderConfig);
@@ -164,6 +165,7 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
     let forkChecker = loaderConfig.forkChecker && getRootCompiler(webpack._compiler)._tsFork;
     let tsState = new State(
         loaderConfig,
+        configFilePath,
         compilerConfig,
         compilerInfo
     );
@@ -198,6 +200,7 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
         babelImpl,
         compiledFiles: {},
         loaderConfig,
+        configFilePath,
         compilerConfig,
         externalsInvoked: false,
         checker: forkChecker
@@ -283,7 +286,13 @@ function applyDefaults(compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
     loaderConfig.externals.push.apply(loaderConfig.externals, initialFiles);
 }
 
-function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): { compilerConfig: TsConfig, loaderConfig } {
+export interface Configs {
+    configFilePath: string;
+    compilerConfig: TsConfig;
+    loaderConfig: LoaderConfig;
+}
+
+function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): Configs {
     let configFilePath: string;
     if (query.tsconfig && query.tsconfig.match(/\.json$/)) {
         configFilePath = query.tsconfig;
@@ -291,11 +300,22 @@ function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts)
         configFilePath = tsImpl.findConfigFile(process.cwd(), tsImpl.sys.fileExists);
     }
 
+     let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, process.cwd(), 'atl.query');
+
     if (!configFilePath) {
-        return null;
+        return {
+            configFilePath: process.cwd(),
+            compilerConfig: tsImpl.parseJsonConfigFileContent(
+                {},
+                tsImpl.sys,
+                process.cwd(),
+                _.extend({}, ts.getDefaultCompilerOptions(), existingOptions.options) as ts.CompilerOptions,
+                process.cwd()
+            ),
+            loaderConfig: query as LoaderConfig
+        };
     }
 
-    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, process.cwd(), 'atl.query');
     let jsonConfigFile = tsImpl.readConfigFile(configFilePath, tsImpl.sys.readFile);
 
     let compilerConfig = tsImpl.parseJsonConfigFileContent(
@@ -307,8 +327,11 @@ function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts)
     );
 
     return {
+        configFilePath,
         compilerConfig,
-        loaderConfig: _.defaults(query, jsonConfigFile.config.awesomeTypescriptLoaderOptions)
+        loaderConfig: _.defaults<LoaderConfig, LoaderConfig>(
+            query,
+            jsonConfigFile.config.awesomeTypescriptLoaderOptions)
     };
 }
 
