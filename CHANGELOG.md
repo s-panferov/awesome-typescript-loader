@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.16"></a>
+# [2.0.0-rc.16](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.15...v2.0.0-rc.16) (2016-06-25)
+
+
+### Bug Fixes
+
+* rename ts -> tsImpl, refs [#156](https://github.com/s-panferov/awesome-typescript-loader/issues/156) ([7ed3c7c](https://github.com/s-panferov/awesome-typescript-loader/commit/7ed3c7c))
+
+
+
 <a name="2.0.0-rc.15"></a>
 # [2.0.0-rc.15](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.14...v2.0.0-rc.15) (2016-06-25)
 
