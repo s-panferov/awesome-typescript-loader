@@ -142,7 +142,6 @@ export class PathsPlugin implements ResolverPlugin {
                 "aliased with mapping '" + innerRequest  + "': '" + mapping.alias + "' to '" + newRequestStr + "'",
                 createInnerCallback(
                     function(err, result) {
-                        console.log(err, result, arguments.length > 0);
                         if (arguments.length > 0) {
                             return callback(err, result);
                         }
