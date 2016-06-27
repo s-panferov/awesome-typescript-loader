@@ -1,3 +1,8 @@
+<a name="2.0.0-rc.17"></a>
+# [2.0.0-rc.17](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.16...v2.0.0-rc.17) (2016-06-27)
+
+
+
 <a name="2.0.0-rc.16"></a>
 # [2.0.0-rc.16](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.15...v2.0.0-rc.16) (2016-06-25)
 
