@@ -71,7 +71,7 @@ export class PathsPlugin implements ResolverPlugin {
         this.baseUrl = this.options.baseUrl;
         this.absoluteBaseUrl = path.resolve(
             path.dirname(this.configFilePath),
-            this.baseUrl
+            this.baseUrl || '.'
         );
 
         this.mappings = [];
