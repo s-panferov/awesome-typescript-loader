@@ -1,4 +1,3 @@
-import * as ts from "typescript";
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
