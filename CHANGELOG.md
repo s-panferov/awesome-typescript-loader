@@ -1,3 +1,13 @@
+<a name="2.0.0-rc.18"></a>
+# [2.0.0-rc.18](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.17...v2.0.0-rc.18) (2016-06-29)
+
+
+### Bug Fixes
+
+* minor paths-plugin fix ([5649e12](https://github.com/s-panferov/awesome-typescript-loader/commit/5649e12))
+
+
+
 <a name="2.0.0-rc.17"></a>
 # [2.0.0-rc.17](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.16...v2.0.0-rc.17) (2016-06-27)
 
