@@ -153,6 +153,10 @@ Less logging from the checker.
 Invoke Babel to transpile files. Useful with ES6 target. Please see `useCache` option
 which can improve warm-up time.
 
+### babelCore *(string) (default=undefined)*
+
+Override the path used to find `babel-core`. Useful if `node_modules` is installed in a non-standard place or webpack is being invoked from a directory not at the root of the project.
+
 ### babelOptions *(object) (default=null)*
 
 Use this option to pass some options to Babel (e.g. presets). Please note that
