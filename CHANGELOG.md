@@ -1,3 +1,31 @@
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v1.1.1...v2.0.0) (2016-07-07)
+
+
+### Bug Fixes
+
+* guard for 1.8.10 ([1d1867b](https://github.com/s-panferov/awesome-typescript-loader/commit/1d1867b))
+* minor paths-plugin fix ([230780a](https://github.com/s-panferov/awesome-typescript-loader/commit/230780a))
+* process watch files with `toUnix` ([79b72f1](https://github.com/s-panferov/awesome-typescript-loader/commit/79b72f1))
+* proper module resolution for .d.ts files ([36b412c](https://github.com/s-panferov/awesome-typescript-loader/commit/36b412c))
+* rename ts -> tsImpl, refs [#156](https://github.com/s-panferov/awesome-typescript-loader/issues/156) ([d8f24a1](https://github.com/s-panferov/awesome-typescript-loader/commit/d8f24a1))
+* search all nodes for modules (can be optimized) ([b3a9218](https://github.com/s-panferov/awesome-typescript-loader/commit/b3a9218))
+* watch files on Windows (normalize) ([75b41d7](https://github.com/s-panferov/awesome-typescript-loader/commit/75b41d7))
+
+
+### Features
+
+* fixed module resolution; add `lib` option support ([e5ff563](https://github.com/s-panferov/awesome-typescript-loader/commit/e5ff563))
+* initial impl of PathsPlugin, refs [#156](https://github.com/s-panferov/awesome-typescript-loader/issues/156) ([6401a94](https://github.com/s-panferov/awesome-typescript-loader/commit/6401a94))
+* more options, better error messages from ts ([e4498df](https://github.com/s-panferov/awesome-typescript-loader/commit/e4498df))
+* no more async, simplify module resolution ([87f096e](https://github.com/s-panferov/awesome-typescript-loader/commit/87f096e))
+* resolve type reference directives ([799b17c](https://github.com/s-panferov/awesome-typescript-loader/commit/799b17c))
+* rework path normalization for new TS ([f6dcc22](https://github.com/s-panferov/awesome-typescript-loader/commit/f6dcc22))
+* support `types` preventive resolution ([6916c8f](https://github.com/s-panferov/awesome-typescript-loader/commit/6916c8f))
+* use TS's preProcessFile to extract deps, refs [#168](https://github.com/s-panferov/awesome-typescript-loader/issues/168) ([96fba97](https://github.com/s-panferov/awesome-typescript-loader/commit/96fba97))
+
+
+
 <a name="2.0.0-rc.18"></a>
 # [2.0.0-rc.18](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.0.0-rc.17...v2.0.0-rc.18) (2016-06-29)
 
