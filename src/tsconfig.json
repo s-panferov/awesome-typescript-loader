@@ -14,7 +14,6 @@
     },
     "compileOnSave": false,
     "exclude": [
-        "test",
         "test/fixtures",
         "test/output/*"
     ]

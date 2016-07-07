@@ -69,6 +69,7 @@ export interface LoaderConfig {
     emitRequireType?: boolean;
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
+    tsconfigContent?: string;
     useWebpackText?: boolean;
     externals?: string[];
     doTypeCheck?: boolean;
@@ -306,13 +307,13 @@ export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typ
         configFilePath = tsImpl.findConfigFile(process.cwd(), tsImpl.sys.fileExists);
     }
 
-     let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, process.cwd(), 'atl.query');
+    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, process.cwd(), 'atl.query');
 
-    if (!configFilePath) {
+    if (!configFilePath || query.tsconfigContent) {
         return {
-            configFilePath: process.cwd(),
+            configFilePath: configFilePath || process.cwd(),
             compilerConfig: tsImpl.parseJsonConfigFileContent(
-                {},
+                query.tsconfigContent || {},
                 tsImpl.sys,
                 process.cwd(),
                 _.extend({}, tsImpl.getDefaultCompilerOptions(), existingOptions.options) as ts.CompilerOptions,

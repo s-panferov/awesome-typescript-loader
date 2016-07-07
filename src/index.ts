@@ -144,7 +144,7 @@ function transform(webpack: IWebPack, instance: ICompilerInstance, fileName: str
     let resultSourceMap = null;
     let state = instance.tsState;
 
-    let useSlowEmit = state.compilerConfig.options.declaration || state.loaderConfig.disableFastEmit
+    let useSlowEmit = state.compilerConfig.options.declaration || state.loaderConfig.disableFastEmit;
     if (useSlowEmit) {
         let output = state.emit(fileName);
         let result = helpers.findResultFor(output, fileName);

@@ -4,21 +4,29 @@ import {
 } from './utils';
 
 describe('salsa test', function() {
-    it('should compile js file', async function() {
+    it('should compile ts file with js invoke', async function() {
         let config =  {
             entry: fixturePath(['salsa', 'index.ts'])
         };
 
         let tsconfig = fixturePath(['salsa', 'tsconfig.json']);
-        let loaderQuery = { tsconfig };
-        let exclude = [ /exclude/ ];
+        let loaderQuery = { tsconfig, tsconfigContent: null };
 
-        let stats = await cleanAndCompile(createConfig(config, { loaderQuery, exclude }));
+        let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
+        console.log(stats.compilation.errors)
+        expect(stats.compilation.errors.length).eq(1);
+    });
 
-        console.log(stats.compilation.errors);
+    xit('should compile js file as entry point', async function() {
+        let config =  {
+            entry: fixturePath(['salsa', 'index.js'])
+        };
 
-        expect(stats.compilation.errors.length).eq(2);
-        expect(stats.compilation.errors[0].toString()).include('Cannot find module');
-        expect(stats.compilation.errors[1].toString()).include(`Argument of type 'string'`);
+        let tsconfig = fixturePath(['salsa', 'tsconfig.json']);
+        let loaderQuery = { tsconfig, tsconfigContent: null };
+
+        let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
+        console.log(stats.compilation.errors)
+        expect(stats.compilation.errors.length).eq(1);
     });
 });

@@ -45,7 +45,7 @@ describe('main test', function() {
             entry: fixturePath(['tsx', 'basic.tsx'])
         };
 
-        let loaderQuery = { tsconfig };
+        let loaderQuery = { tsconfig, tsconfigContent: null };
 
         let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
         expect(stats.compilation.errors.length).eq(1);

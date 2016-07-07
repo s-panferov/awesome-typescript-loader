@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as _ from 'lodash';
 
 const temp = require('temp').track();
-
 require('babel-polyfill');
 require('source-map-support').install();
 
@@ -52,19 +51,31 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
                 {
                     test: /\.(tsx?|jsx?)/,
                     loader: loaderDir,
-                    query: Object.assign({ target: 'es6' }, options.loaderQuery)
+                    query: Object.assign(
+                        {
+                            target: 'es6',
+                        },
+                        {
+                            tsconfigContent: {
+                                exclude: ["*"]
+                            }
+                        },
+                        options.loaderQuery
+                    )
                 },
             ],
         },
         plugins: []
     };
 
+    let loader = defaultConfig.module.loaders[0] as any;
+
     if (options.include) {
-        (defaultConfig.module.loaders[0] as any).include = options.include;
+        loader.include = (loader.include || []).concat(options.include);
     }
 
     if (options.exclude) {
-        (defaultConfig.module.loaders[0] as any).exclude = options.exclude;
+        loader.exclude = (loader.exclude || []).concat(options.exclude);
     }
 
     if (options.watch) {

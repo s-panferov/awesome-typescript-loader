@@ -106,7 +106,6 @@ export class PathsPlugin implements ResolverPlugin {
             resolver.apply(new ModulesInRootPlugin("module", this.absoluteBaseUrl, "resolve"));
         }
 
-
         mappings.forEach(mapping => {
             resolver.plugin(this.source, this.createPlugin(resolver, mapping));
         });
