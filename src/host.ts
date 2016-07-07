@@ -49,7 +49,7 @@ export class Host implements ts.LanguageServiceHost {
     getScriptSnapshot(fileName) {
         let file = this.state.getFile(fileName);
         if (!file) {
-            throw new Error(`Requested file is unknown: ${ fileName }`);
+            return null;
         }
         return this.state.ts.ScriptSnapshot.fromString(file.text);
     }

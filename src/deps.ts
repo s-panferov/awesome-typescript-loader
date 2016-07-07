@@ -68,7 +68,6 @@ export class FileAnalyzer {
         let options = this.state.compilerConfig.options;
         let ts = this.state.ts;
         let deps = this.state.fileAnalyzer.dependencies;
-
         let imports: string[] = [];
 
         imports.push.apply(imports, info.importedFiles

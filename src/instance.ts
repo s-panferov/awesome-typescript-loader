@@ -82,8 +82,7 @@ export interface LoaderConfig {
     skipDeclarationFilesCheck?: boolean;
     useCache?: boolean;
     cacheDirectory?: string;
-    resolveGlobs?: boolean;
-    library: string;
+    disableFastEmit?: boolean;
 }
 
 export type QueryOptions = LoaderConfig & ts.CompilerOptions;

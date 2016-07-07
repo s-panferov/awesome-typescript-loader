@@ -3,12 +3,6 @@
 [![Join the chat at https://gitter.im/s-panferov/awesome-typescript-loader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-panferov/awesome-typescript-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/s-panferov/awesome-typescript-loader.svg?branch=master)](https://travis-ci.org/s-panferov/awesome-typescript-loader)
 
-TypeScript loader for Webpack. This project was started as a fork of https://github.com/andreypopp/typescript-loader.
-Thanks to @andreypopp for the great project.
-
-The main goal of this loader is to support the **watch** mode and *webpack-dev-server* with **incremental** compilation.
-There are a lot of problems in other TypeScript loaders that are fixed here.
-
 ## Installation
 
 ```
@@ -44,7 +38,7 @@ module.exports = {
 
   // Currently we need to add '.ts' to the resolve.extensions array.
   resolve: {
-    extensions: ['', '.ts', '.webpack.js', '.web.js', '.js']
+    extensions: ['', '.ts', '.tsx', '.js', '.jsx']
   },
 
   // Source maps support ('inline-source-map' also works)
@@ -64,10 +58,6 @@ module.exports = {
 
 After that, you will be able to build TypeScript files with webpack.
 
-## TS defaults
-
-* target = 'es5'
-
 ## tsconfig.json
 
 You can use the tsconfig.json file to configure your compiler and loader:
@@ -84,6 +74,26 @@ You can use the tsconfig.json file to configure your compiler and loader:
 }
 ```
 
+## Supported TypeScript
+
+`awesome-typescript-loader@2.x` aims to support only `typescript@2.x` and `webpack@2x`, if you need old compilers please use
+`1.x` or `0.x` versions.
+
+## Advansed path resolution in TypeScript 2.0
+
+If you want to use new `paths` and `baseUrl` feature of TS 2.0 please include `TsConfigPathsPlugin`.
+This feature is available only for `webpack@2.1`.
+
+```
+var TsConfigPathsPlugin = require('awesome-typescript-loader').TsConfigPathsPlugin;
+
+resolve: {
+    plugins: [
+        new TsConfigPathsPlugin(/* { tsconfig, compiler } */)
+    ]
+}
+```
+
 ## Loader options
 
 ### compiler *(string) (default='typescript')*
@@ -93,13 +103,13 @@ set to the NPM name of the compiler, e.g. *ntypescript* or the path to a package
 Note that the compiler must be installed in **your** project. You can also use
 nightly versions.
 
+### disableFastEmit (boolean) (default=false)*
+
+Disable fast `transpileModule` emit mode. Disables automatically when you set `declaration: true`.
+
 ### emitRequireType *(boolean) (default=false)*
 
 Specify whether or not the loader emits webpacks's require type.
-
-### library *(string) (default='es5' possible='es6')*
-
-Allows the use of libraries other than the `target`'s default one. Useful when you want to use ES6 library with ES5 target. Additionally you might use `library=es6` with Node.
 
 ### instanceName *(string) (default='default')*
 
@@ -174,10 +184,6 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 
 Directory when cache is stored.
 
-### resolveGlobs *(string) (default=true)*
-
-Invoke glob resolver using 'filesGlob' and 'exclude' sections of `tsconfig`.
-
 ### skipDeclarationFilesCheck *(string) (default=false)*
 
 Skip declaration files typechecking. Use this only if you understand consequences.
@@ -185,31 +191,3 @@ Skip declaration files typechecking. Use this only if you understand consequence
 ## Compiler options
 
 You can pass compiler options inside loader query string or in tsconfig file.
-
-## Using with --watch or webpack-dev-server
-
-This loader supports both `--watch` and `webpack-dev-server` modes. It handles file dependencies
-using internal webpack dependency markers. When you change a file, the loader recompiles all the dependencies.
-
-## External Modules
-
-The most natural way to structure your code with TypeScript and webpack is to use [external modules](https://github.com/Microsoft/TypeScript/wiki/Modules#going-external), and these work as you would expect.
-
-```
-npm install --save react
-```
-
-```typescript
-import * as React from 'react';
-```
-
-## Internal Modules
-
-This project doesn't aim to support internal modules, because it's hard to resolve dependencies for the watch mode. Of course, you can still use them without watch, but this function is **unstable**.
-
-## Declaration files
-
-All declaration files should be resolvable from the entry file.
-The easiest way to do this is to create a `references.d.ts` file which contains
-references to all of your declaration files. Then reference
-`references.d.ts` from your entry file.

@@ -144,9 +144,8 @@ function transform(webpack: IWebPack, instance: ICompilerInstance, fileName: str
     let resultSourceMap = null;
     let state = instance.tsState;
 
-    if (state.compilerConfig.options.declaration) {
-        // can't use fastEmit with declaration generation
-
+    let useSlowEmit = state.compilerConfig.options.declaration || state.loaderConfig.disableFastEmit
+    if (useSlowEmit) {
         let output = state.emit(fileName);
         let result = helpers.findResultFor(output, fileName);
 
@@ -164,8 +163,6 @@ function transform(webpack: IWebPack, instance: ICompilerInstance, fileName: str
         resultText = result.text;
         resultSourceMap = result.sourceMap;
     } else {
-        // Use fast emit
-
         let result = state.fastEmit(fileName);
         resultText = result.text;
         resultSourceMap = result.sourceMap;

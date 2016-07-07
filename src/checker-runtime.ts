@@ -90,7 +90,7 @@ export class Host implements ts.LanguageServiceHost {
     getScriptSnapshot(fileName: string) {
         let file = env.files[fileName];
         if (!file) {
-            throw new Error(`Requested file is unknown: ${ fileName }`);
+            return null;
         }
         return env.compiler.ScriptSnapshot.fromString(file.text);
     }
