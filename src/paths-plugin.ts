@@ -1,5 +1,6 @@
 import { setupTs, readConfigFile, LoaderConfig } from './instance';
 import * as path from 'path';
+import * as _ from 'lodash';
 
 const ModulesInRootPlugin: new (a: string, b: string, c: string) => ResolverPlugin
     = require('enhanced-resolve/lib/ModulesInRootPlugin');
@@ -132,9 +133,9 @@ export class PathsPlugin implements ResolverPlugin {
                 newRequestStr = path.resolve(this.absoluteBaseUrl, newRequestStr);
             }
 
-            let newRequest: Request = Object.assign({}, request, {
+            let newRequest = _.extend({}, request, {
                 request: newRequestStr
-            });
+            }) as Request;
 
             return resolver.doResolve(
                 this.target,
