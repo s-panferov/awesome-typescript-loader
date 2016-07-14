@@ -144,7 +144,7 @@ export class State {
                     type,
                     this.configFilePath,
                     options,
-                    ts.sys
+                    this.ts.sys
                 );
 
                 if (resolvedTypeReferenceDirective) {
