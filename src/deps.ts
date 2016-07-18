@@ -1,4 +1,5 @@
 import { State } from './host';
+import * as path from 'path';
 type FileSet = {[fileName: string]: boolean};
 
 export interface IDependency {
@@ -84,13 +85,17 @@ export class FileAnalyzer {
         imports.push.apply(imports, info.referencedFiles
             .map(file => file.fileName)
             .map(depName => {
-                return /^[a-z0-9].*\.d\.ts$/.test(depName) ? './' + depName : depName;
+                let relative = /^[a-z0-9].*\.d\.ts$/.test(depName)
+                    ? './' + depName
+                    : depName;
+                return path.resolve(path.dirname(fileName), relative);
             })
             .map(depName => {
                 let { resolvedModule } = ts.resolveModuleName(depName, fileName, options, ts.sys);
                 if (resolvedModule) {
                     deps.addModuleResolution(fileName, depName, resolvedModule);
-                    return resolvedModule.resolvedFileName;
+                    // return non-realpath name (symlinks not resolved)
+                    return depName;
                 }
             })
             .filter(Boolean));
