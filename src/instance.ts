@@ -70,7 +70,6 @@ export interface LoaderConfig {
     reEmitDependentFiles?: boolean;
     tsconfig?: string;
     tsconfigContent?: string;
-    useWebpackText?: boolean;
     externals?: string[];
     doTypeCheck?: boolean;
     ignoreDiagnostics?: number[];

@@ -264,23 +264,26 @@ export class State {
     updateFile(fileName: string, text: string, checked: boolean = false): boolean {
         let prevFile = this.files[fileName];
         let version = 0;
-        let changed = true;
+        let changed = false;
         let isDefaultLib = false;
 
         if (prevFile) {
             isDefaultLib = prevFile.isDefaultLib;
             if (!checked || (checked && text !== prevFile.text)) {
                 version = prevFile.version + 1;
-            } else {
-                changed = false;
+                changed = true;
             }
+        } else {
+            changed = true;
         }
 
-        this.files[fileName] = {
-            text,
-            version,
-            isDefaultLib
-        };
+        if (changed) {
+            this.files[fileName] = {
+                text,
+                version,
+                isDefaultLib
+            };
+        }
 
         return changed;
     }

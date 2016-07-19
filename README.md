@@ -123,14 +123,6 @@ Collect file dependency graph and re-emit all dependent files along with the cha
 
 Specifies the path to a TS config file. This is useful when you have multiple config files. This setting is useless *inside* a TS config file.
 
-### useWebpackText *(boolean) (default=false)*
-
-Use this setting to force the loader to use webpack's method of loading files. Useful only with ts-jsx-loader. Builds may become slower.
-
-### externals *(array)*
-
-Array of paths to .d.ts files that must be included in program. Useful with `rewriteImports`.
-
 ### doTypeCheck *(boolean) (default=true)*
 
 Use this setting to disable type checking.

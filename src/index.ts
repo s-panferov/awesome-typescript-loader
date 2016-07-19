@@ -59,10 +59,10 @@ function compiler(webpack: IWebPack, text: string): void {
 
     instance.compiledFiles[fileName] = true;
     let doUpdate = false;
-    if (instance.loaderConfig.useWebpackText) {
-        if (state.updateFile(fileName, text, true)) {
-            doUpdate = true;
-        }
+
+    if (state.updateFile(fileName, text, true)) {
+        state.fileAnalyzer.validFiles.markFileInvalid(fileName);
+        doUpdate = true;
     }
 
     try {
