@@ -194,6 +194,7 @@ function processCompile(payload: ICompilePayload) {
                 console.error(colors.red(`[${ instanceName }] ${ message }`));
             }
         });
+        console.error(colors.red(`[${ instanceName }] Checking finished with ${ allDiagnostics.length } errors`));
     } else {
         if (!silent) {
             let timeEnd = +new Date();
