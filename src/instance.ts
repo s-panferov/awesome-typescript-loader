@@ -328,7 +328,7 @@ export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typ
     let compilerConfig = tsImpl.parseJsonConfigFileContent(
         jsonConfigFile.config,
         tsImpl.sys,
-        process.cwd(),
+        path.dirname(configFilePath),
         existingOptions.options,
         configFilePath
     );
