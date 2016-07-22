@@ -79,7 +79,7 @@ You can use the tsconfig.json file to configure your compiler and loader:
 `awesome-typescript-loader@2.x` aims to support only `typescript@2.x` and `webpack@2x`, if you need old compilers please use
 `1.x` or `0.x` versions.
 
-## Advansed path resolution in TypeScript 2.0
+## Advanced path resolution in TypeScript 2.0
 
 If you want to use new `paths` and `baseUrl` feature of TS 2.0 please include `TsConfigPathsPlugin`.
 This feature is available only for `webpack@2.1`.
