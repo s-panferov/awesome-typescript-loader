@@ -1,3 +1,17 @@
+# Change Log
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+<a name="2.1.1"></a>
+## [2.1.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.1.0...v2.1.1) (2016-07-25)
+
+
+### Bug Fixes
+
+* resolve dependencies for `types` entries ([b70a81c](https://github.com/s-panferov/awesome-typescript-loader/commit/b70a81c))
+
+
+
 <a name="2.0.1"></a>
 ## [2.0.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v1.1.1...v2.0.1) (2016-07-08)
 
@@ -849,5 +863,3 @@
 #### Features
 
 * ***:** use new just-emit workflow; this must be much faster too ([9d3a9961](https://github.com/s-panferov/awesome-typescript-loader/commit/9d3a9961))
-
-
