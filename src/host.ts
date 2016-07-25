@@ -148,7 +148,8 @@ export class State {
                 );
 
                 if (resolvedTypeReferenceDirective) {
-                    this.readFileAndAdd(resolvedTypeReferenceDirective.resolvedFileName);
+                    let fileName = resolvedTypeReferenceDirective.resolvedFileName;
+                    this.fileAnalyzer.checkDependencies(fileName);
                     this.fileAnalyzer.dependencies.addTypeReferenceResolution(
                         TSCONFIG_INFERRED,
                         type,
