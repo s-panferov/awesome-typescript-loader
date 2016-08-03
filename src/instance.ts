@@ -347,7 +347,7 @@ function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', function (watching, callback) {
         let instance = resolveInstance(watching.compiler, instanceName);
         let state = instance.tsState;
-        let mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
+        let mtimes = watching.compiler.fileTimestamps || watching.compiler.watchFileSystem.watcher.mtimes;
         let changedFiles = Object.keys(mtimes).map(toUnix);
 
         changedFiles.forEach((changedFile) => {
