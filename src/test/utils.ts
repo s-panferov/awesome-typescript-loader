@@ -93,6 +93,14 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
     return _.merge(defaultConfig, conf);
 }
 
+export async function chroot<T>(root: string, foo: () => Promise<T>): Promise<T> {
+    let cwd = process.cwd();
+    process.chdir(root);
+    let result = await foo();
+    process.chdir(cwd);
+    return result;
+}
+
 export function expectSource(source: string, fragment: string) {
     expect(source.replace(/\s/g, '')).include(fragment.replace(/\s/g, ''));
 }

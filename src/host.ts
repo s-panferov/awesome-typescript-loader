@@ -36,6 +36,10 @@ export class Host implements ts.LanguageServiceHost {
         this.state = state;
     }
 
+    getSourceFile(fileName: string) {
+        return this.state.program.getSourceFile(fileName);
+    }
+
     getScriptFileNames() {
         return this.state.allFileNames();
     }
@@ -112,6 +116,7 @@ export class State {
     program: ts.Program;
     fileAnalyzer: FileAnalyzer;
     defaultLib: string;
+    compilerHost: ts.CompilerHost;
 
     constructor(
         loaderConfig: LoaderConfig,
@@ -122,6 +127,7 @@ export class State {
         this.ts = compilerInfo.tsImpl;
         this.compilerInfo = compilerInfo;
         this.host = new Host(this);
+        this.compilerHost = this.ts.createCompilerHost(compilerConfig.options);
         this.services = this.ts.createLanguageService(this.host, this.ts.createDocumentRegistry());
         this.loaderConfig = loaderConfig;
         this.configFilePath = configFilePath;
@@ -138,8 +144,11 @@ export class State {
 
     loadTypesFromConfig() {
         let { options } = this.compilerConfig;
-        if (options.types) {
-            options.types.forEach(type => {
+
+        const directives = this.ts.getAutomaticTypeDirectiveNames(options, [], this.compilerHost);
+
+        if (directives) {
+            directives.forEach(type => {
                 let { resolvedTypeReferenceDirective } = this.ts.resolveTypeReferenceDirective(
                     type,
                     this.configFilePath,
