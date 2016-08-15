@@ -1,7 +1,7 @@
 .tscache
-node_modules
-dist
-dist.babel
+/node_modules
+/dist
+/dist.babel
 tscommand
 npm-debug.log
 .awcache
