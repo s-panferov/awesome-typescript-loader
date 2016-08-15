@@ -265,7 +265,13 @@ function setupBabel(loaderConfig: LoaderConfig): any {
 function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
     compilerConfig.typingOptions.exclude = compilerConfig.typingOptions.exclude || [];
     let configDirname = path.dirname(configFilePath);
-    let initialFiles = compilerConfig.fileNames.map(f => path.join(configDirname, f));
+    let initialFiles = compilerConfig.fileNames.map(f => {
+        if (path.isAbsolute(f)) {
+            return f;
+        } else {
+            return path.join(configDirname, f);
+        }
+    });
 
     _.defaults(compilerConfig.options, {
         sourceMap: true,
