@@ -1,6 +1,4 @@
-/// <reference path='../node_modules/typescript/lib/typescriptServices.d.ts' />
-/// <reference path="./defines.d.ts"/>
-/// <reference path='../typings/tsd.d.ts' />
+/// <reference path="./defines.d.ts" />
 
 import * as _ from 'lodash';
 import * as path from 'path';
@@ -201,6 +199,7 @@ function transform(webpack: IWebPack, instance: ICompilerInstance, fileName: str
 
 function invokeKnownFilesOneTime(instance: ICompilerInstance) {
      if (instance.loaderConfig.externals && !instance.externalsInvoked) {
+
         instance.loaderConfig.externals
             .filter(isTypeDeclaration)
             .forEach(ext => instance.tsState.fileAnalyzer.checkDependencies(ext));

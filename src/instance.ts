@@ -142,7 +142,7 @@ export function ensureInstance(webpack: IWebPack, query: QueryOptions, instanceN
 
     let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
-    applyDefaults(compilerConfig, loaderConfig);
+    applyDefaults(configFilePath, compilerConfig, loaderConfig);
     let babelImpl = setupBabel(loaderConfig);
     let cacheIdentifier = setupCache(loaderConfig, tsImpl, webpack, babelImpl);
 
@@ -262,9 +262,10 @@ function setupBabel(loaderConfig: LoaderConfig): any {
     return babelImpl;
 }
 
-function applyDefaults(compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
+function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
     compilerConfig.typingOptions.exclude = compilerConfig.typingOptions.exclude || [];
-    let initialFiles = compilerConfig.fileNames;
+    let configDirname = path.dirname(configFilePath);
+    let initialFiles = compilerConfig.fileNames.map(f => path.join(configDirname, f));
 
     _.defaults(compilerConfig.options, {
         sourceMap: true,
@@ -310,7 +311,7 @@ export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typ
 
     if (!configFilePath || query.tsconfigContent) {
         return {
-            configFilePath: configFilePath || process.cwd(),
+            configFilePath: configFilePath || path.join(process.cwd(), 'tsconfig.json'),
             compilerConfig: tsImpl.parseJsonConfigFileContent(
                 query.tsconfigContent || {},
                 tsImpl.sys,
@@ -331,6 +332,8 @@ export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typ
         existingOptions.options,
         configFilePath
     );
+
+    configFilePath = path.join(process.cwd(), configFilePath);
 
     return {
         configFilePath,

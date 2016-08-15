@@ -10,8 +10,9 @@
     "watch:ts": "npm run build:ts -- --watch --diagnostics",
     "watch:babel": "babel dist --watch --out-dir dist.babel",
     "prebuild": "npm run lint",
-    "build": "npm run build:ts",
+    "build": "npm run build:ts && npm run build:tests && npm run build:babel",
     "build:ts": "tsc -p src --pretty",
+    "build:tests": "cd src/test && tsc --pretty",
     "build:babel": "babel dist --out-dir dist.babel",
     "lint": "tslint src/*.ts",
     "release": "standard-version"

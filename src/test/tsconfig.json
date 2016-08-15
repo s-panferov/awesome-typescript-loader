@@ -3,9 +3,11 @@
         "target": "es6",
         "moduleResolution": "node",
         "sourceMap": true,
+        "outDir": "../../dist/test",
         "lib": [ "es6", "dom" ]
     },
     "exclude": [
-        "*"
+        "fixtures",
+        "output"
     ]
 }
