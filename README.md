@@ -66,7 +66,7 @@ You can use the tsconfig.json file to configure your compiler and loader:
 {
     "compilerOptions": {
         "noImplicitAny": true,
-        "removeComments": true,
+        "removeComments": true
     },
     "awesomeTypescriptLoaderOptions": {
         /* ... */
