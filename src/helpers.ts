@@ -113,3 +113,9 @@ export function loadLib(moduleId) {
         text: text
     };
 }
+
+const TYPESCRIPT_EXTENSION = /\.(d\.)?(t|j)s$/;
+
+export function withoutTypeScriptExtension(fileName: string): string {
+    return fileName.replace(TYPESCRIPT_EXTENSION, '');
+}

@@ -145,7 +145,7 @@ export class State {
     loadTypesFromConfig() {
         let { options } = this.compilerConfig;
 
-        const directives = this.ts.getAutomaticTypeDirectiveNames(options, [], this.compilerHost);
+        const directives = this.ts.getAutomaticTypeDirectiveNames(options, this.compilerHost);
 
         if (directives) {
             directives.forEach(type => {

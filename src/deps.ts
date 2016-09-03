@@ -1,4 +1,5 @@
 import { State } from './host';
+import { withoutTypeScriptExtension } from './helpers';
 import * as path from 'path';
 type FileSet = {[fileName: string]: boolean};
 
@@ -74,7 +75,8 @@ export class FileAnalyzer {
         imports.push.apply(imports, info.importedFiles
             .map(file => file.fileName)
             .map(depName => {
-                let { resolvedModule } = ts.resolveModuleName(depName, fileName, options, ts.sys);
+                let moduleName = withoutTypeScriptExtension(depName);
+                let { resolvedModule } = ts.resolveModuleName(moduleName, fileName, options, ts.sys);
                 if (resolvedModule) {
                     deps.addModuleResolution(fileName, depName, resolvedModule);
                     return resolvedModule.resolvedFileName;
@@ -91,7 +93,8 @@ export class FileAnalyzer {
                 return path.resolve(path.dirname(fileName), relative);
             })
             .map(depName => {
-                let { resolvedModule } = ts.resolveModuleName(depName, fileName, options, ts.sys);
+                let moduleName = withoutTypeScriptExtension(depName);
+                let { resolvedModule } = ts.resolveModuleName(moduleName, fileName, options, ts.sys);
                 if (resolvedModule) {
                     deps.addModuleResolution(fileName, depName, resolvedModule);
                     // return non-realpath name (symlinks not resolved)
