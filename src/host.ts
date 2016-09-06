@@ -86,10 +86,12 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let deps = this.state.fileAnalyzer.dependencies;
-        return moduleNames.map(moduleName => {
+        const deps = this.state.fileAnalyzer.dependencies;
+        const resolvedModules = moduleNames.map(moduleName => {
             return deps.getModuleResolution(containingFile, moduleName);
         });
+
+        return resolvedModules;
     }
 
     getDefaultLibLocation(): string {

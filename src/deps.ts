@@ -94,7 +94,7 @@ export class FileAnalyzer {
             })
             .map(depName => {
                 let moduleName = withoutTypeScriptExtension(depName);
-                let { resolvedModule } = ts.resolveModuleName(moduleName, fileName, options, ts.sys);
+                let { resolvedModule } = ts.classicNameResolver(moduleName, fileName, options, ts.sys);
                 if (resolvedModule) {
                     deps.addModuleResolution(fileName, depName, resolvedModule);
                     // return non-realpath name (symlinks not resolved)
@@ -126,17 +126,10 @@ export interface IDependencyGraphItem {
 }
 
 export class DependencyManager {
-    dependencies: {[fileName: string]: string[]};
-    moduleResolutions: {[cacheKey: string]: ts.ResolvedModule};
-    typeReferenceResolutions: {[cacheKey: string]: ts.ResolvedTypeReferenceDirective};
-    compiledModules: {[fileName: string]: string[]};
-
-    constructor() {
-        this.dependencies = {};
-        this.compiledModules = {};
-        this.moduleResolutions = {};
-        this.typeReferenceResolutions = {};
-    }
+    dependencies: {[fileName: string]: string[]} = {};
+    moduleResolutions: {[cacheKey: string]: ts.ResolvedModule} = {};
+    typeReferenceResolutions: {[cacheKey: string]: ts.ResolvedTypeReferenceDirective} = {};
+    compiledModules: {[fileName: string]: string[]} = {};
 
     addModuleResolution(fileName: string, depName: string, resolvedModule: ts.ResolvedModule) {
         this.moduleResolutions[`${fileName}::${depName}`] = resolvedModule;
