@@ -86,10 +86,12 @@ export class Host implements ts.LanguageServiceHost {
     }
 
     resolveModuleNames(moduleNames: string[], containingFile: string) {
-        let deps = this.state.fileAnalyzer.dependencies;
-        return moduleNames.map(moduleName => {
+        const deps = this.state.fileAnalyzer.dependencies;
+        const resolvedModules = moduleNames.map(moduleName => {
             return deps.getModuleResolution(containingFile, moduleName);
         });
+
+        return resolvedModules;
     }
 
     getDefaultLibLocation(): string {
@@ -145,7 +147,7 @@ export class State {
     loadTypesFromConfig() {
         let { options } = this.compilerConfig;
 
-        const directives = this.ts.getAutomaticTypeDirectiveNames(options, [], this.compilerHost);
+        const directives = this.ts.getAutomaticTypeDirectiveNames(options, this.compilerHost);
 
         if (directives) {
             directives.forEach(type => {
