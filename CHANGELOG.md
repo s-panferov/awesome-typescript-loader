@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.2.3"></a>
+## [2.2.3](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.2.2...v2.2.3) (2016-09-06)
+
+
+### Bug Fixes
+
+* don't make `configFilePath` absolute twice, fixes [#220](https://github.com/s-panferov/awesome-typescript-loader/issues/220) ([cab47b5](https://github.com/s-panferov/awesome-typescript-loader/commit/cab47b5)), closes [#220](https://github.com/s-panferov/awesome-typescript-loader/issues/220)
+
+
+
 <a name="2.2.2"></a>
 ## [2.2.2](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.2.1...v2.2.2) (2016-09-06)
 
