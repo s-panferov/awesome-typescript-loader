@@ -339,8 +339,6 @@ export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typ
         configFilePath
     );
 
-    configFilePath = path.join(process.cwd(), configFilePath);
-
     return {
         configFilePath,
         compilerConfig,
