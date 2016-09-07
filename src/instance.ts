@@ -264,14 +264,7 @@ function setupBabel(loaderConfig: LoaderConfig): any {
 
 function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
     compilerConfig.typingOptions.exclude = compilerConfig.typingOptions.exclude || [];
-    let configDirname = path.dirname(configFilePath);
-    let initialFiles = compilerConfig.fileNames.map(f => {
-        if (path.isAbsolute(f)) {
-            return f;
-        } else {
-            return path.join(configDirname, f);
-        }
-    });
+    let initialFiles = compilerConfig.fileNames;
 
     _.defaults(compilerConfig.options, {
         sourceMap: true,
@@ -305,10 +298,18 @@ export interface Configs {
     loaderConfig: LoaderConfig;
 }
 
+function absolutize(fileName) {
+    if (path.isAbsolute(fileName)) {
+        return fileName;
+    } else {
+        return path.join(process.cwd(), fileName);
+    }
+}
+
 export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): Configs {
     let configFilePath: string;
     if (query.tsconfig && query.tsconfig.match(/\.json$/)) {
-        configFilePath = query.tsconfig;
+        configFilePath = absolutize(query.tsconfig);
     } else {
         configFilePath = tsImpl.findConfigFile(process.cwd(), tsImpl.sys.fileExists);
     }
