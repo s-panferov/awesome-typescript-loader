@@ -2,20 +2,19 @@
     "compilerOptions": {
         "target": "es5",
         "outDir": "../dist",
+        "module": "commonjs",
         "moduleResolution": "node",
         "skipDefaultLibCheck": true,
-        "allowSyntheticDefaultImports": true,
-        "noImplicitAny": false,
         "sourceMap": true,
         "removeComments": true,
-        "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
         "lib": [ "es6", "dom" ]
     },
     "compileOnSave": false,
+    "include": [
+        "../src/**/*"
+    ],
     "exclude": [
-        "test",
-        "test/fixtures",
-        "test/output/*"
+        "../src/test"
     ]
 }

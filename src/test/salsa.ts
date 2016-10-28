@@ -9,11 +9,10 @@ describe('salsa test', function() {
             entry: fixturePath(['salsa', 'index.ts'])
         };
 
-        let tsconfig = fixturePath(['salsa', 'tsconfig.json']);
-        let loaderQuery = { tsconfig, tsconfigContent: null };
+        let configFileName = fixturePath(['salsa', 'tsconfig.json']);
+        let loaderQuery = { configFileName, configFileContent: null };
 
         let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
-        console.log(stats.compilation.errors)
         expect(stats.compilation.errors.length).eq(1);
     });
 
@@ -22,11 +21,10 @@ describe('salsa test', function() {
             entry: fixturePath(['salsa', 'index.js'])
         };
 
-        let tsconfig = fixturePath(['salsa', 'tsconfig.json']);
-        let loaderQuery = { tsconfig, tsconfigContent: null };
+        let configFileName = fixturePath(['salsa', 'tsconfig.json']);
+        let loaderQuery = { configFileName, configFileContent: null };
 
         let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
-        console.log(stats.compilation.errors)
         expect(stats.compilation.errors.length).eq(1);
     });
 });

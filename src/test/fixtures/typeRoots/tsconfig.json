@@ -1,4 +1,8 @@
 {
     "compilerOptions": {
+        "moduleResolution": "node",
+        "types": [
+            "jasmine"
+        ]
     }
 }

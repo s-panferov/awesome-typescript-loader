@@ -11,8 +11,8 @@ describe('react test', function() {
             },
             {
                 loaderQuery: {
-                    tsconfigContent: undefined,
-                    tsconfig: fixturePath(['react', 'tsconfig.json'])
+                    configFileContent: undefined,
+                    configFileName: fixturePath(['react', 'tsconfig.json'])
                 }
             }
         );

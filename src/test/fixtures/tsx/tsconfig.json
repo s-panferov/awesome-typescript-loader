@@ -1,18 +1,11 @@
 {
     "compilerOptions": {
-        "target": "es6",
-        "declaration": false,
-        "noImplicitAny": false,
-        "removeComments": true,
+        "target": "es5",
         "jsx": "react",
-        "noLib": false,
-        "noEmit": false,
-        "preserveConstEnums": true,
-        "experimentalDecorators": true,
-        "suppressImplicitAnyIndexErrors": true,
-        "experimentalAsyncFunctions": true
+        "moduleResolution": "node",
+        "types": ["react"]
     },
-    "exclude": [
-        "*"
+    "include": [
+        "./basic.tsx"
     ]
 }

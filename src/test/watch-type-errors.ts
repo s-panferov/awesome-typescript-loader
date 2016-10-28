@@ -35,7 +35,7 @@ describe('checker test', function() {
 
             const [err, stats] = await watcher.wait();
             expect(err).not.ok;
-            expect(stats.compilation.errors).lengthOf(1);
+            expect(stats.compilation.errors).lengthOf(0);
         }
 
         watcher.close();

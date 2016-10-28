@@ -79,7 +79,7 @@ function filename(source: string, identifier, options) {
 interface CacheParams<T> {
     source: string;
     options: any;
-    transform: () => T;
+    transform: () => Promise<T>;
     identifier: any;
     directory: string;
 }
@@ -87,7 +87,7 @@ interface CacheParams<T> {
 /**
  * Retrieve file from cache, or create a new one for future reads
  */
-export function cache<T>(params: CacheParams<T>): T {
+export function cache<T>(params: CacheParams<T>): Promise<T> {
     // Spread params into named variables
     // Forgive user whenever possible
     let source = params.source;
@@ -97,17 +97,19 @@ export function cache<T>(params: CacheParams<T>): T {
     let directory = (typeof params.directory === 'string') ?
         params.directory :
         os.tmpdir();
+
     let file = path.join(directory, filename(source, identifier, options));
 
     try {
         // No errors mean that the file was previously cached
         // we just need to return it
-        return read(file);
+        return Promise.resolve(read(file));
     } catch(e) {
         // Otherwise just transform the file
         // return it to the user asap and write it in cache
-        let result = transform();
-        write(file, result);
-        return result;
+        return transform().then(result => {
+            write(file, result);
+            return result;
+        });
     }
 }

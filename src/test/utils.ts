@@ -4,8 +4,9 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 
+import { LoaderConfig } from '../interfaces';
+
 const temp = require('temp').track();
-require('babel-polyfill');
 require('source-map-support').install();
 
 import { expect } from 'chai';
@@ -18,23 +19,20 @@ const mkdirp = BPromise.promisify(require('mkdirp'));
 const rimraf = BPromise.promisify(require('rimraf'));
 const readFile = BPromise.promisify(fs.readFile);
 const writeFile = BPromise.promisify(fs.writeFile);
-const loaderDir = path.join(process.cwd(), 'dist.babel');
-const ForkCheckerPlugin = require(loaderDir).ForkCheckerPlugin;
+const loaderDir = path.join(process.cwd(), 'dist');
 
 export const defaultOutputDir = path.join(process.cwd(), 'src', 'test', 'output');
 export const defaultFixturesDir = path.join(process.cwd(), 'src', 'test', 'fixtures');
 
 export interface ConfigOptions {
-    loaderQuery?: any;
+    loaderQuery?: LoaderConfig;
     watch?: boolean;
-    forkChecker?: boolean;
     include?: (string | RegExp)[];
     exclude?: (string | RegExp)[];
 }
 
 let defaultOptions: ConfigOptions = {
     watch: false,
-    forkChecker: false,
 };
 
 export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
@@ -46,19 +44,21 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
             filename: '[name].js'
         },
         resolve: {
-            extensions: ['', '.ts', '.tsx', '.js', '.jsx'],
+            extensions: ['.ts', '.tsx', '.js', '.jsx'],
         },
         module: {
             loaders: [
                 {
-                    test: /\.(tsx?|jsx?)/,
+                    test: defaultOptions && defaultOptions.loaderQuery && (defaultOptions.loaderQuery as any).allowJs
+                        ? /\.(tsx?|jsx?)/
+                        : /\.tsx?/,
                     loader: loaderDir,
                     query: Object.assign(
                         {
                             target: 'es6',
                         },
                         {
-                            tsconfigContent: {
+                            configFileContent: {
                                 exclude: ["*"]
                             }
                         },
@@ -82,12 +82,6 @@ export function createConfig(conf, _options: ConfigOptions = defaultOptions) {
 
     if (options.watch) {
         defaultConfig.watch = true;
-    }
-
-    if (options.forkChecker) {
-        defaultConfig.plugins.push(
-            new ForkCheckerPlugin()
-        );
     }
 
     return _.merge(defaultConfig, conf);

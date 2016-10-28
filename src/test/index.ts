@@ -11,6 +11,7 @@ describe('main test', function() {
         };
 
         let stats = await cleanAndCompile(createConfig(config));
+        console.log(stats.compilation.errors)
         expect(stats.compilation.errors.length).eq(0);
 
         let result = await readOutputFile();
@@ -40,18 +41,25 @@ describe('main test', function() {
     });
 
     it('should load tsx files and use tsconfig', async function() {
-        let tsconfig = fixturePath(['tsx', 'tsconfig.json']);
+        let configFileName = fixturePath(['tsx', 'tsconfig.json']);
         let config = {
-            entry: fixturePath(['tsx', 'basic.tsx'])
+            entry: fixturePath(['tsx', 'basic.tsx']),
+            resolve: {
+                alias: {
+                    react: 'empty-module'
+                }
+            }
         };
 
-        let loaderQuery = { tsconfig, tsconfigContent: null };
+        let loaderQuery = { configFileName, configFileContent: null };
 
         let stats = await cleanAndCompile(createConfig(config, { loaderQuery }));
-        expect(stats.compilation.errors.length).eq(1);
+        console.log(stats.compilation.errors);
+
+        expect(stats.compilation.errors.length).eq(0);
 
         let result = await readOutputFile();
-        let expectation = 'return React.createElement("div", null, "hi there");';
+        let expectation = '("div", null, "hi there");';
 
         expectSource(result, expectation);
     });

@@ -1,4 +1,5 @@
-import { setupTs, readConfigFile, LoaderConfig } from './instance';
+import { setupTs, readConfigFile } from './instance';
+import { LoaderConfig } from './interfaces';
 import * as path from 'path';
 import * as _ from 'lodash';
 

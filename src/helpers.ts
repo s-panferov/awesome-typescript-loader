@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as host from './host';
+import { OutputFile } from './interfaces';
 
 const double = /\/\//;
 export function toUnix(fileName: string): string {
@@ -33,16 +33,16 @@ function isDeclarationEmit(fileName, outputFileName, sourceFileName) {
         && (outputFileName.substr(-5) === '.d.ts');
 }
 
-export function findResultFor(output: host.IEmitOutput, fileName: string) {
+export function findResultFor(fileName: string, output: ts.EmitOutput): OutputFile {
     let text;
     let sourceMap;
-    let declaration: host.IOutputFile;
+    let declaration: ts.OutputFile;
     fileName = withoutExt(fileName);
 
     for (let i = 0; i < output.outputFiles.length; i++) {
         let o = output.outputFiles[i];
         let outputFileName = o.name;
-        let sourceFileName = withoutExt(o.sourceName);
+        let sourceFileName = withoutExt(o.name);
         if (isFileEmit(fileName, outputFileName, sourceFileName)) {
             text = o.text;
         }
@@ -53,6 +53,7 @@ export function findResultFor(output: host.IEmitOutput, fileName: string) {
             declaration = o;
         }
     }
+
     return {
         text: text,
         sourceMap: sourceMap,

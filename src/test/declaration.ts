@@ -5,7 +5,7 @@ import {
 
 describe('main test', function() {
 
-    it('should emit declaration files', async function() {
+    xit('should emit declaration files', async function() {
         // babel need some time to init
         this.timeout(10000);
 

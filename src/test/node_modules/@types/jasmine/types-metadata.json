@@ -4,8 +4,8 @@
     "libraryDependencies": [],
     "moduleDependencies": [],
     "libraryMajorVersion": "2",
-    "libraryMinorVersion": "2",
-    "libraryName": "Jasmine 2.2",
+    "libraryMinorVersion": "5",
+    "libraryName": "Jasmine 2.5",
     "typingsPackageName": "jasmine",
     "projectName": "http://jasmine.github.io/",
     "sourceRepoURL": "https://www.github.com/DefinitelyTyped/DefinitelyTyped",
@@ -36,5 +36,5 @@
         "index.d.ts"
     ],
     "hasPackageJson": false,
-    "contentHash": "608d57b043cd805f7347bcccb8521d07f580281faf9a7177e970862d3b171a50"
+    "contentHash": "342ad787ae1d9085f9cb2f352460449c601a7fbda833a19bb87aa2787dbc9ec3"
 }

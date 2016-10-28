@@ -11,8 +11,8 @@ describe('main test', function() {
             },
             {
                 loaderQuery: {
-                    tsconfigContent: undefined,
-                    tsconfig: fixturePath(['typeRoots', 'tsconfig.json'])
+                    configFileContent: undefined,
+                    configFileName: fixturePath(['typeRoots', 'tsconfig.json'])
                 }
             }
         );

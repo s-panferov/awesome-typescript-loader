@@ -14,16 +14,12 @@ npm install awesome-typescript-loader --save-dev
 `awesome-typescript-loader` loader was created mostly to speed-up compilation in my own projects.
 Some of them are quite big and I wanted to have full control on how my files are compiled. There are three major points:
 
-1) awesome-typescript-loader (atl) uses dependency resolution to build modules dependency graph at early stages.
-This speeds up build process in some corner cases (minimizes module resolutions, minimizes `createProgram` calls),
-but adds a lot of additional complexity. Also it can re-emit all related files which is also useful in some corner cases.
-
-2) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who use Typescript with Babel.
+1) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who use Typescript with Babel.
 When `useBabel` and `useCache` flags are enabled, typescript's emit will be transpiled with Babel and cached.
 So next time if source file (+environment) has the same checksum we can totally skip typescript's and babel's transpiling.
 This significantly reduces build time in this scenario.
 
-3) atl is able to fork type-checker to a separate process, which also speeds-up some development scenarios (e.g. react with react-hot-loader)
+2) atl is able to fork type-checker and emitter to a separate process, which also speeds-up some development scenarios (e.g. react with react-hot-loader)
 So your webpack compilation will end earlier and you can explore compiled version in your browser while your files are typecheked.
 
 ## Configuration
@@ -38,7 +34,7 @@ module.exports = {
 
   // Currently we need to add '.ts' to the resolve.extensions array.
   resolve: {
-    extensions: ['', '.ts', '.tsx', '.js', '.jsx']
+    extensions: ['.ts', '.tsx', '.js', '.jsx']
   },
 
   // Source maps support ('inline-source-map' also works)
@@ -103,27 +99,23 @@ set to the NPM name of the compiler, e.g. *ntypescript* or the path to a package
 Note that the compiler must be installed in **your** project. You can also use
 nightly versions.
 
-### disableFastEmit (boolean) (default=false)*
+### useTranspileModule (boolean) (default=false)*
 
-Disable fast `transpileModule` emit mode. Disables automatically when you set `declaration: true`.
+Use fast `transpileModule` emit mode. Disables automatically when you set `declaration: true`.
 
 ### emitRequireType *(boolean) (default=false)*
 
 Specify whether or not the loader emits webpacks's require type.
 
-### instanceName *(string) (default='default')*
+### instance *(string) (default='at-loader')*
 
-Allows the use of several TypeScript compilers with different settings in one app. Override `instanceName` to initialize another instance.
+Allows the use of several TypeScript compilers with different settings in one app. Override `instance` to initialize another instance.
 
-### reEmitDependentFiles *(boolean) (default=false')*
-
-Collect file dependency graph and re-emit all dependent files along with the changed file.
-
-### tsconfig *(string) (default='tsconfig.json')*
+### configFileName *(string) (default='tsconfig.json')*
 
 Specifies the path to a TS config file. This is useful when you have multiple config files. This setting is useless *inside* a TS config file.
 
-### doTypeCheck *(boolean) (default=true)*
+### transpileOnly *(boolean) (default=true)*
 
 Use this setting to disable type checking.
 
@@ -131,20 +123,6 @@ Use this setting to disable type checking.
 
 You can squelch certain TypeScript errors by specifying an array of [diagnostic codes](https://github.com/Microsoft/TypeScript/blob/master/src/compiler/diagnosticMessages.json) to ignore.
 For example, you can transpile [stage 1 properties](https://github.com/jeffmo/es-class-fields-and-static-properties) from `*.js` using `"ignoreDiagnostics": [8014]`.
-
-### forkChecker *(boolean) (default=false)*
-
-Do type checking in a separate process, so webpack doesn't need to wait. **Significantly** improves development workflow with tools like [react-hot-loader](https://github.com/gaearon/react-hot-loader).
-
-Works only with `ForkCheckerPlugin`:
-
-```js
-var ForkCheckerPlugin = require('awesome-typescript-loader').ForkCheckerPlugin;
-
-plugins: [
-    new ForkCheckerPlugin(),
-]
-```
 
 ### forkCheckerSilent *(boolean) (default=false)*
 
@@ -175,10 +153,6 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 ### cacheDirectory *(string) (default='.awcache')*
 
 Directory when cache is stored.
-
-### skipDeclarationFilesCheck *(string) (default=false)*
-
-Skip declaration files typechecking. Use this only if you understand consequences.
 
 ## Compiler options
 
