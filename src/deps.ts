@@ -81,6 +81,12 @@ export class FileAnalyzer {
                     deps.addModuleResolution(fileName, depName, resolvedModule);
                     return resolvedModule.resolvedFileName;
                 }
+
+                let { resolvedModule: resolvedModuleWithExtension } = ts.resolveModuleName(depName, fileName, options, ts.sys);
+                if (resolvedModuleWithExtension) {
+                    deps.addModuleResolution(fileName, depName, resolvedModuleWithExtension);
+                    return resolvedModuleWithExtension.resolvedFileName;
+                }
             })
             .filter(Boolean));
 
