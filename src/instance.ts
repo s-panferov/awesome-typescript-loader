@@ -98,7 +98,7 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
 
     let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
-    console.log(`\nUsing typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
+    console.log(`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
         + `"tsconfig.json" from ${configFilePath}\n`);
 
     applyDefaults(configFilePath, compilerConfig, loaderConfig);
