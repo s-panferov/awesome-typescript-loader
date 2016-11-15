@@ -79,11 +79,20 @@ class FileDeps {
 
 const fileDeps = new FileDeps();
 
+const TS_AND_JS_FILES = /\.tsx?$|\.jsx?$/i;
+const TS_FILES = /\.tsx?$/i;
+
 class Host implements ts.LanguageServiceHost {
+    filesRegex: RegExp;
+
+    constructor(filesRegex: RegExp) {
+        this.filesRegex = filesRegex;
+    }
+
     getProjectVersion() { return projectVersion.toString(); }
 
     getScriptFileNames() {
-        return Object.keys(files);
+        return Object.keys(files).filter(filePath => this.filesRegex.test(filePath));
     }
 
     getScriptVersion(fileName: string) {
@@ -180,8 +189,8 @@ function processInit({seq, payload}: Init.Request) {
     compilerOptions = compilerConfig.options;
     webpackOptions = payload.webpackOptions;
 
-    host = new Host();
-    service = compiler.createLanguageService(new Host());
+    host = new Host(compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES);
+    service = compiler.createLanguageService(host);
 
     compilerConfig.fileNames.forEach(fileName => {
         const text = compiler.sys.readFile(fileName);
