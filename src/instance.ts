@@ -332,7 +332,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         instance.compiledFiles = {};
         const files = instance.checker.getFiles()
             .then(({files}) => {
-                compilation.fileDependencies = files.map(path.normalize);
+                Array.prototype.push.apply(compilation.fileDependencies, files.map(path.normalize));
             });
 
         const diag = instance.loaderConfig.transpileOnly
