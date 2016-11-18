@@ -225,6 +225,7 @@ function updateFile(fileName: string, text: string) {
         if (file.text !== text) {
             projectVersion++;
             file.version++;
+            file.text = text;
             file.snapshot = compiler.ScriptSnapshot.fromString(text);
         }
     } else {
