@@ -6,6 +6,7 @@
         "moduleResolution": "node",
         "skipDefaultLibCheck": true,
         "sourceMap": true,
+        "declaration": true,
         "removeComments": true,
         "suppressImplicitAnyIndexErrors": true,
         "lib": [ "es6", "dom" ]
