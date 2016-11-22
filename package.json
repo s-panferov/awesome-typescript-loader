@@ -32,6 +32,7 @@
   "homepage": "https://github.com/s-panferov/awesome-typescript-loader",
   "dependencies": {
     "colors": "^1.1.2",
+    "enhanced-resolve": "^2.3.0",
     "loader-utils": "^0.2.16",
     "lodash": "^4.13.1",
     "object-assign": "^4.1.0",

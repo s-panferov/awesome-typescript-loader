@@ -19,7 +19,7 @@ export interface Instance {
     cacheIdentifier: any;
 }
 
-interface Compiler {
+export interface Compiler {
     inputFileSystem: typeof fs;
     _tsInstances: { [key: string]: Instance };
     options: {
@@ -294,7 +294,11 @@ function setupWatchRun(compiler, instanceName: string) {
         const updates = changedFiles
             .filter(file => EXTENSIONS.test(file))
             .map(changedFile => {
-                checker.updateFile(changedFile, fs.readFileSync(changedFile).toString());
+                if (fs.existsSync(changedFile)) {
+                    checker.updateFile(changedFile, fs.readFileSync(changedFile).toString());
+                } else {
+                    checker.removeFile(changedFile);
+                }
             });
 
         Promise.all(updates)

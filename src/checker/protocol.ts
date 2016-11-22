@@ -1,11 +1,12 @@
 import { LoaderConfig, CompilerInfo, TsConfig } from '../interfaces';
 export { CompilerInfo, LoaderConfig, TsConfig }
 
-export type MessageType = 'Init' | 'UpdateFile' | 'Diagnostics' | 'EmitFile' | 'Files'
+export type MessageType = 'Init' | 'UpdateFile' | 'Diagnostics' | 'EmitFile' | 'Files' | 'RemoveFile'
 export const MessageType = {
     Init: 'Init' as 'Init',
     Files: 'Files' as 'Files',
     UpdateFile: 'UpdateFile' as 'UpdateFile',
+    RemoveFile: 'RemoveFile' as 'RemoveFile',
     Diagnostics: 'Diagnostics' as 'Diagnostics',
     EmitFile: 'EmitFile' as 'EmitFile',
 };
@@ -20,6 +21,7 @@ export type Req =
     EmitFile.Request |
     UpdateFile.Request |
     Diagnostics.Request |
+    RemoveFile.Request |
     Files.Request
 
 export interface Res {
@@ -67,6 +69,22 @@ export namespace UpdateFile {
     }
 }
 
+export namespace RemoveFile {
+    export interface Payload {
+        fileName: string;
+    }
+
+    export interface Request extends ReqBase {
+        type: 'RemoveFile';
+        payload: Payload;
+    }
+
+    export interface Response extends Res {
+        payload: {
+        };
+    }
+}
+
 export namespace EmitFile {
     export interface ReqPayload {
         fileName: string;
@@ -82,7 +100,7 @@ export namespace EmitFile {
         emitResult: {
             text: string;
             sourceMap: string;
-        }
+        };
         deps: string[];
     }
 
@@ -102,7 +120,6 @@ export namespace Files {
         };
     }
 }
-
 
 export namespace Diagnostics {
     export interface Request extends ReqBase {

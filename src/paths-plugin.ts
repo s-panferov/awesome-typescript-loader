@@ -25,9 +25,9 @@ export interface Callback {
     missing?: any;
 }
 
-type ResolverCallback = (request: Request, callback: Callback) => void;
+export type ResolverCallback = (request: Request, callback: Callback) => void;
 
-interface ResolverPlugin {
+export interface ResolverPlugin {
     apply(resolver: Resolver): void;
 }
 
@@ -38,7 +38,7 @@ export interface Resolver {
     join(relativePath: string, innerRequest: Request): Request;
 }
 
-interface Mapping {
+export interface Mapping {
     onlyModule: boolean;
     alias: string;
     aliasPattern: RegExp;

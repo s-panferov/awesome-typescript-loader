@@ -12,10 +12,11 @@ import {
     Files,
     Diagnostics,
     UpdateFile,
-    TsConfig
+    TsConfig,
+    RemoveFile
 } from './protocol';
 
-interface Resolve {
+export interface Resolve {
     resolve: (...args: any[]) => void;
     reject: (e: Error) => void;
 }
@@ -102,6 +103,15 @@ export class Checker {
                 text
             }
         } as UpdateFile.Request);
+    }
+
+    removeFile(fileName: string) {
+       return this.req({
+            type: 'RemoveFile',
+            payload: {
+                fileName,
+            }
+        } as RemoveFile.Request);
     }
 
     getDiagnostics(): any {

@@ -10,6 +10,7 @@ import {
     EmitFile,
     UpdateFile,
     Diagnostics,
+    RemoveFile,
     Files,
     MessageType,
     TsConfig
@@ -62,17 +63,19 @@ class FileDeps {
         return this.files[containingFile] || [];
     }
 
-    getAllDeps(containingFile: string, allDeps = new Set<string>(), initial = true): string[] {
+    getAllDeps(containingFile: string, allDeps: {[key: string]: boolean} = {}, initial = true): string[] {
         const deps = this.getDeps(containingFile);
         deps.forEach(dep => {
-            if (!allDeps.has(dep)) {
-                allDeps.add(dep);
+            if (!allDeps[dep]) {
+                allDeps[dep] = true;
                 this.getAllDeps(dep, allDeps, false);
             }
         });
 
         if (initial) {
-            return Array.from(allDeps.keys());
+            return Object.keys(allDeps);
+        } else {
+            return [];
         }
     }
 }
@@ -238,6 +241,13 @@ function updateFile(fileName: string, text: string) {
     }
 }
 
+function removeFile(fileName: string) {
+    const file = files[fileName];
+    if (file) {
+        delete files[fileName];
+    }
+}
+
 function emit(fileName: string) {
     if (loaderConfig.useTranspileModule || loaderConfig.transpileOnly) {
         return fastEmit(fileName);
@@ -266,6 +276,11 @@ function fastEmit(fileName: string) {
 
 function processUpdate({seq, payload}: UpdateFile.Request) {
     updateFile(payload.fileName, payload.text);
+    replyOk(seq, null);
+}
+
+function processRemove({seq, payload}: RemoveFile.Request) {
+    removeFile(payload.fileName);
     replyOk(seq, null);
 }
 
@@ -343,7 +358,6 @@ function processDiagnostics({seq}: Diagnostics.Request) {
     replyOk(seq, processedDiagnostics);
 }
 
-
 function replyOk(seq: number, payload: any) {
     process.send({
         seq,
@@ -352,13 +366,13 @@ function replyOk(seq: number, payload: any) {
     } as Res);
 }
 
-function replyErr(seq: number, payload: any) {
-    process.send({
-        seq,
-        success: false,
-        payload
-    } as Res);
-}
+// function replyErr(seq: number, payload: any) {
+//     process.send({
+//         seq,
+//         success: false,
+//         payload
+//     } as Res);
+// }
 
 process.on('message', function(req: Req) {
     switch (req.type) {
@@ -376,6 +390,9 @@ process.on('message', function(req: Req) {
             break;
         case MessageType.Files:
             processFiles(req);
+            break;
+        case MessageType.RemoveFile:
+            processRemove(req);
             break;
     }
 });

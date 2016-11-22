@@ -76,7 +76,7 @@ function filename(source: string, identifier, options) {
     return hash.read().toString('hex') + '.json.gzip';
 };
 
-interface CacheParams<T> {
+export interface CacheParams<T> {
     source: string;
     options: any;
     transform: () => Promise<T>;
