@@ -205,6 +205,7 @@ function setupBabel(loaderConfig: LoaderConfig): any {
 }
 
 function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
+    compilerConfig.typingOptions = compilerConfig.typingOptions || {};
     compilerConfig.typingOptions.exclude = compilerConfig.typingOptions.exclude || [];
 
     _.defaults(compilerConfig.options, {
