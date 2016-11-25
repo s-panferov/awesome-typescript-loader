@@ -132,6 +132,15 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
     };
 }
 
+function findTsImplPackage(inputPath: string) {
+    let pkgDir = path.dirname(inputPath);
+    if (fs.readdirSync(pkgDir).find((value) => value === 'package.json')) {
+        return path.join(pkgDir, 'package.json');
+    } else {
+        return findTsImplPackage(pkgDir);
+    }
+}
+
 export function setupTs(compiler: string): CompilerInfo {
     let compilerPath = compiler || 'typescript';
 
@@ -146,7 +155,7 @@ export function setupTs(compiler: string): CompilerInfo {
         process.exit(1);
     }
 
-    const pkgPath = path.join(path.dirname(path.dirname(tsImplPath)), 'package.json');
+    const pkgPath = findTsImplPackage(tsImplPath);
     const compilerVersion = require(pkgPath).version;
 
     let compilerInfo: CompilerInfo = {
