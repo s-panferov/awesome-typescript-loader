@@ -65,13 +65,6 @@ export class Checker {
             console.error('Typescript checker error:', e);
         });
 
-        checker.on('exit', (code) => {
-            if (code !== 0) {
-                console.error('Typescript checker was exited with non-zero error code');
-                process.exit(code);
-            }
-        });
-
         checker.on('message', (res: Res) => {
             const {seq, success, payload} = res;
             if (seq && this.pending.has(seq)) {
