@@ -59,7 +59,7 @@
     "standard-version": "^2.4.0",
     "temp": "^0.8.3",
     "tslint": "^3.14.0",
-    "typescript": "^2.0.6",
+    "typescript": "next",
     "webpack": "2.1.0-beta.25"
   }
 }

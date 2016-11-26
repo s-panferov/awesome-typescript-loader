@@ -205,9 +205,6 @@ function setupBabel(loaderConfig: LoaderConfig): any {
 }
 
 function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
-    compilerConfig.typingOptions = compilerConfig.typingOptions || {};
-    compilerConfig.typingOptions.exclude = compilerConfig.typingOptions.exclude || [];
-
     _.defaults(compilerConfig.options, {
         sourceMap: true,
         verbose: false,
@@ -224,13 +221,12 @@ function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderC
     });
 
     _.defaults(loaderConfig, {
-        externals: [],
-        doTypeCheck: true,
         sourceMap: true,
         verbose: false,
     });
 
     delete compilerConfig.options.outDir;
+    delete compilerConfig.options.inlineSourceMap;
     delete compilerConfig.options.outFile;
     delete compilerConfig.options.out;
     delete compilerConfig.options.noEmit;

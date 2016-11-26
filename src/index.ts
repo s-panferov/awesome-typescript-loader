@@ -44,7 +44,7 @@ function compiler(loader: Loader, text: string): void {
         compiledModule = findCompiledModule(fileName);
     }
 
-    let transformation: Promise<Transformation> = null;
+    let transformation: Promise<{cached: boolean, result: Transformation}> = null;
 
     if (compiledModule) {
         transformation = Promise.resolve({
@@ -52,7 +52,7 @@ function compiler(loader: Loader, text: string): void {
             map: compiledModule.map
                 ? JSON.parse(compiledModule.map)
                 : null
-        });
+        }).then(result => ({cached: true, result}));
     } else {
         let transformationFunction = () => transform(
             loader,
@@ -70,21 +70,21 @@ function compiler(loader: Loader, text: string): void {
                 transform: transformationFunction
             });
         } else {
-            transformation = transformationFunction();
+            transformation = transformationFunction().then(result => ({cached: false, result}));
         }
     }
 
     transformation
-        .then(trans => {
+        .then(({cached, result}) => {
             if (!instance.compilerConfig.options.isolatedModules) {
                 // If our modules are isolated we don't need to recompile all the deps
-                trans.deps.forEach(dep => loader.addDependency(dep));
+                result.deps.forEach(dep => loader.addDependency(dep));
             }
-            if (!trans.fresh) {
+            if (cached) {
                 // Update file in checker in case we read it from the cache
                 instance.checker.updateFile(fileName, text);
             }
-            return trans;
+            return result;
         })
         .then(({text, map}) => {
             callback(null, text, map);
@@ -147,7 +147,6 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
             text: resultText,
             map: resultSourceMap,
             deps,
-            fresh: true
         };
     }));
 }

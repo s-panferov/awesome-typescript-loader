@@ -87,7 +87,7 @@ export interface CacheParams<T> {
 /**
  * Retrieve file from cache, or create a new one for future reads
  */
-export function cache<T>(params: CacheParams<T>): Promise<T> {
+export function cache<T>(params: CacheParams<T>): Promise<{cached: boolean, result: T}> {
     // Spread params into named variables
     // Forgive user whenever possible
     let source = params.source;
@@ -103,13 +103,13 @@ export function cache<T>(params: CacheParams<T>): Promise<T> {
     try {
         // No errors mean that the file was previously cached
         // we just need to return it
-        return Promise.resolve(read(file));
+        return Promise.resolve({cached: true, result: read(file)});
     } catch(e) {
         // Otherwise just transform the file
         // return it to the user asap and write it in cache
         return transform().then(result => {
             write(file, result);
-            return result;
+            return {cached: false, result};
         });
     }
 }
