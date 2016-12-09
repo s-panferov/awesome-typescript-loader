@@ -1,3 +1,12 @@
+process.on('uncaughtException', function (err) {
+    console.log("UNCAUGHT EXCEPTION in awesome-typescript-loader");
+    console.log("[Inside 'uncaughtException' event] ", err.message, err.stack);
+});
+
+process.on('disconnect', function() {
+    process.exit();
+});
+
 import * as path from 'path';
 import * as colors from 'colors';
 import { findResultFor } from '../helpers';
@@ -33,6 +42,7 @@ let files: {[fileName: string]: File} = {};
 let host: ts.LanguageServiceHost;
 let service: ts.LanguageService;
 let ignoreDiagnostics: {[id: number]: boolean} = {};
+let instanceName: string;
 
 function ensureFile(fileName: string) {
     if (!files[fileName]) {
@@ -192,6 +202,8 @@ function processInit({seq, payload}: Init.Request) {
     compilerOptions = compilerConfig.options;
     webpackOptions = payload.webpackOptions;
 
+    instanceName = loaderConfig.instance || 'at-loader';
+
     host = new Host(compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES);
     service = compiler.createLanguageService(host);
 
@@ -218,6 +230,7 @@ function processInit({seq, payload}: Init.Request) {
             ignoreDiagnostics[diag] = true;
         });
     }
+
 
     replyOk(seq, null);
 }
@@ -299,7 +312,6 @@ function processFiles({seq}: Files.Request) {
 }
 
 function processDiagnostics({seq}: Diagnostics.Request) {
-    let instanceName = loaderConfig.instance || 'at-loader';
     let silent = !!loaderConfig.forkCheckerSilent;
 
     const timeStart = +new Date();
@@ -366,33 +378,38 @@ function replyOk(seq: number, payload: any) {
     } as Res);
 }
 
-// function replyErr(seq: number, payload: any) {
-//     process.send({
-//         seq,
-//         success: false,
-//         payload
-//     } as Res);
-// }
+function replyErr(seq: number, payload: any) {
+    process.send({
+        seq,
+        success: false,
+        payload
+    } as Res);
+}
 
 process.on('message', function(req: Req) {
-    switch (req.type) {
-        case MessageType.Init:
-            processInit(req);
-            break;
-        case MessageType.UpdateFile:
-            processUpdate(req);
-            break;
-        case MessageType.EmitFile:
-            processEmit(req);
-            break;
-        case MessageType.Diagnostics:
-            processDiagnostics(req);
-            break;
-        case MessageType.Files:
-            processFiles(req);
-            break;
-        case MessageType.RemoveFile:
-            processRemove(req);
-            break;
+    try {
+        switch (req.type) {
+            case MessageType.Init:
+                processInit(req);
+                break;
+            case MessageType.UpdateFile:
+                processUpdate(req);
+                break;
+            case MessageType.EmitFile:
+                processEmit(req);
+                break;
+            case MessageType.Diagnostics:
+                processDiagnostics(req);
+                break;
+            case MessageType.Files:
+                processFiles(req);
+                break;
+            case MessageType.RemoveFile:
+                processRemove(req);
+                break;
+        }
+    } catch (e) {
+        console.error(`[${instanceName}]: Child process failed to process the request: `, e);
+        replyErr(req.seq, null);
     }
 });
