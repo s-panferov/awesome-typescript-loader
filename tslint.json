@@ -7,7 +7,7 @@
     ],
     "curly": true,
     "eofline": true,
-    "indent": true,
+    "indent": [true],
     "jsdoc-format": true,
     "member-ordering": [
       true,
@@ -16,17 +16,13 @@
       "variables-before-functions"
     ],
     "no-arg": true,
-    "no-consecutive-blank-lines": true,
-    "no-constructor-vars": true,
+    "no-consecutive-blank-lines": [true],
     "no-debugger": true,
-    "no-duplicate-key": true,
     "no-duplicate-variable": true,
     "no-trailing-whitespace": true,
-    "no-unreachable": true,
-    "no-unused-variable": true,
     "no-var-keyword": true,
-    "quotemark": true,
-    "typedef-whitespace": true,
-    "semicolon": true
+    "quotemark": [true],
+    "typedef-whitespace": [true],
+    "semicolon": [true]
   }
 }
