@@ -30,6 +30,11 @@ So your webpack compilation will end earlier and you can explore compiled versio
 **webpack.config.js**
 
 ```javascript
+// `CheckerRuntime` is optional. Use it if you want async error reporting.
+// We need this plugin to detect a `--watch` mode. It may be removed later
+// after https://github.com/webpack/webpack/issues/3460 will be resolved.
+const { CheckerRuntime } = require('awesome-typescript-loader')
+
 module.exports = {
 
   // Currently we need to add '.ts' to the resolve.extensions array.
@@ -48,7 +53,10 @@ module.exports = {
         loader: 'awesome-typescript-loader'
       }
     ]
-  }
+  },
+  plugins: [
+      new CheckerRuntime()
+  ]
 };
 ```
 
@@ -92,6 +100,11 @@ resolve: {
 
 ## Loader options
 
+### silent *(boolean) (default=false)*
+
+No logging from the checker. Please note that this option disables async error reporting because
+this option bans `console.log()` usage.
+
 ### compiler *(string) (default='typescript')*
 
 Allows use of TypeScript compilers other than the official one. Must be
@@ -102,10 +115,6 @@ nightly versions.
 ### useTranspileModule (boolean) (default=false)*
 
 Use fast `transpileModule` emit mode. Disables automatically when you set `declaration: true`.
-
-### emitRequireType *(boolean) (default=false)*
-
-Specify whether or not the loader emits webpacks's require type.
 
 ### instance *(string) (default='at-loader')*
 
@@ -123,10 +132,6 @@ Use this setting to disable type checking.
 
 You can squelch certain TypeScript errors by specifying an array of [diagnostic codes](https://github.com/Microsoft/TypeScript/blob/master/src/compiler/diagnosticMessages.json) to ignore.
 For example, you can transpile [stage 1 properties](https://github.com/jeffmo/es-class-fields-and-static-properties) from `*.js` using `"ignoreDiagnostics": [8014]`.
-
-### forkCheckerSilent *(boolean) (default=false)*
-
-Less logging from the checker.
 
 ### useBabel *(boolean) (default=false)*
 

@@ -4,6 +4,7 @@ import * as _ from 'lodash';
 import { toUnix } from './helpers';
 import { Checker } from './checker';
 import { CompilerInfo, LoaderConfig, TsConfig } from './interfaces';
+import { WatchModeSymbol } from './watch-mode';
 
 let colors = require('colors/safe');
 let pkg = require('../package.json');
@@ -98,18 +99,18 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
 
     let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
 
-    console.log(`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
-        + `"tsconfig.json" from ${configFilePath}\n`);
-
     applyDefaults(configFilePath, compilerConfig, loaderConfig);
+
+    if (!loaderConfig.silent) {
+        console.log(`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
+            + `"tsconfig.json" from ${configFilePath}\n`);
+    }
+
     let babelImpl = setupBabel(loaderConfig);
     let cacheIdentifier = setupCache(loaderConfig, tsImpl, webpack, babelImpl);
     let compiler = (<any>webpack._compiler);
 
-    if (isWatching(compiler)) {
-        setupWatchRun(compiler, instanceName);
-    }
-
+    setupWatchRun(compiler, instanceName);
     setupAfterCompile(compiler, instanceName);
 
     const webpackOptions = _.pick(webpack._compiler.options, 'resolve');
@@ -313,8 +314,21 @@ function setupWatchRun(compiler, instanceName: string) {
     });
 }
 
-function isWatching(compiler: any) {
-    return compiler.options.watch || compiler.outputFileSystem.constructor.name === 'MemoryFileSystem';
+enum WatchMode {
+    Enabled,
+    Disabled,
+    Unknown
+}
+
+function isWatching(compiler: any): WatchMode {
+    const value = compiler[WatchModeSymbol];
+    if (value === true) {
+        return WatchMode.Enabled;
+    } else if (value === false) {
+        return WatchMode.Disabled;
+    } else {
+        return WatchMode.Unknown;
+    }
 }
 
 function setupAfterCompile(compiler, instanceName, forkChecker = false) {
@@ -325,14 +339,17 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             return;
         }
 
-        let instance: Instance = resolveInstance(compilation.compiler, instanceName);
+        const watchMode = isWatching(compilation.compiler);
+        const instance: Instance = resolveInstance(compilation.compiler, instanceName);
+        const silent = !instance.loaderConfig.silent;
+
         let emitError = (msg) => {
             if (compilation.bail) {
                 console.error('Error in bail mode:', msg);
                 process.exit(1);
             }
 
-            if (isWatching(compilation.compiler)) {
+            if (watchMode === WatchMode.Enabled && !silent) {
                 console.log(msg, '\n');
             } else {
                 compilation.errors.push(new Error(msg));
@@ -352,11 +369,9 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                     diags.forEach(diag => emitError(diag.pretty));
                 });
 
-        const watching = isWatching(compilation.compiler);
-
         files
             .then(() => {
-                if (watching) {
+                if (watchMode === WatchMode.Enabled && !silent) {
                     // Don't wait for diags in watch mode
                     return;
                 } else {
@@ -364,7 +379,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 }
             })
             .then(() => {
-                if (!watching) {
+                if (watchMode === WatchMode.Disabled) {
                     instance.checker.kill();
                 }
             })
