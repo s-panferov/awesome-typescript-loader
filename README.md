@@ -30,10 +30,10 @@ So your webpack compilation will end earlier and you can explore compiled versio
 **webpack.config.js**
 
 ```javascript
-// `CheckerRuntime` is optional. Use it if you want async error reporting.
+// `CheckerPlugin` is optional. Use it if you want async error reporting.
 // We need this plugin to detect a `--watch` mode. It may be removed later
 // after https://github.com/webpack/webpack/issues/3460 will be resolved.
-const { CheckerRuntime } = require('awesome-typescript-loader')
+const { CheckerPlugin } = require('awesome-typescript-loader')
 
 module.exports = {
 
@@ -55,7 +55,7 @@ module.exports = {
     ]
   },
   plugins: [
-      new CheckerRuntime()
+      new CheckerPlugin()
   ]
 };
 ```
