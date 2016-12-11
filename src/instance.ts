@@ -296,7 +296,8 @@ function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', function (watching, callback) {
         const instance = resolveInstance(watching.compiler, instanceName);
         const checker = instance.checker;
-        const mtimes = watching.compiler.watchFileSystem.watcher.mtimes;
+        const watcher = watching.compiler.watchFileSystem.watcher || watching.compiler.watchFileSystem.wfs.watcher;
+        const mtimes = watcher.mtimes;
         const changedFiles = Object.keys(mtimes).map(toUnix);
         const updates = changedFiles
             .filter(file => EXTENSIONS.test(file))
