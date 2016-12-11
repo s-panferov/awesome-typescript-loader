@@ -164,7 +164,7 @@ export function watch(config, cb?: (err, stats) => void): Watch {
     return watch;
 }
 
-class Watch {
+export class Watch {
     resolves: ((arg: any[]) => void)[] = [];
     close: () => void;
 

@@ -7,6 +7,7 @@ import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
 import { QueryOptions, Loader, ensureInstance, Instance } from './instance';
 import { PathsPlugin } from './paths-plugin';
+import { CheckerPlugin } from './watch-mode';
 
 let loaderUtils = require('loader-utils');
 
@@ -152,5 +153,6 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
 }
 
 (loader as any).TsConfigPathsPlugin = PathsPlugin;
+(loader as any).CheckerPlugin = CheckerPlugin;
 
 module.exports = loader;

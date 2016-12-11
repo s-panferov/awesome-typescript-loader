@@ -312,7 +312,7 @@ function processFiles({seq}: Files.Request) {
 }
 
 function processDiagnostics({seq}: Diagnostics.Request) {
-    let silent = !!loaderConfig.forkCheckerSilent;
+    let silent = !!loaderConfig.silent;
 
     const timeStart = +new Date();
 

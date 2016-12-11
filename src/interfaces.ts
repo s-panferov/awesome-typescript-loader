@@ -17,7 +17,7 @@ export interface LoaderConfig {
     babelCore?: string;
     babelOptions?: any;
     usePrecompiledFiles?: boolean;
-    forkCheckerSilent?: boolean;
+    silent?: boolean;
     useCache?: boolean;
     cacheDirectory?: string;
 }
