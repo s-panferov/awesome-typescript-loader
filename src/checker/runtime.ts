@@ -7,6 +7,11 @@ process.on('disconnect', function() {
     process.exit();
 });
 
+// HACK keepalive for concurrent webpack config
+process.on('SIGTERM', function () {
+    // do nothing
+});
+
 import * as path from 'path';
 import * as colors from 'colors';
 import { findResultFor } from '../helpers';
@@ -230,7 +235,6 @@ function processInit({seq, payload}: Init.Request) {
             ignoreDiagnostics[diag] = true;
         });
     }
-
 
     replyOk(seq, null);
 }

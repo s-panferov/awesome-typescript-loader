@@ -136,7 +136,7 @@ export class Checker {
     }
 
     kill() {
-        this.checker.kill('SIGKILL');
+        this.checker.kill('SIGTERM');
     }
 }
 
