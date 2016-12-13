@@ -38,28 +38,23 @@ export class Checker {
         compilerInfo: CompilerInfo,
         loaderConfig: LoaderConfig,
         compilerConfig: TsConfig,
-        webpackOptions: any
+        webpackOptions: any,
+        fork: boolean = false
     ) {
         const execArgv = getExecArgv();
-        const checker: childProcess.ChildProcess
-            = childProcess.fork(path.join(__dirname, 'runtime.js'), [], { execArgv });
+        const checker: childProcess.ChildProcess = fork
+            ? childProcess.fork(path.join(__dirname, 'runtime.js'), [], { execArgv })
+            : require('./runtime');
 
-        this.sender = createQueuedSender(checker);
+        this.sender = fork
+            ? createQueuedSender(checker)
+            : { send: checker.send };
+
         this.checker = checker;
         this.compilerInfo = compilerInfo;
         this.loaderConfig = loaderConfig;
         this.compilerConfig = compilerConfig;
         this.webpackOptions = webpackOptions;
-
-        this.req({
-            type: 'Init',
-            payload: {
-                compilerInfo: _.omit(compilerInfo, 'tsImpl'),
-                loaderConfig,
-                compilerConfig,
-                webpackOptions
-            }
-        } as Init.Request);
 
         checker.on('error', (e) => {
             console.error('Typescript checker error:', e);
@@ -80,18 +75,29 @@ export class Checker {
                 console.warn('Unknown message: ', payload);
             }
         });
+
+        this.req({
+            type: 'Init',
+            payload: {
+                compilerInfo: _.omit(compilerInfo, 'tsImpl'),
+                loaderConfig,
+                compilerConfig,
+                webpackOptions
+            }
+        } as Init.Request);
     }
 
     req<T>(message: Req): Promise<T> {
         message.seq = ++this.seq;
-        this.sender.send(message);
-        return new Promise<T>((resolve, reject) => {
+        const promise = new Promise<T>((resolve, reject) => {
             let resolver: Resolve = {
                 resolve, reject
             };
 
             this.pending.set(message.seq, resolver);
         });
+        this.sender.send(message);
+        return promise;
     }
 
     emitFile(fileName: string, text: string): Promise<EmitFile.ResPayload> {

@@ -90,13 +90,9 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
     ensureInstanceStore(webpack._compiler);
 
     const rootCompiler = getRootCompiler(webpack._compiler);
+    const watching = isWatching(rootCompiler);
 
-    if (isWatching(rootCompiler) === WatchMode.Unknown) {
-        console.error(colors.red(`[${instanceName}] Please install "CheckerPlugin" from "awesome-typescript-loader".`));
-        process.exit(1);
-    }
-
-    let exInstance = resolveInstance(rootCompiler, instanceName);
+    let exInstance = resolveInstance(webpack._compiler, instanceName);
     if (exInstance) {
         return exInstance;
     }
@@ -109,8 +105,9 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
     applyDefaults(configFilePath, compilerConfig, loaderConfig);
 
     if (!loaderConfig.silent) {
+        const sync = watching === WatchMode.Enabled ? ' (in a forked process)' : '';
         console.log(`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
-            + `"tsconfig.json" from ${configFilePath}\n`);
+            + `"tsconfig.json" from ${configFilePath}${sync}.\n`);
     }
 
     let babelImpl = setupBabel(loaderConfig);
@@ -125,7 +122,8 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
         compilerInfo,
         loaderConfig,
         compilerConfig,
-        webpackOptions
+        webpackOptions,
+        watching === WatchMode.Enabled
     );
 
     return getInstanceStore(webpack._compiler)[instanceName] = {
@@ -329,7 +327,7 @@ enum WatchMode {
 }
 
 function isWatching(compiler: any): WatchMode {
-    const value = compiler[WatchModeSymbol];
+    const value = compiler && compiler[WatchModeSymbol];
     if (value === true) {
         return WatchMode.Enabled;
     } else if (value === false) {
@@ -350,6 +348,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         const watchMode = isWatching(compilation.compiler);
         const instance: Instance = resolveInstance(compilation.compiler, instanceName);
         const silent = !instance.loaderConfig.silent;
+        const asyncErrors = watchMode === WatchMode.Enabled && !silent;
 
         let emitError = (msg) => {
             if (compilation.bail) {
@@ -357,7 +356,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 process.exit(1);
             }
 
-            if (watchMode === WatchMode.Enabled && !silent) {
+            if (asyncErrors) {
                 console.log(msg, '\n');
             } else {
                 compilation.errors.push(new Error(msg));
@@ -379,16 +378,11 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
         files
             .then(() => {
-                if (watchMode === WatchMode.Enabled && !silent) {
+                if (asyncErrors) {
                     // Don't wait for diags in watch mode
                     return;
                 } else {
                     return diag;
-                }
-            })
-            .then(() => {
-                if (watchMode === WatchMode.Disabled) {
-                    instance.checker.kill();
                 }
             })
             .then(() => callback())
