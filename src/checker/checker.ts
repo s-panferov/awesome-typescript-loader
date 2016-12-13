@@ -22,6 +22,9 @@ export interface Resolve {
     reject: (e: Error) => void;
 }
 
+const IPC = require('node-ipc').IPC;
+let checkerId = 0;
+
 export class Checker {
     seq: number = 0;
     checker: childProcess.ChildProcess;
@@ -33,6 +36,8 @@ export class Checker {
     webpackOptions?: any;
 
     sender: QueuedSender;
+    connected: boolean = false;
+    ipc: any;
 
     constructor(
         compilerInfo: CompilerInfo,
@@ -40,16 +45,25 @@ export class Checker {
         compilerConfig: TsConfig,
         webpackOptions: any
     ) {
+        const id = `awesometypescriptloader${(checkerId++).toString()}`;
         const execArgv = getExecArgv();
+        console.log(process.argv0)
         const checker: childProcess.ChildProcess
-            = childProcess.fork(path.join(__dirname, 'runtime.js'), [], { execArgv });
+            = childProcess.spawn(process.argv0, [path.join(__dirname, 'runtime.js'), '--id=' + id], {
+                execArgv,
+                stdio: 'inherit'
+            } as any);
 
-        this.sender = createQueuedSender(checker);
+        console.log('spawning ', path.join(__dirname, 'runtime.js'));
+
+        // this.sender = createQueuedSender(checker);
         this.checker = checker;
         this.compilerInfo = compilerInfo;
         this.loaderConfig = loaderConfig;
         this.compilerConfig = compilerConfig;
         this.webpackOptions = webpackOptions;
+
+        this.startIpc(id);
 
         this.req({
             type: 'Init',
@@ -65,26 +79,78 @@ export class Checker {
             console.error('Typescript checker error:', e);
         });
 
-        checker.on('message', (res: Res) => {
-            const {seq, success, payload} = res;
-            if (seq && this.pending.has(seq)) {
-                const resolver = this.pending.get(seq);
-                if (success) {
-                    resolver.resolve(payload);
-                } else {
-                    resolver.reject(payload);
-                }
+        // checker.on('message', this.onMessage.bind);
+    }
 
-                this.pending.delete(seq);
+    onMessage(res: Res) {
+        console.log('res', res.seq)
+        const {seq, success, payload} = res;
+        if (seq && this.pending.has(seq)) {
+            const resolver = this.pending.get(seq);
+            if (success) {
+                resolver.resolve(payload);
             } else {
-                console.warn('Unknown message: ', payload);
+                resolver.reject(payload);
             }
+
+            this.pending.delete(seq);
+        } else {
+            console.warn('Unknown message: ', payload);
+        }
+    }
+
+    startIpc(id: string) {
+        const buffer = [];
+        this.sender = {
+            send: (msg: any) => {
+                if (!this.connected) {
+                    buffer.push(msg);
+                } else {
+                    console.log('sending', msg.seq)
+                    this.ipc.of[this.ipc.config.id].emit('message', msg);
+                }
+            }
+        };
+
+        const sendPending = () => {
+            while(buffer.length > 0 && this.connected) {
+                const msg = buffer.shift();
+                this.sender.send(msg);
+            }
+        };
+
+        this.ipc = new IPC();
+        this.ipc.config.id = id;
+        this.ipc.silent = true;
+        this.ipc.connectTo(this.ipc.config.id, () => {
+            this.ipc.of[this.ipc.config.id].on(
+                'message',
+                this.onMessage.bind(this)
+            );
         });
+
+        this.ipc.of[this.ipc.config.id].on(
+            'connect',
+            () => {
+                this.connected = true;
+                sendPending();
+            }
+        );
+
+        this.ipc.of[this.ipc.config.id].on(
+            'disconnect',
+            () => {
+                this.connected = false;
+            }
+        );
     }
 
     req<T>(message: Req): Promise<T> {
         message.seq = ++this.seq;
+
         this.sender.send(message);
+
+        // this.sender.send(message);
         return new Promise<T>((resolve, reject) => {
             let resolver: Resolve = {
                 resolve, reject

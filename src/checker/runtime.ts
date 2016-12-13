@@ -31,6 +31,8 @@ export interface File {
     snapshot: ts.IScriptSnapshot;
 }
 
+let send: (msg: any) => void;
+
 let projectVersion = 0;
 let loaderConfig: LoaderConfig;
 let compilerConfig: TsConfig;
@@ -371,7 +373,7 @@ function processDiagnostics({seq}: Diagnostics.Request) {
 }
 
 function replyOk(seq: number, payload: any) {
-    process.send({
+    send({
         seq,
         success: true,
         payload
@@ -379,37 +381,58 @@ function replyOk(seq: number, payload: any) {
 }
 
 function replyErr(seq: number, payload: any) {
-    process.send({
+    send({
         seq,
         success: false,
         payload
     } as Res);
 }
 
-process.on('message', function(req: Req) {
-    try {
-        switch (req.type) {
-            case MessageType.Init:
-                processInit(req);
-                break;
-            case MessageType.UpdateFile:
-                processUpdate(req);
-                break;
-            case MessageType.EmitFile:
-                processEmit(req);
-                break;
-            case MessageType.Diagnostics:
-                processDiagnostics(req);
-                break;
-            case MessageType.Files:
-                processFiles(req);
-                break;
-            case MessageType.RemoveFile:
-                processRemove(req);
-                break;
+const ipc = require('node-ipc');
+
+const ipcId = process.argv[2].replace('--id=', '');
+ipc.config.id = ipcId;
+ipc.config.silent = true;
+
+ipc.serve(() => {
+    ipc.server.on(
+        'message',
+        function(req: Req, socket) {
+            send = (msg: any) => {
+                ipc.server.emit(
+                    socket,
+                    'message',
+                    msg
+                );
+            };
+
+            try {
+                switch (req.type) {
+                    case MessageType.Init:
+                        processInit(req);
+                        break;
+                    case MessageType.UpdateFile:
+                        processUpdate(req);
+                        break;
+                    case MessageType.EmitFile:
+                        processEmit(req);
+                        break;
+                    case MessageType.Diagnostics:
+                        processDiagnostics(req);
+                        break;
+                    case MessageType.Files:
+                        processFiles(req);
+                        break;
+                    case MessageType.RemoveFile:
+                        processRemove(req);
+                        break;
+                }
+            } catch (e) {
+                console.error(`[${instanceName}]: Child process failed to process the request: `, e);
+                replyErr(req.seq, null);
+            }
         }
-    } catch (e) {
-        console.error(`[${instanceName}]: Child process failed to process the request: `, e);
-        replyErr(req.seq, null);
-    }
+    );
 });
+
+ipc.server.start();

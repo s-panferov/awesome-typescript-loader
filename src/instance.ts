@@ -89,14 +89,12 @@ let id = 0;
 export function ensureInstance(webpack: Loader, query: QueryOptions, instanceName: string): Instance {
     ensureInstanceStore(webpack._compiler);
 
-    const rootCompiler = getRootCompiler(webpack._compiler);
+    // if (isWatching(rootCompiler) === WatchMode.Unknown) {
+    //     console.error(colors.red(`[${instanceName}] Please install "CheckerPlugin" from "awesome-typescript-loader".`));
+    //     process.exit(1);
+    // }
 
-    if (isWatching(rootCompiler) === WatchMode.Unknown) {
-        console.error(colors.red(`[${instanceName}] Please install "CheckerPlugin" from "awesome-typescript-loader".`));
-        process.exit(1);
-    }
-
-    let exInstance = resolveInstance(rootCompiler, instanceName);
+    let exInstance = resolveInstance(webpack._compiler, instanceName);
     if (exInstance) {
         return exInstance;
     }
@@ -384,11 +382,6 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                     return;
                 } else {
                     return diag;
-                }
-            })
-            .then(() => {
-                if (watchMode === WatchMode.Disabled) {
-                    instance.checker.kill();
                 }
             })
             .then(() => callback())

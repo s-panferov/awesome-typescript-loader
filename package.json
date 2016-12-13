@@ -35,6 +35,7 @@
     "enhanced-resolve": "^2.3.0",
     "loader-utils": "^0.2.16",
     "lodash": "^4.13.1",
+    "node-ipc": "^8.9.2",
     "object-assign": "^4.1.0",
     "source-map-support": "^0.4.0"
   },
