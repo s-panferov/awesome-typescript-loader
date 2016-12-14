@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.0.0-beta.16"></a>
+# [3.0.0-beta.16](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.15...v3.0.0-beta.16) (2016-12-14)
+
+
+### Bug Fixes
+
+* ts namespace ([84640b0](https://github.com/s-panferov/awesome-typescript-loader/commit/84640b0))
+
+
+
 <a name="2.2.4"></a>
 ## [2.2.4](https://github.com/s-panferov/awesome-typescript-loader/compare/v2.2.3...v2.2.4) (2016-09-07)
 
