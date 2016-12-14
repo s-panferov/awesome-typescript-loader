@@ -232,7 +232,6 @@ function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderC
     });
 
     delete compilerConfig.options.outDir;
-    delete compilerConfig.options.inlineSourceMap;
     delete compilerConfig.options.outFile;
     delete compilerConfig.options.out;
     delete compilerConfig.options.noEmit;
