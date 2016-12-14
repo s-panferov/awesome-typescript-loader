@@ -347,7 +347,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
         const watchMode = isWatching(compilation.compiler);
         const instance: Instance = resolveInstance(compilation.compiler, instanceName);
-        const silent = !instance.loaderConfig.silent;
+        const silent = instance.loaderConfig.silent;
         const asyncErrors = watchMode === WatchMode.Enabled && !silent;
 
         let emitError = (msg) => {
