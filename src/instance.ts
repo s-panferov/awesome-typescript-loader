@@ -140,7 +140,7 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
 
 function findTsImplPackage(inputPath: string) {
     let pkgDir = path.dirname(inputPath);
-    if (fs.readdirSync(pkgDir).find((value) => value === 'package.json')) {
+    if (fs.readdirSync(pkgDir).indexOf('package.json') !== -1) {
         return path.join(pkgDir, 'package.json');
     } else {
         return findTsImplPackage(pkgDir);
