@@ -1,5 +1,3 @@
-/// <reference path="./defines.d.ts" />
-
 import * as _ from 'lodash';
 import * as path from 'path';
 
