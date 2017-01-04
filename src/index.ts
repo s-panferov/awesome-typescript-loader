@@ -84,7 +84,7 @@ function compiler(loader: Loader, text: string): void {
         .then(({cached, result}) => {
             if (!instance.compilerConfig.options.isolatedModules) {
                 // If our modules are isolated we don't need to recompile all the deps
-                result.deps.forEach(dep => loader.addDependency(dep));
+                result.deps.forEach(dep => loader.addDependency(path.normalize(dep)));
             }
             if (cached) {
                 // Update file in checker in case we read it from the cache
