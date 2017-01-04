@@ -4,7 +4,7 @@ import {
 } from './utils';
 
 describe('main test', function() {
-    it('should transpile without sourceamps', async function() {
+    it('should transpile without sourcemaps', async function() {
         // babel need some time to init
         this.timeout(10000);
 
