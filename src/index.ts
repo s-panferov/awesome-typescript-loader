@@ -82,7 +82,7 @@ function compiler(loader: Loader, text: string): void {
 
     transformation
         .then(({cached, result}) => {
-            if (!instance.compilerConfig.options.isolatedModules) {
+            if (!instance.compilerConfig.options.isolatedModules && result.deps) {
                 // If our modules are isolated we don't need to recompile all the deps
                 result.deps.forEach(dep => loader.addDependency(path.normalize(dep)));
             }
