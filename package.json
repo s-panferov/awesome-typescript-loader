@@ -11,7 +11,7 @@
     "watch:ts": "npm run build:ts -- --watch --diagnostics",
     "prebuild": "npm run lint",
     "compile": "tsc --pretty",
-    "build": "rm -rf dict && tsc -p prod --pretty",
+    "build": "rm -rf dist && tsc -p prod --pretty",
     "lint": "tslint src/*.ts",
     "release": "standard-version"
   },
