@@ -20,6 +20,7 @@ export interface LoaderConfig {
     silent?: boolean;
     useCache?: boolean;
     cacheDirectory?: string;
+    muteNodeModules?: boolean;
 }
 
 export interface OutputFile {
