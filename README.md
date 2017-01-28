@@ -159,6 +159,10 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 
 Directory when cache is stored.
 
+### muteNodeModules *(boolean) (default=false)*
+
+Mute TypeScript Errors that occur in libraries in the node_modules folder.
+
 ## Compiler options
 
 You can pass compiler options inside loader query string or in tsconfig file.

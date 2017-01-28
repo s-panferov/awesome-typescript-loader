@@ -344,6 +344,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
     function processDiagnostics({seq}: Diagnostics.Request) {
         let silent = !!loaderConfig.silent;
+        const muteNodeModules = !!loaderConfig.muteNodeModules;
 
         const timeStart = +new Date();
 
@@ -369,6 +370,12 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         const processedDiagnostics = allDiagnostics
+            .filter(diag => {
+                if (muteNodeModules && diag.file) {
+                    return !/node_modules/.test(diag.file.fileName)
+                }
+                return true
+            })
             .filter(diag => !ignoreDiagnostics[diag.code])
             .map(diagnostic => {
                 const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
