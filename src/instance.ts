@@ -193,6 +193,10 @@ function setupBabel(loaderConfig: LoaderConfig): any {
 }
 
 function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
+    // HACK: adding in a blank initializer to stop loader from crashing, 
+    // see s-panferov/awesome-typescript-loader#190 for more details
+    compilerConfig.raw.compilerOptions.exclude = compilerConfig.raw.compilerOptions.exclude || [];
+    
     _.defaults(compilerConfig.options, {
         sourceMap: true,
         verbose: false,
