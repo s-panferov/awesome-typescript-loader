@@ -1,10 +1,9 @@
 import {
-    clear, src, webpackConfig, tsconfig,
+    src, webpackConfig, tsconfig,
     watch, expectErrors, xrun
 } from './utils';
 
 xrun(__filename, async function() {
-    clear();
     const index = src('index.ts', `
         import sum from './sum'
         import mul from './mul'
@@ -29,9 +28,9 @@ xrun(__filename, async function() {
     tsconfig();
     const watcher = await watch(webpackConfig());
 
-    await watcher.wait();
+    let stats = await watcher.wait();
 
-    expectErrors(1, [
+    expectErrors(stats, 1, [
         `Cannot find name 'c'`
     ]);
 
@@ -42,6 +41,6 @@ xrun(__filename, async function() {
 
     mul.remove();
 
-    await watcher.wait();
-    expectErrors(0);
+    stats = await watcher.wait();
+    expectErrors(stats, 0);
 });

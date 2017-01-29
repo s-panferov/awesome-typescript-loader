@@ -1,11 +1,9 @@
 import {
-    clear, src, webpackConfig, tsconfig,
+    src, webpackConfig, tsconfig,
     watch, expectErrors, run
 } from './utils';
 
 run(__filename, async function() {
-    clear();
-
     const sum = src('sum.ts', `
         export default function sum(a: number, b: number) {
             return a + b;
@@ -21,8 +19,8 @@ run(__filename, async function() {
 
     const watcher = watch(webpackConfig());
 
-    await watcher.wait();
-    expectErrors(0);
+    let stats = await watcher.wait();
+    expectErrors(stats, 0);
 
     sum.update(() => `
         export default function sum(a: number, b: string) {
@@ -30,9 +28,9 @@ run(__filename, async function() {
         }
     `);
 
-    await watcher.wait();
+    stats = await watcher.wait();
 
-    expectErrors(1, [
+    expectErrors(stats, 1, [
         `Argument of type '1' is not assignable to parameter of type 'string'`
     ]);
 
@@ -41,7 +39,7 @@ run(__filename, async function() {
         sum(1, '1');
     `);
 
-    await watcher.wait();
+    stats = await watcher.wait();
 
-    expectErrors(0);
+    expectErrors(stats, 0);
 });

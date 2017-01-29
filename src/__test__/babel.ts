@@ -1,10 +1,9 @@
 import {
-    clear, src, webpackConfig, tsconfig, install,
+    src, webpackConfig, tsconfig, install,
     watch, checkOutput, expectErrors, query, run
 } from './utils';
 
 run(__filename, async function() {
-    clear();
     const index = src('index.ts', `
         class HiThere {
             constructor(a: number, b: string) {
@@ -16,16 +15,18 @@ run(__filename, async function() {
     install('babel-core', 'babel-preset-es2015');
     tsconfig();
 
-    const watcher = await watch(webpackConfig(query({
+    const config = webpackConfig(query({
         useBabel: true,
         babelOptions: {
             "presets": ["es2015"]
         }
-    })));
+    }));
 
-    await watcher.wait();
+    const watcher = await watch(config);
 
-    expectErrors(0);
+    let stats = await watcher.wait();
+
+    expectErrors(stats, 0);
     checkOutput('index.js', `
         var HiThere = function HiThere(a, b) {
             _classCallCheck(this, HiThere);
@@ -39,9 +40,9 @@ run(__filename, async function() {
         }
     `);
 
-    await watcher.wait();
+    stats = await watcher.wait();
 
-    expectErrors(0);
+    expectErrors(stats, 0);
     checkOutput('index.js', `
         function sum() {
             for(var _len = arguments.length,

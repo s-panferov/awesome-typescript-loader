@@ -40,6 +40,7 @@ export namespace Init {
         compilerConfig: TsConfig;
         compilerInfo: CompilerInfo;
         webpackOptions: any;
+        context: string;
     }
 
     export interface Request extends ReqBase {

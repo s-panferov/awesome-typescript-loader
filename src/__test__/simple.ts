@@ -1,10 +1,9 @@
 import {
-    clear, src, webpackConfig, tsconfig,
+    src, webpackConfig, tsconfig,
     compile, checkOutput, expectErrors, run
 } from './utils';
 
 run(__filename, async function() {
-    clear();
     src('index.ts', `
         class HiThere {
             constructor(a: number, b: string) {
@@ -14,9 +13,9 @@ run(__filename, async function() {
     `);
 
     tsconfig();
-    await compile(webpackConfig());
+    let stats = await compile(webpackConfig());
 
-    expectErrors(0);
+    expectErrors(stats, 0);
     checkOutput('index.js', `
         class HiThere {
             constructor(a, b) {

@@ -80,6 +80,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let service: ts.LanguageService;
     let ignoreDiagnostics: {[id: number]: boolean} = {};
     let instanceName: string;
+    let context: string;
 
     function ensureFile(fileName: string) {
         if (!files[fileName]) {
@@ -160,7 +161,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         getCurrentDirectory() {
-            return process.cwd();
+            return context;
         }
 
         getScriptIsOpen() {
@@ -238,6 +239,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
         webpackOptions = payload.webpackOptions;
+        context = payload.context;
 
         instanceName = loaderConfig.instance || 'at-loader';
 
@@ -381,7 +383,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             .filter(diag => !ignoreDiagnostics[diag.code])
             .map(diagnostic => {
                 const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-                const fileName = diagnostic.file && path.relative(process.cwd(), diagnostic.file.fileName);
+                const fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
                 let pretty = '';
                 let line = 0;
                 let character = 0;
