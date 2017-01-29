@@ -54,24 +54,11 @@ function getRootCompiler(compiler) {
     }
 }
 
-function getInstanceStore(compiler): { [key: string]: Instance } {
-    let store = getRootCompiler(compiler)._tsInstances;
-    if (store) {
-        return store;
-    } else {
-        throw new Error('Can not resolve instance store');
-    }
-}
-
-function ensureInstanceStore(compiler) {
-    let rootCompiler = getRootCompiler(compiler);
-    if (!rootCompiler._tsInstances) {
-        rootCompiler._tsInstances = {};
-    }
-}
-
 function resolveInstance(compiler, instanceName) {
-    return getInstanceStore(compiler)[instanceName];
+     if (!compiler._tsInstances) {
+        compiler._tsInstances = {};
+    }
+    return compiler._tsInstances[instanceName];
 }
 
 const COMPILER_ERROR = colors.red(`\n\nTypescript compiler cannot be found, please add it to your package.json file:
@@ -82,13 +69,8 @@ const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add i
     npm install --save-dev babel-core
 `);
 
-/**
- * Creates compiler instance
- */
 let id = 0;
 export function ensureInstance(webpack: Loader, query: QueryOptions, instanceName: string): Instance {
-    ensureInstanceStore(webpack._compiler);
-
     const rootCompiler = getRootCompiler(webpack._compiler);
     const watching = isWatching(rootCompiler);
 
@@ -126,7 +108,7 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
         watching === WatchMode.Enabled
     );
 
-    return getInstanceStore(webpack._compiler)[instanceName] = {
+    return rootCompiler._tsInstances[instanceName] = {
         id: ++id,
         babelImpl,
         compiledFiles: {},
@@ -300,7 +282,9 @@ function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', function (watching, callback) {
         const instance = resolveInstance(watching.compiler, instanceName);
         const checker = instance.checker;
-        const watcher = watching.compiler.watchFileSystem.watcher || watching.compiler.watchFileSystem.wfs.watcher;
+        const watcher = watching.compiler.watchFileSystem.watcher
+            || watching.compiler.watchFileSystem.wfs.watcher;
+
         const mtimes = watcher.mtimes;
         const changedFiles = Object.keys(mtimes).map(toUnix);
         const updates = changedFiles

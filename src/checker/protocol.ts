@@ -100,6 +100,7 @@ export namespace EmitFile {
         emitResult: {
             text: string;
             sourceMap: string;
+            declaration: { name: string, text: string };
         };
         deps: string[];
     }

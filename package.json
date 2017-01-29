@@ -6,14 +6,14 @@
   "typings": "./dist/index.d.ts",
   "scripts": {
     "prepublish": "npm run build",
-    "test": "mocha dist/test --harmony-async-await",
     "watch": "npm run watch:ts",
     "watch:ts": "npm run build:ts -- --watch --diagnostics",
     "prebuild": "npm run lint",
     "compile": "tsc --pretty",
-    "build": "rm -rf dist && tsc -p prod --pretty",
+    "build": "rm -rf dist && tsc --pretty",
     "lint": "tslint src/*.ts",
-    "release": "standard-version"
+    "release": "standard-version",
+    "test": "mocha --timeout 10000 dist/__test__"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -33,34 +33,32 @@
   "homepage": "https://github.com/s-panferov/awesome-typescript-loader",
   "dependencies": {
     "colors": "^1.1.2",
-    "enhanced-resolve": "^2.3.0",
+    "enhanced-resolve": "^3.0.3",
     "loader-utils": "^0.2.16",
-    "lodash": "^4.13.1",
-    "object-assign": "^4.1.0",
-    "source-map-support": "^0.4.0"
+    "lodash": "^4.17.4",
+    "object-assign": "^4.1.1",
+    "source-map-support": "^0.4.11"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
-    "@types/colors": "^0.6.33",
-    "@types/lodash": "^4.14.43",
-    "@types/mocha": "^2.2.32",
-    "@types/node": "^6.0.46",
-    "@types/sinon": "^1.16.31",
-    "babel-core": "^6.20.0",
-    "babel-preset-es2015": "^6.18.0",
-    "bluebird": "^3.4.1",
+    "@types/colors": "^1.1.1",
+    "@types/lodash": "^4.14.51",
+    "@types/mocha": "^2.2.38",
+    "@types/node": "^7.0.4",
+    "@types/sinon": "^1.16.34",
+    "bluebird": "^3.4.7",
     "chai": "^3.5.0",
     "empty-module": "0.0.2",
+    "fs-extra": "^2.0.0",
     "git-hooks": "^1.0.2",
     "mkdirp": "^0.5.1",
     "mocha": "^3.2.0",
     "ps-node": "^0.1.1",
     "rimraf": "^2.5.0",
-    "sinon": "^1.17.4",
     "standard-version": "^4.0.0",
     "temp": "^0.8.3",
-    "tslint": "^4.0.2",
-    "typescript": "^2.1.4",
-    "webpack": "2.1.0-beta.25"
+    "tslint": "^4.4.2",
+    "typescript": "^2.1.5",
+    "webpack": "2.2.0"
   }
 }

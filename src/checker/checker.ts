@@ -44,7 +44,7 @@ export class Checker {
         const execArgv = getExecArgv();
         const checker: childProcess.ChildProcess = fork
             ? childProcess.fork(path.join(__dirname, 'runtime.js'), [], { execArgv })
-            : require('./runtime');
+            : require('./runtime').run();
 
         this.sender = fork
             ? createQueuedSender(checker)

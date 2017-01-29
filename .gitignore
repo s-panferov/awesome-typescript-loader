@@ -11,3 +11,4 @@ src/test/output
 Vagrantfile
 issues
 .idea
+.test

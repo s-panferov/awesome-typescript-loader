@@ -20,6 +20,7 @@ export interface LoaderConfig {
     silent?: boolean;
     useCache?: boolean;
     cacheDirectory?: string;
+    entryFileIsJs?: boolean;
 }
 
 export interface OutputFile {

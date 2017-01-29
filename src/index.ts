@@ -7,7 +7,7 @@ import { QueryOptions, Loader, ensureInstance, Instance } from './instance';
 import { PathsPlugin } from './paths-plugin';
 import { CheckerPlugin as _CheckerPlugin } from './watch-mode';
 
-let loaderUtils = require('loader-utils');
+const loaderUtils = require('loader-utils');
 
 function loader(text) {
     try {
@@ -35,11 +35,11 @@ function compiler(loader: Loader, text: string): void {
         loader.cacheable();
     }
 
-    let options = <QueryOptions>loaderUtils.parseQuery(loader.query);
-    let instanceName = options.instance || 'at-loader';
-    let instance = ensureInstance(loader, options, instanceName);
-    let callback = loader.async();
-    let fileName = helpers.toUnix(loader.resourcePath);
+    const options = <QueryOptions>loaderUtils.parseQuery(loader.query);
+    const instanceName = options.instance || 'at-loader';
+    const instance = ensureInstance(loader, options, instanceName);
+    const callback = loader.async();
+    const fileName = helpers.toUnix(loader.resourcePath);
 
     instance.compiledFiles[fileName] = true;
 
@@ -58,7 +58,7 @@ function compiler(loader: Loader, text: string): void {
                 : null
         }).then(result => ({cached: true, result}));
     } else {
-        let transformationFunction = () => transform(
+        const transformationFunction = () => transform(
             loader,
             instance,
             fileName,
@@ -145,6 +145,18 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
             resultSourceMap.sources = [ sourcePath ];
             resultSourceMap.file = fileName;
             resultSourceMap.sourcesContent = [ text ];
+        }
+
+        if (emitResult.declaration) {
+            const declPath = path.relative(
+                process.cwd(),
+                emitResult.declaration.name
+            );
+
+            webpack.emitFile(
+                declPath,
+                emitResult.declaration.text
+            );
         }
 
         return {

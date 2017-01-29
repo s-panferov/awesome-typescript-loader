@@ -40,7 +40,7 @@ export function findCompiledModule(fileName: string): CompiledModule {
 function read(filename: string) {
     let content = fs.readFileSync(filename);
     let jsonString = zlib.gunzipSync(content);
-    return JSON.parse(jsonString);
+    return JSON.parse(jsonString.toString());
 }
 
 /**
