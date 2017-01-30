@@ -18,6 +18,7 @@ export interface Instance {
     loaderConfig: LoaderConfig;
     checker: Checker;
     cacheIdentifier: any;
+    context: string;
 }
 
 export interface Compiler {
@@ -79,12 +80,18 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
         return exInstance;
     }
 
+    const context = rootCompiler.context;
     let compilerInfo = setupTs(query.compiler);
     let { tsImpl } = compilerInfo;
 
-    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(process.cwd(), query, tsImpl);
+    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(context, query, tsImpl);
 
-    applyDefaults(configFilePath, compilerConfig, loaderConfig);
+    applyDefaults(
+        configFilePath,
+        compilerConfig,
+        loaderConfig,
+        context
+    );
 
     if (!loaderConfig.silent) {
         const sync = watching === WatchMode.Enabled ? ' (in a forked process)' : '';
@@ -92,8 +99,14 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
             + `"tsconfig.json" from ${configFilePath}${sync}.\n`);
     }
 
-    let babelImpl = setupBabel(loaderConfig);
-    let cacheIdentifier = setupCache(loaderConfig, tsImpl, webpack, babelImpl);
+    let babelImpl = setupBabel(loaderConfig, context);
+    let cacheIdentifier = setupCache(
+        loaderConfig,
+        tsImpl,
+        webpack,
+        babelImpl,
+        context
+    );
     let compiler = (<any>webpack._compiler);
 
     setupWatchRun(compiler, instanceName);
@@ -105,6 +118,7 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
         loaderConfig,
         compilerConfig,
         webpackOptions,
+        context,
         watching === WatchMode.Enabled
     );
 
@@ -116,7 +130,8 @@ export function ensureInstance(webpack: Loader, query: QueryOptions, instanceNam
         configFilePath,
         compilerConfig,
         checker,
-        cacheIdentifier
+        cacheIdentifier,
+        context
     };
 }
 
@@ -155,11 +170,17 @@ export function setupTs(compiler: string): CompilerInfo {
     return compilerInfo;
 }
 
-function setupCache(loaderConfig: LoaderConfig, tsImpl: typeof ts, webpack: Loader, babelImpl: any) {
+function setupCache(
+    loaderConfig: LoaderConfig,
+    tsImpl: typeof ts,
+    webpack: Loader,
+    babelImpl: any,
+    context: string
+) {
     let cacheIdentifier = null;
     if (loaderConfig.useCache) {
         if (!loaderConfig.cacheDirectory) {
-            loaderConfig.cacheDirectory = path.join(process.cwd(), '.awcache');
+            loaderConfig.cacheDirectory = path.join(context, '.awcache');
         }
 
         if (!fs.existsSync(loaderConfig.cacheDirectory)) {
@@ -177,11 +198,11 @@ function setupCache(loaderConfig: LoaderConfig, tsImpl: typeof ts, webpack: Load
     }
 }
 
-function setupBabel(loaderConfig: LoaderConfig): any {
+function setupBabel(loaderConfig: LoaderConfig, context: string): any {
     let babelImpl: any;
     if (loaderConfig.useBabel) {
         try {
-            let babelPath = loaderConfig.babelCore || path.join(process.cwd(), 'node_modules', 'babel-core');
+            let babelPath = loaderConfig.babelCore || path.join(context, 'node_modules', 'babel-core');
             babelImpl = require(babelPath);
         } catch (e) {
             console.error(BABEL_ERROR);
@@ -192,7 +213,12 @@ function setupBabel(loaderConfig: LoaderConfig): any {
     return babelImpl;
 }
 
-function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderConfig: LoaderConfig) {
+function applyDefaults(
+    configFilePath: string,
+    compilerConfig: TsConfig,
+    loaderConfig: LoaderConfig,
+    context: string
+) {
     _.defaults(compilerConfig.options, {
         sourceMap: true,
         verbose: false,
@@ -205,7 +231,7 @@ function applyDefaults(configFilePath: string, compilerConfig: TsConfig, loaderC
     }
 
     _.defaults(compilerConfig.options, {
-        sourceRoot: compilerConfig.options.sourceMap ? process.cwd() : undefined
+        sourceRoot: compilerConfig.options.sourceMap ? context : undefined
     });
 
     _.defaults(loaderConfig, {
@@ -225,33 +251,37 @@ export interface Configs {
     loaderConfig: LoaderConfig;
 }
 
-function absolutize(fileName) {
+function absolutize(fileName: string, context: string) {
     if (path.isAbsolute(fileName)) {
         return fileName;
     } else {
-        return path.join(process.cwd(), fileName);
+        return path.join(context, fileName);
     }
 }
 
-export function readConfigFile(baseDir: string, query: QueryOptions, tsImpl: typeof ts): Configs {
+export function readConfigFile(
+    context: string,
+    query: QueryOptions,
+    tsImpl: typeof ts
+): Configs {
     let configFilePath: string;
     if (query.configFileName  && query.configFileName.match(/\.json$/)) {
-        configFilePath = absolutize(query.configFileName);
+        configFilePath = absolutize(query.configFileName, context);
     } else {
-        configFilePath = tsImpl.findConfigFile(process.cwd(), tsImpl.sys.fileExists);
+        configFilePath = tsImpl.findConfigFile(context, tsImpl.sys.fileExists);
     }
 
-    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, process.cwd(), 'atl.query');
+    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, context, 'atl.query');
 
     if (!configFilePath || query.configFileContent) {
         return {
-            configFilePath: configFilePath || path.join(process.cwd(), 'tsconfig.json'),
+            configFilePath: configFilePath || path.join(context, 'tsconfig.json'),
             compilerConfig: tsImpl.parseJsonConfigFileContent(
                 query.configFileContent || {},
                 tsImpl.sys,
-                process.cwd(),
+                context,
                 _.extend({}, tsImpl.getDefaultCompilerOptions(), existingOptions.options) as ts.CompilerOptions,
-                process.cwd()
+                context
             ),
             loaderConfig: query as LoaderConfig
         };

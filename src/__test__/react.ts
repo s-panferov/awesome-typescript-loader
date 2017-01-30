@@ -1,10 +1,9 @@
 import {
-    clear, src, webpackConfig, expectErrors,
+    src, webpackConfig, expectErrors,
     tsconfig, compile, install, entry, run
 } from './utils';
 
 run(__filename, async function() {
-    clear();
     install(
         'react',
         'react-dom',
@@ -33,7 +32,7 @@ run(__filename, async function() {
         jsx: 'react'
     });
 
-    await compile(webpackConfig(entry('index.tsx')));
+    let stats = await compile(webpackConfig(entry('index.tsx')));
 
-    expectErrors(0);
+    expectErrors(stats, 0);
 });

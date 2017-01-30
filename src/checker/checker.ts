@@ -39,6 +39,7 @@ export class Checker {
         loaderConfig: LoaderConfig,
         compilerConfig: TsConfig,
         webpackOptions: any,
+        context: string,
         fork: boolean = false
     ) {
         const execArgv = getExecArgv();
@@ -82,7 +83,8 @@ export class Checker {
                 compilerInfo: _.omit(compilerInfo, 'tsImpl'),
                 loaderConfig,
                 compilerConfig,
-                webpackOptions
+                webpackOptions,
+                context
             }
         } as Init.Request);
     }

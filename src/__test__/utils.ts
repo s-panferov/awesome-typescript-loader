@@ -14,7 +14,7 @@ const webpack = require('webpack');
 const BPromise = require('bluebird');
 
 const mkdirp = BPromise.promisify(require('mkdirp'));
-const rimraf = BPromise.promisify(require('rimraf'));
+// const rimraf = BPromise.promisify(require('rimraf'));
 const readFile = BPromise.promisify(fs.readFile);
 const writeFile = BPromise.promisify(fs.writeFile);
 
@@ -29,32 +29,34 @@ export interface ConfigOptions {
 }
 
 const TEST_DIR = path.join(process.cwd(), '.test');
-const SRC_DIR = path.join(TEST_DIR, 'src');
-const OUT_DIR = path.join(TEST_DIR, 'out');
+const SRC_DIR = './src';
+const OUT_DIR = './out';
 
 mkdirp.sync(TEST_DIR);
-mkdirp.sync(SRC_DIR);
-mkdirp.sync(OUT_DIR);
 
 const LOADER = path.join(process.cwd(), 'index.js');
 
 export function entry(file: string) {
     return config => {
-        config.entry.index = path.join(SRC_DIR, file)
+        config.entry.index = path.join(process.cwd(), SRC_DIR, file);
     };
 }
 
 export function query(q: any) {
     return config => {
-        config.module.loaders.find(loader => loader.loader === LOADER).query = q;
+        _.merge(
+            config.module.loaders.find(loader =>
+                loader.loader === LOADER).query,
+            q
+        );
     };
 }
 
 export function webpackConfig(...enchance: any[]) {
-    const config = _.merge({
-        entry: { index: path.join(SRC_DIR, 'index.ts') },
+    const config = {
+        entry: { index: path.join(process.cwd(), SRC_DIR, 'index.ts') },
         output: {
-            path: path.join(OUT_DIR),
+            path: path.join(process.cwd(), OUT_DIR),
             filename: '[name].js'
         },
         resolve: {
@@ -65,27 +67,26 @@ export function webpackConfig(...enchance: any[]) {
                 {
                     test: /\.(tsx?|jsx?)/,
                     loader: LOADER,
-                    include: [ SRC_DIR ]
+                    include: [ path.join(process.cwd(), SRC_DIR) ],
+                    query: {
+                        silent: true
+                    }
                 }
             ]
         }
-    });
+    };
 
     enchance.forEach(e => e(config));
     return config;
 }
 
-export function expectErrors(count: number, errors: string[] = []) {
-    LAST_STATS.compilation.errors.every(err => {
+export function expectErrors(stats: any, count: number, errors: string[] = []) {
+    stats.compilation.errors.every(err => {
         const str = err.toString();
         expect(errors.some(e => str.indexOf(e) !== -1), 'Error is not covered: \n' + str).true;
     });
 
-    expect(LAST_STATS.compilation.errors.length).eq(count);
-}
-
-export function error(text: string) {
-    expect(LAST_STATS.compilation.errors.some(err => err.toString().indexOf(text) !== 0)).true;
+    expect(stats.compilation.errors.length).eq(count);
 }
 
 export function tsconfig(compilerOptions?: any, config?: any) {
@@ -98,22 +99,7 @@ export function tsconfig(compilerOptions?: any, config?: any) {
 }
 
 export function install(...name: string[]) {
-    chroot(TEST_DIR, () => {
-        return child.execSync(`yarn add ${name.join(' ')}`);
-    });
-}
-
-export async function chroot<R>(root: string, foo: () => R): Promise<R> {
-    let cwd = process.cwd();
-    process.chdir(root);
-    let result = foo();
-
-    if ((result as any).then) {
-        await result;
-    }
-
-    process.chdir(cwd);
-    return result;
+    return child.execSync(`yarn add ${name.join(' ')}`);
 }
 
 export function json(obj) {
@@ -122,6 +108,9 @@ export function json(obj) {
 
 export function checkOutput(fileName: string, fragment: string) {
     const source = readOutput(fileName);
+
+    if (!source) { process.exit() }
+
     expect(source.replace(/\s/g, '')).include(fragment.replace(/\s/g, ''));
 }
 
@@ -135,30 +124,34 @@ export function touchFile(fileName: string): Promise<any> {
         .then(source => writeFile(fileName, source));
 }
 
-let LAST_STATS: any;
-
 export function compile(config?): Promise<any> {
-    return chroot(TEST_DIR, () => {
-        return new Promise((resolve, reject) => {
-            const compiler = webpack(config);
+    return new Promise((resolve, reject) => {
+        const compiler = webpack(config);
 
-            LAST_STATS = undefined;
-            compiler.run((err, stats) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    LAST_STATS = stats;
-                    resolve(stats);
-                }
-            });
+        compiler.run((err, stats) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(stats);
+            }
         });
     });
 }
 
 export function run<T>(name: string, cb: () => Promise<T>, disable = false) {
     const runner = () => {
+        const temp = path.join(
+            TEST_DIR,
+            path.basename(name).replace('.', '') + '-' +
+                (new Date()).toTimeString()
+                    .replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1")
+                    .replace(/:/g, "-")
+        );
+
+        mkdirp.sync(temp);
         let cwd = process.cwd();
-        process.chdir(TEST_DIR);
+        process.chdir(temp);
+        pkg();
         const promise = cb();
         return promise
             .then(a => {
@@ -186,7 +179,6 @@ export function watch(config, cb?: (err, stats) => void): Watch {
     let compiler = webpack(config);
     let watch = new Watch();
     let webpackWatcher = compiler.watch({}, (err, stats) => {
-        LAST_STATS = stats;
         watch.invoke(err, stats);
         if (cb) {
             cb(err, stats);
@@ -200,34 +192,27 @@ export function watch(config, cb?: (err, stats) => void): Watch {
 export class Watch {
     close: () => void;
 
-    private resolves: ((arg: any[]) => void)[] = [];
+    private resolves: {resolve: any, reject: any}[] = [];
 
     invoke(err, stats) {
-        this.resolves.forEach(resolver => {
-            resolver([err, stats]);
+        this.resolves.forEach(({resolve, reject}) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(stats);
+            }
         });
         this.resolves = [];
     }
 
     wait(): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.resolves.push(resolve);
+            this.resolves.push({resolve, reject});
         });
     }
 }
 
-export function project() {
-    clear();
-    return {
-        file,
-        ts,
-        webpack: webpackConfig
-    };
-}
-
-export function clear() {
-    rimraf.sync(TEST_DIR);
-    mkdirp.sync(TEST_DIR);
+export function pkg() {
     file('package.json', `
         {
             "name": "test",
@@ -241,7 +226,7 @@ export function src(fileName: string, text: string) {
 }
 
 export function file(fileName: string, text: string) {
-    return new Fixture(path.join(TEST_DIR, fileName), text);
+    return new Fixture(fileName, text);
 }
 
 export class Fixture {

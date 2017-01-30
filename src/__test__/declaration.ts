@@ -1,10 +1,9 @@
 import {
-    clear, src, webpackConfig, tsconfig,
+    src, webpackConfig, tsconfig,
     watch, checkOutput, expectErrors, run
 } from './utils';
 
 run(__filename, async function() {
-    clear();
     const index = src('index.ts', `
         export { default as sum } from './utils/sum'
     `);
@@ -21,9 +20,9 @@ run(__filename, async function() {
 
     const watcher = watch(webpackConfig());
 
-    await watcher.wait();
+    let stats = await watcher.wait();
 
-    expectErrors(0);
+    expectErrors(stats, 0);
 
     checkOutput('src/index.d.ts', `
         export { default as sum } from './utils/sum'

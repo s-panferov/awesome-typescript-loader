@@ -103,7 +103,12 @@ function compiler(loader: Loader, text: string): void {
         });
 }
 
-function transform(webpack: Loader, instance: Instance, fileName: string, text: string): Promise<Transformation> {
+function transform(
+    webpack: Loader,
+    instance: Instance,
+    fileName: string,
+    text: string
+): Promise<Transformation> {
     let resultText;
     let resultSourceMap = null;
 
@@ -111,7 +116,7 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
         resultSourceMap = emitResult.sourceMap;
         resultText = emitResult.text;
 
-        let sourceFileName = fileName.replace(process.cwd() + '/', '');
+        let sourceFileName = fileName.replace(instance.context + '/', '');
         if (resultSourceMap) {
             resultSourceMap = JSON.parse(resultSourceMap);
             resultSourceMap.sources = [ sourceFileName ];
@@ -124,7 +129,7 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
         if (instance.loaderConfig.useBabel) {
             let defaultOptions = {
                 inputSourceMap: resultSourceMap,
-                sourceRoot: process.cwd(),
+                sourceRoot: instance.context,
                 filename: fileName,
                 sourceMap: true
             };
@@ -138,7 +143,7 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
 
         if (resultSourceMap) {
             let sourcePath = path.relative(
-                instance.compilerConfig.options.sourceRoot || process.cwd(),
+                instance.compilerConfig.options.sourceRoot || instance.context,
                 loaderUtils.getRemainingRequest(webpack)
             );
 
@@ -149,7 +154,7 @@ function transform(webpack: Loader, instance: Instance, fileName: string, text: 
 
         if (emitResult.declaration) {
             const declPath = path.relative(
-                process.cwd(),
+                instance.context,
                 emitResult.declaration.name
             );
 

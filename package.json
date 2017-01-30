@@ -10,10 +10,10 @@
     "watch:ts": "npm run build:ts -- --watch --diagnostics",
     "prebuild": "npm run lint",
     "compile": "tsc --pretty",
-    "build": "rm -rf dist && tsc --pretty",
+    "build": "rimraf dist && tsc --pretty",
     "lint": "tslint src/*.ts",
     "release": "standard-version",
-    "test": "mocha --timeout 10000 dist/__test__"
+    "test": "rimraf .test && mocha --timeout 30000 dist/__test__"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -50,7 +50,6 @@
     "chai": "^3.5.0",
     "empty-module": "0.0.2",
     "fs-extra": "^2.0.0",
-    "git-hooks": "^1.0.2",
     "mkdirp": "^0.5.1",
     "mocha": "^3.2.0",
     "ps-node": "^0.1.1",
