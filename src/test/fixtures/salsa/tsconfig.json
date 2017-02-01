@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-        "target": "es5",
-        "moduleResolution": "node",
-        "declaration": false,
-        "allowJs": true,
-        "types": []
-    }
-}

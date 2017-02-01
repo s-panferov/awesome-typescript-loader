@@ -40,6 +40,7 @@ export namespace Init {
         compilerConfig: TsConfig;
         compilerInfo: CompilerInfo;
         webpackOptions: any;
+        context: string;
     }
 
     export interface Request extends ReqBase {
@@ -100,6 +101,7 @@ export namespace EmitFile {
         emitResult: {
             text: string;
             sourceMap: string;
+            declaration: { name: string, text: string };
         };
         deps: string[];
     }

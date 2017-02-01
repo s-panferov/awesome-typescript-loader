@@ -8,32 +8,38 @@ if (!module.parent) {
         process.exit();
     });
 
+    process.on('exit', () => {
+        console.log('EXIT RUNTIME');
+    });
+
     createChecker(
         process.on.bind(process, 'message'),
         process.send.bind(process)
     );
 } else {
-    let send: (msg: Req, cb: (err?: Error) => void) => void;
-    let receive = (msg) => {};
+    module.exports.run = function run() {
+        let send: (msg: Req, cb: (err?: Error) => void) => void;
+        let receive = (msg) => {};
 
-    const checker = createChecker(
-        (receive: (msg: Req) => void) => {
-            send = (msg: Req, cb: (err?: Error) => void) => {
-                receive(msg);
-                if (cb) { cb(); }
-            };
-        },
-        (msg) => receive(msg)
-    );
+        createChecker(
+            (receive: (msg: Req) => void) => {
+                send = (msg: Req, cb: (err?: Error) => void) => {
+                    receive(msg);
+                    if (cb) { cb(); }
+                };
+            },
+            (msg) => receive(msg)
+        );
 
-    module.exports = {
-        on: (type: string, cb) => {
-            if (type === 'message') {
-                receive = cb;
-            }
-        },
-        send,
-        kill: () => {}
+        return {
+            on: (type: string, cb) => {
+                if (type === 'message') {
+                    receive = cb;
+                }
+            },
+            send,
+            kill: () => {}
+        };
     };
 }
 
@@ -74,6 +80,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let service: ts.LanguageService;
     let ignoreDiagnostics: {[id: number]: boolean} = {};
     let instanceName: string;
+    let context: string;
 
     function ensureFile(fileName: string) {
         if (!files[fileName]) {
@@ -154,7 +161,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         getCurrentDirectory() {
-            return process.cwd();
+            return context;
         }
 
         getScriptIsOpen() {
@@ -232,10 +239,15 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
         webpackOptions = payload.webpackOptions;
+        context = payload.context;
 
         instanceName = loaderConfig.instance || 'at-loader';
 
-        host = new Host(compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES);
+        host = new Host(compilerOptions.allowJs
+            ? TS_AND_JS_FILES
+            : TS_FILES
+        );
+
         service = compiler.createLanguageService(host);
 
         compilerConfig.fileNames.forEach(fileName => {
@@ -269,12 +281,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     function updateFile(fileName: string, text: string) {
         const file = files[fileName];
         if (file) {
-            if (file.text !== text) {
-                projectVersion++;
-                file.version++;
-                file.text = text;
-                file.snapshot = compiler.ScriptSnapshot.fromString(text);
-            }
+            projectVersion++;
+            file.version++;
+            file.text = text;
+            file.snapshot = compiler.ScriptSnapshot.fromString(text);
         } else {
             projectVersion++;
             files[fileName] = {
@@ -300,6 +310,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             if (output.outputFiles.length > 0) {
                 return findResultFor(fileName, output);
             } else {
+                // Use fast emit in case of errors
                 return fastEmit(fileName);
             }
         }
@@ -372,7 +383,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             .filter(diag => !ignoreDiagnostics[diag.code])
             .map(diagnostic => {
                 const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-                const fileName = diagnostic.file && path.relative(process.cwd(), diagnostic.file.fileName);
+                const fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
                 let pretty = '';
                 let line = 0;
                 let character = 0;

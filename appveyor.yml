@@ -1,0 +1,16 @@
+environment:
+  nodejs_version: "7.0"
+  matrix:
+  - TYPESCRIPT: typescript@2.1.5
+cache:
+ - "%LOCALAPPDATA%\\Yarn"
+install:
+  - ps: Install-Product node $env:nodejs_version
+  - yarn install
+  - yarn run compile
+  - yarn add %TYPESCRIPT%
+test_script:
+  - node --version
+  - yarn --version
+  - yarn test
+build: off

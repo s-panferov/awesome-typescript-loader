@@ -39,12 +39,13 @@ export class Checker {
         loaderConfig: LoaderConfig,
         compilerConfig: TsConfig,
         webpackOptions: any,
+        context: string,
         fork: boolean = false
     ) {
         const execArgv = getExecArgv();
         const checker: childProcess.ChildProcess = fork
             ? childProcess.fork(path.join(__dirname, 'runtime.js'), [], { execArgv })
-            : require('./runtime');
+            : require('./runtime').run();
 
         this.sender = fork
             ? createQueuedSender(checker)
@@ -82,7 +83,8 @@ export class Checker {
                 compilerInfo: _.omit(compilerInfo, 'tsImpl'),
                 loaderConfig,
                 compilerConfig,
-                webpackOptions
+                webpackOptions,
+                context
             }
         } as Init.Request);
     }

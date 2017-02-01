@@ -7,6 +7,9 @@
         "skipDefaultLibCheck": true,
         "sourceMap": true,
         "declaration": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "noFallthroughCasesInSwitch": true,
         "removeComments": true,
         "suppressImplicitAnyIndexErrors": true,
         "lib": [ "es6", "dom" ]
@@ -14,13 +17,10 @@
     "files": [
         "node_modules/typescript/lib/typescriptServices.d.ts"
     ],
-    "compileOnSave": false,
     "include": [
         "src/**/*"
     ],
     "exclude": [
-        "src/test/node_modules",
-        "src/test/fixtures",
-        "src/test/output/*"
+        "src/__old__/**/*"
     ]
 }
