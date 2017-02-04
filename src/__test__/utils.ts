@@ -178,7 +178,7 @@ export const stdout = (test: Test) => streamTest('stdout', test);
 export const stderr = (test: Test) => streamTest('stderr', test);
 
 export function exec(command: string, args?: string[], options?: child.SpawnOptions) {
-    const p = child.spawn(WEBPACK, args, {
+    const p = child.spawn('node', [WEBPACK].concat(args), {
         shell: false,
         stdio: 'pipe',
         env: process.env
