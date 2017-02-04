@@ -362,11 +362,24 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             console.log(colors.cyan(`\n[${ instanceName }] Checking started in a separate process...`));
         }
 
-        const allDiagnostics = service.getProgram().getOptionsDiagnostics().concat(
-            service.getProgram().getGlobalDiagnostics(),
-            service.getProgram().getSyntacticDiagnostics(),
-            service.getProgram().getSemanticDiagnostics(),
-        );
+        const program = service.getProgram();
+
+        const allDiagnostics = program
+            .getOptionsDiagnostics().concat(
+                service.getProgram().getGlobalDiagnostics()
+            );
+
+        const nativeGetter = program.getSourceFiles;
+        if (compilerConfig.options.skipLibCheck) {
+            program.getSourceFiles = () => nativeGetter().filter(file => {
+                return !file.isDeclarationFile;
+            });
+        }
+
+        allDiagnostics.push(...service.getProgram().getSyntacticDiagnostics());
+        allDiagnostics.push(...service.getProgram().getSemanticDiagnostics());
+
+        program.getSourceFiles = nativeGetter;
 
         if (allDiagnostics.length) {
             console.error(colors.red(`\n[${ instanceName }] Checking finished with ${ allDiagnostics.length } errors`));
