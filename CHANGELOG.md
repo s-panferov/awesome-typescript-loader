@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.0.0-beta.19"></a>
+# [3.0.0-beta.19](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.18...v3.0.0-beta.19) (2017-02-04)
+
+
+### Bug Fixes
+
+* undefined error on result.deps ([ef56f36](https://github.com/s-panferov/awesome-typescript-loader/commit/ef56f36))
+
+
+### Features
+
+* refactor tests, fix [#349](https://github.com/s-panferov/awesome-typescript-loader/issues/349), [#323](https://github.com/s-panferov/awesome-typescript-loader/issues/323), [#335](https://github.com/s-panferov/awesome-typescript-loader/issues/335) ([1436114](https://github.com/s-panferov/awesome-typescript-loader/commit/1436114))
+* support `skipLibCheck`, fixes [#324](https://github.com/s-panferov/awesome-typescript-loader/issues/324) ([ab522d0](https://github.com/s-panferov/awesome-typescript-loader/commit/ab522d0))
+
+
+
 <a name="3.0.0-beta.18"></a>
 # [3.0.0-beta.18](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.17...v3.0.0-beta.18) (2017-01-10)
 
