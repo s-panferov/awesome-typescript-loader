@@ -31,6 +31,10 @@ export interface ConfigOptions {
 const TEST_DIR = path.join(process.cwd(), '.test');
 const SRC_DIR = './src';
 const OUT_DIR = './out';
+const WEBPACK = path.join(
+    path.dirname(
+        path.dirname(
+            require.resolve('webpack'))), 'bin', 'webpack.js');
 
 mkdirp.sync(TEST_DIR);
 
@@ -174,8 +178,9 @@ export const stdout = (test: Test) => streamTest('stdout', test);
 export const stderr = (test: Test) => streamTest('stderr', test);
 
 export function exec(command: string, args?: string[], options?: child.SpawnOptions) {
-    const p = child.spawn(command, args, {
-        shell: true,
+    const p = child.spawn(WEBPACK, args, {
+        shell: false,
+        stdio: 'pipe',
         env: process.env
     });
 
@@ -232,7 +237,7 @@ export function json(obj) {
 export function checkOutput(fileName: string, fragment: string) {
     const source = readOutput(fileName);
 
-    if (!source) { process.exit() }
+    if (!source) { process.exit(); }
 
     expect(source.replace(/\s/g, '')).include(fragment.replace(/\s/g, ''));
 }
@@ -266,6 +271,7 @@ export interface TestEnv {
     OUT_DIR: string;
     SRC_DIR: string;
     LOADER: string;
+    WEBPACK: string;
 }
 
 export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => Promise<T>, disable = false) {
@@ -287,7 +293,8 @@ export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => P
             TEST_DIR,
             OUT_DIR,
             SRC_DIR,
-            LOADER
+            LOADER,
+            WEBPACK
         };
 
         const promise = cb(env, done);
