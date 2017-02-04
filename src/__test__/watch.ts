@@ -1,9 +1,9 @@
 import {
     src, webpackConfig, tsconfig,
-    watch, expectErrors, run
+    watch, expectErrors, spec
 } from './utils';
 
-run(__filename, async function() {
+spec(__filename, async function() {
     const sum = src('sum.ts', `
         export default function sum(a: number, b: number) {
             return a + b;

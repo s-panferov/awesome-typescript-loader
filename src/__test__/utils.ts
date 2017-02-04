@@ -80,6 +80,129 @@ export function webpackConfig(...enchance: any[]) {
     return config;
 }
 
+export interface Output {
+    type: 'stderr' | 'stdout';
+    data: string;
+}
+
+export type OutputMatcher = (o: Output) => boolean;
+
+export class Exec {
+    process: child.ChildProcess;
+    watchers: {
+        resolve: any,
+        reject: any,
+        matchers: OutputMatcher[],
+    }[] = [];
+
+    close() {
+        this.process.kill();
+    }
+
+    invoke({stdout, stderr}) {
+        this.watchers = this.watchers.filter(watcher => {
+            const output: Output  = {
+                type: stdout ? 'stdout' : 'stderr',
+                data: stdout || stderr
+            };
+
+            const index = watcher.matchers.findIndex(m => m(output));
+
+            if (index === -1) {
+                watcher.reject(new Error(`Unexpected ${output.type}:\n${output.data}`));
+                return false;
+            }
+
+            watcher.matchers.splice(index, 1);
+            if (watcher.matchers.length === 0) {
+                watcher.resolve();
+                return false;
+            } else {
+                return true;
+            }
+        });
+    }
+
+    wait(...matchers: OutputMatcher[]): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const watcher = {
+                resolve,
+                reject,
+                matchers,
+            };
+
+            this.watchers.push(watcher);
+        });
+    }
+
+    alive(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.process.on('exit', resolve);
+        });
+    }
+}
+
+export type Test = string | (string | [boolean, string])[] | RegExp | ((str: string) => boolean);
+export function streamTest(stream = 'stdout', test: Test) {
+    let matcher: (str: string) => boolean;
+
+    if (typeof test === 'string') {
+        matcher = (o: string) => o.indexOf(test) !== -1;
+    } else if (Array.isArray(test)) {
+        matcher = (o: string) => test.every(test => {
+            if (typeof test === 'string') {
+                return o.indexOf(test) !== -1;
+            } else {
+                const [flag, str] = test;
+                if (flag) {
+                     return o.indexOf(str) !== -1;
+                } else {
+                    return o.indexOf(str) === -1;
+                }
+            }
+        });
+    } else if (test instanceof RegExp) {
+        matcher => (o: string) => test.test(o);
+    } else {
+        matcher = test;
+    }
+
+    return (o: Output) => (o.type === stream) && matcher(o.data);
+}
+
+export const stdout = (test: Test) => streamTest('stdout', test);
+export const stderr = (test: Test) => streamTest('stderr', test);
+
+export function exec(command: string, args?: string[], options?: child.SpawnOptions) {
+    const p = child.spawn(command, args, {
+        shell: true,
+        env: process.env
+    });
+
+    const waiter = new Exec();
+
+    p.stdout.on('data', (data) => {
+        console.log(data.toString());
+        waiter.invoke({ stdout: data.toString(), stderr: null });
+    });
+
+    p.stderr.on('data', (data) => {
+        console.error(data.toString());
+        waiter.invoke({ stdout: null, stderr: data.toString() });
+    });
+
+    process.on('beforeExit', () => {
+        p.kill();
+    });
+
+    process.on('exit', () => {
+        p.kill();
+    });
+
+    waiter.process = p;
+    return waiter;
+}
+
 export function expectErrors(stats: any, count: number, errors: string[] = []) {
     stats.compilation.errors.every(err => {
         const str = err.toString();
@@ -138,8 +261,15 @@ export function compile(config?): Promise<any> {
     });
 }
 
-export function run<T>(name: string, cb: () => Promise<T>, disable = false) {
-    const runner = () => {
+export interface TestEnv {
+    TEST_DIR: string;
+    OUT_DIR: string;
+    SRC_DIR: string;
+    LOADER: string;
+}
+
+export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => Promise<T>, disable = false) {
+    const runner = (done?) => {
         const temp = path.join(
             TEST_DIR,
             path.basename(name).replace('.', '') + '-' +
@@ -152,7 +282,15 @@ export function run<T>(name: string, cb: () => Promise<T>, disable = false) {
         let cwd = process.cwd();
         process.chdir(temp);
         pkg();
-        const promise = cb();
+
+        const env = {
+            TEST_DIR,
+            OUT_DIR,
+            SRC_DIR,
+            LOADER
+        };
+
+        const promise = cb(env, done);
         return promise
             .then(a => {
                 process.chdir(cwd);
@@ -164,15 +302,19 @@ export function run<T>(name: string, cb: () => Promise<T>, disable = false) {
             });
     };
 
+    const asyncRunner = cb.length === 2
+        ? (done) => { runner(done).catch(done); return; }
+        : () => runner();
+
     if (disable) {
-        xit(name, runner);
+        xit(name, asyncRunner);
     } else {
-        it(name, runner);
+        it(name, asyncRunner);
     }
 }
 
-export function xrun<T>(name: string, cb: () => Promise<T>) {
-    return run(name, cb, true);
+export function xspec<T>(name: string, cb: () => Promise<T>) {
+    return spec(name, cb, true);
 }
 
 export function watch(config, cb?: (err, stats) => void): Watch {

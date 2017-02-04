@@ -1,9 +1,9 @@
 import {
     src, webpackConfig, tsconfig,
-    watch, checkOutput, expectErrors, run
+    watch, checkOutput, expectErrors, spec
 } from './utils';
 
-run(__filename, async function() {
+spec(__filename, async function() {
     const index = src('index.ts', `
         export { default as sum } from './utils/sum'
     `);

@@ -33,7 +33,7 @@
   "homepage": "https://github.com/s-panferov/awesome-typescript-loader",
   "dependencies": {
     "colors": "^1.1.2",
-    "enhanced-resolve": "^3.0.3",
+    "enhanced-resolve": "^3.1.0",
     "loader-utils": "^0.2.16",
     "lodash": "^4.17.4",
     "object-assign": "^4.1.1",
@@ -42,9 +42,9 @@
   "devDependencies": {
     "@types/chai": "^3.4.34",
     "@types/colors": "^1.1.1",
-    "@types/lodash": "^4.14.51",
-    "@types/mocha": "^2.2.38",
-    "@types/node": "^7.0.4",
+    "@types/lodash": "^4.14.52",
+    "@types/mocha": "^2.2.39",
+    "@types/node": "^7.0.5",
     "@types/sinon": "^1.16.34",
     "bluebird": "^3.4.7",
     "chai": "^3.5.0",
@@ -58,6 +58,6 @@
     "temp": "^0.8.3",
     "tslint": "^4.4.2",
     "typescript": "^2.1.5",
-    "webpack": "2.2.0"
+    "webpack": "^2.2.1"
   }
 }

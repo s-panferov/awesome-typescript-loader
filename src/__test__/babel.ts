@@ -1,9 +1,9 @@
 import {
     src, webpackConfig, tsconfig, install,
-    watch, checkOutput, expectErrors, query, run
+    watch, checkOutput, expectErrors, query, spec
 } from './utils';
 
-run(__filename, async function() {
+spec(__filename, async function() {
     const index = src('index.ts', `
         class HiThere {
             constructor(a: number, b: string) {
