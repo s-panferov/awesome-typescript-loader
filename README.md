@@ -20,7 +20,7 @@ So next time if source file (+environment) has the same checksum we can totally 
 This significantly reduces build time in this scenario.
 
 2) atl is able to fork type-checker and emitter to a separate process, which also speeds-up some development scenarios (e.g. react with react-hot-loader)
-So your webpack compilation will end earlier and you can explore compiled version in your browser while your files are typecheked.
+So your webpack compilation will end earlier and you can explore compiled version in your browser while your files are typechecked.
 
 ## Configuration
 
