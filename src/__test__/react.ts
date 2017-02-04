@@ -1,9 +1,9 @@
 import {
     src, webpackConfig, expectErrors,
-    tsconfig, compile, install, entry, run
+    tsconfig, compile, install, entry, spec
 } from './utils';
 
-run(__filename, async function() {
+spec(__filename, async function() {
     install(
         'react',
         'react-dom',
