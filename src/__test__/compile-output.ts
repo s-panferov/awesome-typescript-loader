@@ -19,7 +19,7 @@ export function config(env) {
                 loaders: [
                     {
                         test: /\.(tsx?|jsx?)/,
-                        loader: '${env.LOADER}',
+                        loader: path.resolve(process.cwd(), '..', '..', 'index.js'),
                         include: [ path.join(process.cwd(), '${env.SRC_DIR}') ],
                         query: {
                             silent: true
