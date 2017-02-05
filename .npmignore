@@ -8,3 +8,4 @@ prod
 .editorconfig
 .travis.yml
 appveyor.yml
+dist/__test__
