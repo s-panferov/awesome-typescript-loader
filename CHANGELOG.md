@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.0.0"></a>
+# [3.0.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.20...v3.0.0) (2017-02-05)
+
+
+### Bug Fixes
+
+* refactor tests, add `angular-webpack-starter` test, also fixes [#286](https://github.com/s-panferov/awesome-typescript-loader/issues/286) ([41df56b](https://github.com/s-panferov/awesome-typescript-loader/commit/41df56b))
+
+
+### Features
+
+* get options from `this.options` ([f43a215](https://github.com/s-panferov/awesome-typescript-loader/commit/f43a215))
+
+
+
 <a name="3.0.0-beta.20"></a>
 # [3.0.0-beta.20](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.19...v3.0.0-beta.20) (2017-02-05)
 
