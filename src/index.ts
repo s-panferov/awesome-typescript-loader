@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
-import { QueryOptions, Loader, ensureInstance, Instance } from './instance';
+import { QueryOptions, Loader, ensureInstance, Instance, getRootCompiler } from './instance';
 import { PathsPlugin } from './paths-plugin';
 import { CheckerPlugin as _CheckerPlugin } from './watch-mode';
 
@@ -35,11 +35,15 @@ function compiler(loader: Loader, text: string): void {
         loader.cacheable();
     }
 
-    const options = <QueryOptions>loaderUtils.parseQuery(loader.query);
-    const instanceName = options.instance || 'at-loader';
-    const instance = ensureInstance(loader, options, instanceName);
+    const rootCompiler = getRootCompiler(loader._compiler);
+
+    const query = <QueryOptions>loaderUtils.parseQuery(loader.query);
+    const options = (loader.options && loader.options.ts) || {};
+    const instanceName = query.instance || 'at-loader';
+    const instance = ensureInstance(loader, query, options, instanceName, rootCompiler);
     const callback = loader.async();
-    const fileName = helpers.toUnix(loader.resourcePath);
+
+    let fileName = helpers.toUnix(loader.resourcePath);
 
     instance.compiledFiles[fileName] = true;
 

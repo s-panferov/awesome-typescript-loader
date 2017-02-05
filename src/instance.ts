@@ -42,14 +42,13 @@ export interface Loader {
     clearDependencies: () => void;
     emitFile: (fileName: string, text: string) => void;
     options: {
-        atl?: {
-        }
+        ts?: LoaderConfig
     };
 }
 
 export type QueryOptions = LoaderConfig & ts.CompilerOptions;
 
-function getRootCompiler(compiler) {
+export function getRootCompiler(compiler) {
     if (compiler.parentCompilation) {
         return getRootCompiler(compiler.parentCompilation.compiler);
     } else {
@@ -73,20 +72,25 @@ const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add i
 `);
 
 let id = 0;
-export function ensureInstance(webpack: Loader, query: QueryOptions, instanceName: string): Instance {
-    const rootCompiler = getRootCompiler(webpack._compiler);
-    const watching = isWatching(rootCompiler);
-
-    let exInstance = resolveInstance(webpack._compiler, instanceName);
+export function ensureInstance(
+    webpack: Loader,
+    query: QueryOptions,
+    options: LoaderConfig,
+    instanceName: string,
+    rootCompiler: any
+): Instance {
+    let exInstance = resolveInstance(rootCompiler, instanceName);
     if (exInstance) {
         return exInstance;
     }
+
+    const watching = isWatching(rootCompiler);
 
     const context = rootCompiler.context;
     let compilerInfo = setupTs(query.compiler);
     let { tsImpl } = compilerInfo;
 
-    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(context, query, tsImpl);
+    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(context, query, options, tsImpl);
 
     applyDefaults(
         configFilePath,
@@ -264,6 +268,7 @@ function absolutize(fileName: string, context: string) {
 export function readConfigFile(
     context: string,
     query: QueryOptions,
+    options: LoaderConfig,
     tsImpl: typeof ts
 ): Configs {
     let configFilePath: string;
@@ -290,7 +295,6 @@ export function readConfigFile(
     }
 
     let jsonConfigFile = tsImpl.readConfigFile(configFilePath, tsImpl.sys.readFile);
-
     let compilerConfig = tsImpl.parseJsonConfigFileContent(
         jsonConfigFile.config,
         tsImpl.sys,
@@ -302,9 +306,11 @@ export function readConfigFile(
     return {
         configFilePath,
         compilerConfig,
-        loaderConfig: _.defaults<LoaderConfig, LoaderConfig>(
+        loaderConfig: _.defaults(
             query,
-            jsonConfigFile.config.awesomeTypescriptLoaderOptions)
+            jsonConfigFile.config.awesomeTypescriptLoaderOptions,
+            options
+        )
     };
 }
 

@@ -67,7 +67,7 @@ export class PathsPlugin implements ResolverPlugin {
 
         this.ts = setupTs(config.compiler).tsImpl;
 
-        let { configFilePath, compilerConfig } = readConfigFile(process.cwd(), config, this.ts);
+        let { configFilePath, compilerConfig } = readConfigFile(process.cwd(), config, {}, this.ts);
         this.options = compilerConfig.options;
         this.configFilePath = configFilePath;
 
