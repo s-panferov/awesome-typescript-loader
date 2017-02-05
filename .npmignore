@@ -3,3 +3,8 @@ node_modules
 tscommand
 .vagrant
 Vagrantfile
+.test
+prod
+.editorconfig
+.travis.yml
+appveyor.yml
