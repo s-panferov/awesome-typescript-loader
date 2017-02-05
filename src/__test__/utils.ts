@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as child from 'child_process';
+import { exec as shellExec } from 'shelljs';
 
 import { LoaderConfig } from '../interfaces';
 
@@ -197,11 +198,9 @@ export function execNode(command: string, args: string[] = []) {
 }
 
 export function exec(command: string, args?: string[]) {
-    const p = child.spawn(command, args, {
-        shell: false,
-        stdio: 'pipe',
-        env: process.env
-    });
+    const p = shellExec(`${command} ${args.join(' ')}`, {
+        async: true
+    }) as child.ChildProcess;
 
     const waiter = new Exec();
 

@@ -26,5 +26,5 @@ spec(__filename, async function() {
     await compile(config);
 
     const exists = fs.existsSync(path.join(process.cwd(), 'cache', '.cache'));
-    expect(exists).false;
+    expect(exists).true;
 });
