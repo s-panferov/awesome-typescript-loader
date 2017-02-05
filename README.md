@@ -62,6 +62,10 @@ module.exports = {
 
 After that, you will be able to build TypeScript files with webpack.
 
+## NodeJS versions
+
+The loader supports NodeJS 4 and newer.
+
 ## tsconfig.json
 
 You can use the tsconfig.json file to configure your compiler and loader:
