@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
+import * as ts from 'typescript';
 import { toUnix } from './helpers';
 import { Checker } from './checker';
 import { CompilerInfo, LoaderConfig, TsConfig } from './interfaces';

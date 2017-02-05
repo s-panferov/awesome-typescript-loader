@@ -14,13 +14,7 @@
         "suppressImplicitAnyIndexErrors": true,
         "lib": [ "es6", "dom" ]
     },
-    "files": [
-        "node_modules/typescript/lib/typescriptServices.d.ts"
-    ],
     "include": [
         "src/**/*"
-    ],
-    "exclude": [
-        "src/__old__/**/*"
     ]
 }

@@ -2,6 +2,7 @@ import { setupTs, readConfigFile } from './instance';
 import { LoaderConfig } from './interfaces';
 import * as path from 'path';
 import * as _ from 'lodash';
+import * as ts from 'typescript';
 
 const ModulesInRootPlugin: new (a: string, b: string, c: string) => ResolverPlugin
     = require('enhanced-resolve/lib/ModulesInRootPlugin');

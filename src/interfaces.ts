@@ -1,3 +1,5 @@
+import * as ts from 'typescript';
+
 export interface CompilerInfo {
     compilerPath: string;
     compilerVersion: string;
