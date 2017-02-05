@@ -8,3 +8,5 @@ before_script:
   - yarn run build
 node_js:
   - "7"
+  - "6"
+  - "4"
