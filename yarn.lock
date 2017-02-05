@@ -32,6 +32,28 @@
   version "1.16.34"
   resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-1.16.34.tgz#a9761fff33d0f7b3fe61875b577778a2576a9a03"
 
+"@types/source-map@*":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@types/source-map/-/source-map-0.5.0.tgz#dd34bbd8e32fe4e74f2e3d8ac07f8aa5b45a47ac"
+
+"@types/tapable@*":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@types/tapable/-/tapable-0.2.3.tgz#0888b0f20cc7e58e1c22a1888b4e963eefaa810a"
+
+"@types/uglify-js@*":
+  version "2.6.28"
+  resolved "https://registry.yarnpkg.com/@types/uglify-js/-/uglify-js-2.6.28.tgz#1499b48ca3a44132250b318cdde25b8f45f0c616"
+  dependencies:
+    "@types/source-map" "*"
+
+"@types/webpack@^2.2.4":
+  version "2.2.4"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-2.2.4.tgz#05afb4af5b7ece8a4d491030e94c769c7a9bc110"
+  dependencies:
+    "@types/node" "*"
+    "@types/tapable" "*"
+    "@types/uglify-js" "*"
+
 JSONStream@^1.0.4:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/JSONStream/-/JSONStream-1.2.1.tgz#32aa5790e799481083b49b4b7fa94e23bae69bf9"
@@ -1101,7 +1123,7 @@ glob-parent@^2.0.0:
   dependencies:
     is-glob "^2.0.0"
 
-glob@7.0.5, glob@^7.0.5:
+glob@7.0.5, glob@^7.0.0, glob@^7.0.5:
   version "7.0.5"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.0.5.tgz#b4202a69099bbb4d292a7c1b95b6682b67ebdc95"
   dependencies:
@@ -1112,7 +1134,7 @@ glob@7.0.5, glob@^7.0.5:
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
-glob@^7.0.0, glob@^7.1.1:
+glob@^7.1.1:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.1.tgz#805211df04faaf1c63a3600306cdf5ade50b2ec8"
   dependencies:

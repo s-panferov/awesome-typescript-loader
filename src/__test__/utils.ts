@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as child from 'child_process';
+import * as webpack from 'webpack';
 import { exec as shellExec } from 'shelljs';
 
 import { LoaderConfig } from '../interfaces';
@@ -11,7 +12,6 @@ require('source-map-support').install();
 import { expect } from 'chai';
 export { expect };
 
-const webpack = require('webpack');
 const BPromise = require('bluebird');
 
 const mkdirp = BPromise.promisify(require('mkdirp'));
@@ -57,7 +57,7 @@ export function query(q: any) {
     };
 }
 
-export function webpackConfig(...enchance: any[]) {
+export function webpackConfig(...enchance: any[]): webpack.Configuration {
     const config = {
         entry: { index: path.join(process.cwd(), SRC_DIR, 'index.ts') },
         output: {
@@ -358,7 +358,7 @@ export function watch(config, cb?: (err, stats) => void): Watch {
 }
 
 export class Watch {
-    close: () => void;
+    close: (callback: () => void) => void;
 
     private resolves: {resolve: any, reject: any}[] = [];
 
