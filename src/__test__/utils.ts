@@ -99,8 +99,15 @@ export class Exec {
         matchers: OutputMatcher[],
     }[] = [];
 
+    exitCode: number | null;
+    private _strictOutput = false;
+
     close() {
         this.process.kill();
+    }
+
+    strictOutput() {
+        this._strictOutput = true;
     }
 
     invoke({stdout, stderr}) {
@@ -112,7 +119,7 @@ export class Exec {
 
             const index = watcher.matchers.findIndex(m => m(output));
 
-            if (index === -1) {
+            if (this._strictOutput && index === -1) {
                 watcher.reject(new Error(`Unexpected ${output.type}:\n${output.data}`));
                 return false;
             }
@@ -141,7 +148,11 @@ export class Exec {
 
     alive(): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.process.on('exit', resolve);
+            if (this.exitCode != null) {
+                resolve(this.exitCode);
+            } else {
+                this.process.on('exit', resolve);
+            }
         });
     }
 }
@@ -177,8 +188,16 @@ export function streamTest(stream = 'stdout', test: Test) {
 export const stdout = (test: Test) => streamTest('stdout', test);
 export const stderr = (test: Test) => streamTest('stderr', test);
 
-export function exec(command: string, args?: string[], options?: child.SpawnOptions) {
-    const p = child.spawn('node', [WEBPACK].concat(args), {
+export function execWebpack(args?: string[]) {
+    return execNode(WEBPACK, args);
+}
+
+export function execNode(command: string, args: string[] = []) {
+    return exec('node', [command].concat(args));
+}
+
+export function exec(command: string, args?: string[]) {
+    const p = child.spawn(command, args, {
         shell: false,
         stdio: 'pipe',
         env: process.env
@@ -200,7 +219,8 @@ export function exec(command: string, args?: string[], options?: child.SpawnOpti
         p.kill();
     });
 
-    process.on('exit', () => {
+    process.on('exit', (code) => {
+        waiter.exitCode = code;
         p.kill();
     });
 
@@ -275,7 +295,7 @@ export interface TestEnv {
 }
 
 export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => Promise<T>, disable = false) {
-    const runner = (done?) => {
+    const runner = function (done?) {
         const temp = path.join(
             TEST_DIR,
             path.basename(name).replace('.', '') + '-' +
@@ -297,7 +317,7 @@ export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => P
             WEBPACK
         };
 
-        const promise = cb(env, done);
+        const promise = cb.call(this, env, done);
         return promise
             .then(a => {
                 process.chdir(cwd);
@@ -310,8 +330,8 @@ export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => P
     };
 
     const asyncRunner = cb.length === 2
-        ? (done) => { runner(done).catch(done); return; }
-        : () => runner();
+        ? function (done) { runner.call(this, done).catch(done); return; }
+        : function () { return runner.call(this); };
 
     if (disable) {
         xit(name, asyncRunner);
@@ -320,7 +340,7 @@ export function spec<T>(name: string, cb: (env: TestEnv, done?: () => void) => P
     }
 }
 
-export function xspec<T>(name: string, cb: () => Promise<T>) {
+export function xspec<T>(name: string, cb: (env: TestEnv, done?: () => void) => Promise<T>) {
     return spec(name, cb, true);
 }
 

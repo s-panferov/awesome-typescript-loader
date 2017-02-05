@@ -401,14 +401,15 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 let pretty = '';
                 let line = 0;
                 let character = 0;
+                let code = diagnostic.code;
 
                 if (diagnostic.file) {
                     const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
                     line = pos.line;
                     character = pos.character;
-                    pretty = (`[${ instanceName }] ${colors.red(fileName)}:${line + 1}:${character + 1} \n    ${colors.red(message)}`);
+                    pretty = (`[${ instanceName }] ${colors.red(fileName)}:${line + 1}:${character + 1} \n    TS${code}: ${colors.red(message)}`);
                 } else {
-                    pretty = (colors.red(`[${ instanceName }] ${ message }`));
+                    pretty = (colors.red(`[${ instanceName }] TS${code}: ${ message }`));
                 }
 
                 return {

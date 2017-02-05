@@ -1,6 +1,6 @@
 import {
     src, tsconfig, stdout, stderr,
-    spec, exec
+    spec, execWebpack
 } from './utils';
 
 import { config } from './compile-output';
@@ -17,14 +17,15 @@ spec(__filename, async function(env, done) {
     tsconfig();
     config(env);
 
-    const webpack = exec('webpack', ['--watch']);
+    const webpack = execWebpack([ '--watch' ]);
+    webpack.strictOutput();
 
     await webpack.wait(
         stdout('Webpack is watching the files…'),
         stderr('Checking finished with 1 errors'),
         stdout([
             'ERROR in [at-loader]',
-            `Argument of type '"1"' is not assignable to parameter of type 'number'`
+            `TS2345: Argument of type '"1"' is not assignable to parameter of type 'number'`
         ]),
     );
 

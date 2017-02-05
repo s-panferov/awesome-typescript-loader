@@ -37,7 +37,8 @@
     "loader-utils": "^0.2.16",
     "lodash": "^4.17.4",
     "object-assign": "^4.1.1",
-    "source-map-support": "^0.4.11"
+    "source-map-support": "^0.4.11",
+    "mkdirp": "^0.5.1"
   },
   "devDependencies": {
     "@types/chai": "^3.4.34",
@@ -45,15 +46,16 @@
     "@types/lodash": "^4.14.52",
     "@types/mocha": "^2.2.39",
     "@types/node": "^7.0.5",
+    "@types/shelljs": "^0.6.0",
     "@types/sinon": "^1.16.34",
     "bluebird": "^3.4.7",
     "chai": "^3.5.0",
     "empty-module": "0.0.2",
     "fs-extra": "^2.0.0",
-    "mkdirp": "^0.5.1",
     "mocha": "^3.2.0",
     "ps-node": "^0.1.1",
     "rimraf": "^2.5.0",
+    "shelljs": "^0.7.6",
     "standard-version": "^4.0.0",
     "temp": "^0.8.3",
     "tslint": "^4.4.2",

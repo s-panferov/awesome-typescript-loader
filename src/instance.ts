@@ -9,6 +9,7 @@ import { WatchModeSymbol } from './watch-mode';
 
 let colors = require('colors/safe');
 let pkg = require('../package.json');
+let mkdirp = require('mkdirp');
 
 export interface Instance {
     id: number;
@@ -185,7 +186,7 @@ function setupCache(
         }
 
         if (!fs.existsSync(loaderConfig.cacheDirectory)) {
-            fs.mkdirSync(loaderConfig.cacheDirectory);
+            mkdirp.sync(loaderConfig.cacheDirectory);
         }
 
         cacheIdentifier = {

@@ -1,6 +1,6 @@
 import {
     src, tsconfig, stdout, stderr,
-    spec, file, exec
+    spec, file, execWebpack
 } from './utils';
 
 export function config(env) {
@@ -43,7 +43,8 @@ spec(__filename, async function(env, done) {
     tsconfig();
     config(env);
 
-    const webpack = exec('webpack');
+    const webpack = execWebpack();
+    webpack.strictOutput();
 
     await webpack.wait(
         stderr('Checking finished with 1 errors'),
