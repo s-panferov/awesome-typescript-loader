@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.0.0-beta.20"></a>
+# [3.0.0-beta.20](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.19...v3.0.0-beta.20) (2017-02-05)
+
+
+### Bug Fixes
+
+* recompile with `target: es6`, fixes [#363](https://github.com/s-panferov/awesome-typescript-loader/issues/363) ([c3b1161](https://github.com/s-panferov/awesome-typescript-loader/commit/c3b1161))
+
+
+
 <a name="3.0.0-beta.19"></a>
 # [3.0.0-beta.19](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.0-beta.18...v3.0.0-beta.19) (2017-02-04)
 
