@@ -65,7 +65,7 @@ export function webpackConfig(...enchance: any[]): webpack.Configuration {
             filename: '[name].js'
         },
         resolve: {
-            extensions: ['.ts', '.tsx', '.js', '.jsx'],
+            extensions: ['.ts', '.tsx', '.js', '.jsx']
         },
         module: {
             loaders: [
@@ -236,10 +236,14 @@ export function expectErrors(stats: any, count: number, errors: string[] = []) {
     expect(stats.compilation.errors.length).eq(count);
 }
 
-export function tsconfig(compilerOptions?: any, config?: any) {
+export function tsconfig(
+    compilerOptions?: any,
+    config?: any
+) {
     const res = _.merge({
         compilerOptions: _.merge({
-            target: 'es6'
+            target: 'es6',
+            moduleResolution: 'node'
         }, compilerOptions)
     }, config);
     return file('tsconfig.json', json(res));
@@ -271,7 +275,7 @@ export function touchFile(fileName: string): Promise<any> {
         .then(source => writeFile(fileName, source));
 }
 
-export function compile(config?): Promise<any> {
+export function compile(config): Promise<any> {
     return new Promise((resolve, reject) => {
         const compiler = webpack(config);
 

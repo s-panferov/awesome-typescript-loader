@@ -4,7 +4,7 @@ import * as path from 'path';
 import { findCompiledModule, cache } from './cache';
 import * as helpers from './helpers';
 import { QueryOptions, Loader, ensureInstance, Instance, getRootCompiler } from './instance';
-import { PathsPlugin } from './paths-plugin';
+import { PathPlugin } from './paths-plugin';
 import { CheckerPlugin as _CheckerPlugin } from './watch-mode';
 
 const loaderUtils = require('loader-utils');
@@ -19,7 +19,7 @@ function loader(text) {
 }
 
 namespace loader {
-    export const TsConfigPathsPlugin = PathsPlugin;
+    export const TsConfigPathsPlugin = PathPlugin;
     export const CheckerPlugin = _CheckerPlugin;
 }
 

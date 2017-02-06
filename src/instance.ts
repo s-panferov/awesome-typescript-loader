@@ -85,12 +85,17 @@ export function ensureInstance(
     }
 
     const watching = isWatching(rootCompiler);
+    const context = process.cwd();
 
-    const context = rootCompiler.context;
     let compilerInfo = setupTs(query.compiler);
     let { tsImpl } = compilerInfo;
 
-    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(context, query, options, tsImpl);
+    let { configFilePath, compilerConfig, loaderConfig } = readConfigFile(
+        context,
+        query,
+        options,
+        tsImpl
+    );
 
     applyDefaults(
         configFilePath,

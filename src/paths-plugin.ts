@@ -50,7 +50,11 @@ function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-export class PathsPlugin implements ResolverPlugin {
+export interface PathPluginOptions {
+    context?: string;
+}
+
+export class PathPlugin implements ResolverPlugin {
     source: string;
     target: string;
     ts: typeof ts;
@@ -61,13 +65,15 @@ export class PathsPlugin implements ResolverPlugin {
     mappings: Mapping[];
     absoluteBaseUrl: string;
 
-    constructor(config: LoaderConfig & ts.CompilerOptions = {} as any) {
+    constructor(config: LoaderConfig & ts.CompilerOptions & PathPluginOptions = {} as any) {
         this.source = 'described-resolve';
         this.target = 'resolve';
 
         this.ts = setupTs(config.compiler).tsImpl;
 
-        let { configFilePath, compilerConfig } = readConfigFile(process.cwd(), config, {}, this.ts);
+        let context = config.context || process.cwd();
+        let { configFilePath, compilerConfig } = readConfigFile(context, config, {}, this.ts);
+
         this.options = compilerConfig.options;
         this.configFilePath = configFilePath;
 
