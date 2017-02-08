@@ -118,7 +118,7 @@ nightly versions.
 
 ### useTranspileModule (boolean) (default=false)*
 
-Use fast `transpileModule` emit mode. Disables automatically when you set `declaration: true`.
+Use fast `transpileModule` emit mode. Disables automatically when you set compilerOption `declaration: true` ([reference](https://www.typescriptlang.org/docs/handbook/compiler-options.html)).
 
 ### instance *(string) (default='at-loader')*
 
