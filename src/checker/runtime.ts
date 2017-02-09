@@ -367,7 +367,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
         const allDiagnostics = program
             .getOptionsDiagnostics().concat(
-                service.getProgram().getGlobalDiagnostics()
+                program.getGlobalDiagnostics()
             );
 
         const nativeGetter = program.getSourceFiles;
@@ -377,8 +377,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             });
         }
 
-        allDiagnostics.push(...service.getProgram().getSyntacticDiagnostics());
-        allDiagnostics.push(...service.getProgram().getSemanticDiagnostics());
+        allDiagnostics.push(...program.getSyntacticDiagnostics());
+        allDiagnostics.push(...program.getSemanticDiagnostics());
 
         program.getSourceFiles = nativeGetter;
 
