@@ -269,6 +269,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             };
         });
 
+        if (loaderConfig.debug) {
+            console.log(`[${instanceName}] @DEBUG Initial files`, Object.keys(files));
+        }
+
         if (loaderConfig.ignoreDiagnostics) {
             loaderConfig.ignoreDiagnostics.forEach(diag => {
                 ignoreDiagnostics[diag] = true;
@@ -380,6 +384,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
         allDiagnostics.push(...program.getSyntacticDiagnostics());
         allDiagnostics.push(...program.getSemanticDiagnostics());
+
+        if (loaderConfig.debug) {
+            console.log(`[${instanceName}] @DEBUG Typechecked files`, program.getSourceFiles());
+        }
 
         program.getSourceFiles = nativeGetter;
 
