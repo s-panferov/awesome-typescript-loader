@@ -282,6 +282,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     function updateFile(fileName: string, text: string) {
         const file = files[fileName];
         if (file) {
+            if (file.text === text) { return; }
             projectVersion++;
             file.version++;
             file.text = text;
