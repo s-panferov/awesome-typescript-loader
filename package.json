@@ -46,9 +46,9 @@
     "@types/lodash": "^4.14.52",
     "@types/mocha": "^2.2.39",
     "@types/node": "^7.0.5",
-    "@types/shelljs": "^0.6.0",
-    "@types/sinon": "^1.16.34",
-    "@types/webpack": "^2.2.4",
+    "@types/shelljs": "^0.7.0",
+    "@types/sinon": "^1.16.35",
+    "@types/webpack": "^2.2.6",
     "bluebird": "^3.4.7",
     "chai": "^3.5.0",
     "empty-module": "0.0.2",
@@ -60,7 +60,7 @@
     "standard-version": "^4.0.0",
     "temp": "^0.8.3",
     "tslint": "^4.4.2",
-    "typescript": "^2.1.5",
+    "typescript": "^2.1.6",
     "webpack": "^2.2.1"
   }
 }

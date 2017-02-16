@@ -22,15 +22,15 @@
   version "7.0.5"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.5.tgz#96a0f0a618b7b606f1ec547403c00650210bfbb7"
 
-"@types/shelljs@^0.6.0":
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/@types/shelljs/-/shelljs-0.6.0.tgz#090b705c102ce7fc5c0c5ea9b524418ff15840df"
+"@types/shelljs@^0.7.0":
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/@types/shelljs/-/shelljs-0.7.0.tgz#229c157c6bc1e67d6b990e6c5e18dbd2ff58cff0"
   dependencies:
     "@types/node" "*"
 
-"@types/sinon@^1.16.34":
-  version "1.16.34"
-  resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-1.16.34.tgz#a9761fff33d0f7b3fe61875b577778a2576a9a03"
+"@types/sinon@^1.16.35":
+  version "1.16.35"
+  resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-1.16.35.tgz#ee687cc42d1a79448256f1c012a33a0840e85c5c"
 
 "@types/source-map@*":
   version "0.5.0"
@@ -46,9 +46,9 @@
   dependencies:
     "@types/source-map" "*"
 
-"@types/webpack@^2.2.4":
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-2.2.4.tgz#05afb4af5b7ece8a4d491030e94c769c7a9bc110"
+"@types/webpack@^2.2.6":
+  version "2.2.6"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-2.2.6.tgz#f76ba51e7815f6b3f3e89b47d4f9e221dd5334c4"
   dependencies:
     "@types/node" "*"
     "@types/tapable" "*"
@@ -2531,9 +2531,9 @@ typedarray@~0.0.5:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typescript@^2.1.5:
-  version "2.1.5"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.1.5.tgz#6fe9479e00e01855247cea216e7561bafcdbcd4a"
+typescript@^2.1.6:
+  version "2.1.6"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.1.6.tgz#40c7e6e9e5da7961b7718b55505f9cac9487a607"
 
 uglify-js@^2.6, uglify-js@^2.7.5:
   version "2.7.5"
