@@ -236,6 +236,15 @@ export function expectErrors(stats: any, count: number, errors: string[] = []) {
     expect(stats.compilation.errors.length).eq(count);
 }
 
+export function expectWarnings(stats: any, count: number, warnings: string[] = []) {
+    stats.compilation.warnings.every(warn => {
+        const str = warn.toString();
+        expect(warnings.some(e => str.indexOf(e) !== -1), 'Warning is not covered: \n' + str).true;
+    });
+
+    expect(stats.compilation.warnings.length).eq(count);
+}
+
 export function tsconfig(
     compilerOptions?: any,
     config?: any

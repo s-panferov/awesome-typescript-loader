@@ -30,6 +30,8 @@ interface Transformation {
     fresh?: boolean;
 }
 
+const DECLARATION = /\.d.ts$/i;
+
 function compiler(loader: Loader, text: string): void {
     if (loader.cacheable) {
         loader.cacheable();
@@ -44,8 +46,12 @@ function compiler(loader: Loader, text: string): void {
     const callback = loader.async();
 
     let fileName = helpers.toUnix(loader.resourcePath);
-
     instance.compiledFiles[fileName] = true;
+
+    if (DECLARATION.test(fileName)) {
+        loader.emitWarning(`[${instanceName}] TypeScript declaration files should never be required`);
+        return callback(null, '');
+    }
 
     let compiledModule;
     if (instance.loaderConfig.usePrecompiledFiles) {

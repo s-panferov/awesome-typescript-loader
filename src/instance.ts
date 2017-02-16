@@ -41,6 +41,8 @@ export interface Loader {
     addDependency: (dep: string) => void;
     clearDependencies: () => void;
     emitFile: (fileName: string, text: string) => void;
+    emitWarning: (msg: string) => void;
+    emitError: (msg: string) => void;
     options: {
         ts?: LoaderConfig
     };
