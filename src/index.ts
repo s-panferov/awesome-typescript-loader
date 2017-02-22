@@ -39,7 +39,7 @@ function compiler(loader: Loader, text: string): void {
 
     const rootCompiler = getRootCompiler(loader._compiler);
 
-    const query = <QueryOptions>loaderUtils.parseQuery(loader.query);
+    const query = <QueryOptions>loaderUtils.getOptions(loader);
     const options = (loader.options && loader.options.ts) || {};
     const instanceName = query.instance || 'at-loader';
     const instance = ensureInstance(loader, query, options, instanceName, rootCompiler);
