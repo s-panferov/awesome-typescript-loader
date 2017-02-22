@@ -34,7 +34,7 @@
   "dependencies": {
     "colors": "^1.1.2",
     "enhanced-resolve": "^3.1.0",
-    "loader-utils": "^0.2.16",
+    "loader-utils": "^1.0.2",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
     "object-assign": "^4.1.1",
