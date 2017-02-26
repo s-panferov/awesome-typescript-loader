@@ -253,6 +253,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
         compilerConfig.fileNames.forEach(fileName => {
             const text = compiler.sys.readFile(fileName);
+            if (!text) { return; }
             files[fileName] = {
                 text,
                 version: 0,
