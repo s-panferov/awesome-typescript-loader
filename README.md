@@ -93,7 +93,7 @@ If you want to use new `paths` and `baseUrl` feature of TS 2.0 please include `T
 This feature is available only for `webpack@2.1`.
 
 ```
-var TsConfigPathsPlugin = require('awesome-typescript-loader').TsConfigPathsPlugin;
+const { TsConfigPathsPlugin } = require('awesome-typescript-loader');
 
 resolve: {
     plugins: [
