@@ -232,13 +232,18 @@ function applyDefaults(
     loaderConfig: LoaderConfig,
     context: string
 ) {
-    _.defaults(compilerConfig.options, {
+    const def: any = {
         sourceMap: true,
         verbose: false,
-        declarationDir: compilerConfig.options.outDir,
         skipDefaultLibCheck: true,
         suppressOutputPathCheck: true
-    });
+    };
+
+    if (compilerConfig.options.outDir && compilerConfig.options.declaration) {
+        def.declarationDir = compilerConfig.options.outDir;
+    }
+
+    _.defaults(compilerConfig.options, def);
 
     if (loaderConfig.transpileOnly) {
         compilerConfig.options.isolatedModules = true;
