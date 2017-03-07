@@ -46,7 +46,7 @@ if (!module.parent) {
 import * as ts from 'typescript';
 import * as path from 'path';
 import * as colors from 'colors';
-import { findResultFor } from '../helpers';
+import { findResultFor, toUnix } from '../helpers';
 import {
     Req,
     Res,
@@ -411,7 +411,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
 
                 if (fileName[0] !== '.') {
-                    fileName = './' + fileName;
+                    fileName = './' + toUnix(fileName);
                 }
 
                 let pretty = '';
