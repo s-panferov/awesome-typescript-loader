@@ -235,6 +235,7 @@ function applyDefaults(
     _.defaults(compilerConfig.options, {
         sourceMap: true,
         verbose: false,
+        declarationDir: compilerConfig.options.outDir,
         skipDefaultLibCheck: true,
         suppressOutputPathCheck: true
     });

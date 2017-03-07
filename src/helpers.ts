@@ -14,7 +14,7 @@ export function toUnix(fileName: string): string {
 }
 
 function withoutExt(fileName: string): string {
-    return path.join(path.dirname(fileName), path.basename(fileName).split('.')[0]);
+    return path.basename(fileName).split('.')[0];
 }
 
 function isFileEmit(fileName, outputFileName, sourceFileName) {
