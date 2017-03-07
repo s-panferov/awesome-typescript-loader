@@ -55,6 +55,7 @@ export namespace UpdateFile {
     export interface Payload {
         fileName: string;
         text: string;
+        ifExist: boolean;
     }
 
     export interface Request extends ReqBase {

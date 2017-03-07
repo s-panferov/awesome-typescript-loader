@@ -112,12 +112,13 @@ export class Checker {
         } as EmitFile.Request);
     }
 
-    updateFile(fileName: string, text: string) {
+    updateFile(fileName: string, text: string, ifExist = false) {
         return this.req({
             type: 'UpdateFile',
             payload: {
                 fileName,
-                text
+                text,
+                ifExist
             }
         } as UpdateFile.Request);
     }
