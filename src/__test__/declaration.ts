@@ -15,6 +15,7 @@ spec(__filename, async function() {
     `);
 
     tsconfig({
+        declarationDir: 'decl',
         declaration: true
     });
 
@@ -24,11 +25,11 @@ spec(__filename, async function() {
 
     expectErrors(stats, 0);
 
-    checkOutput('src/index.d.ts', `
+    checkOutput('../decl/index.d.ts', `
         export { default as sum } from './utils/sum'
     `);
 
-    checkOutput('src/utils/sum.d.ts', `
+    checkOutput('../decl/utils/sum.d.ts', `
         export default function sum(a: number, b: number): number
     `);
 
@@ -45,11 +46,11 @@ spec(__filename, async function() {
 
     await watcher.wait();
 
-    checkOutput('src/utils/mul.d.ts', `
+    checkOutput('../decl/utils/mul.d.ts', `
         export default function mul(a: number, b: number): number
     `);
 
-    checkOutput('src/index.d.ts', `
+    checkOutput('../decl/index.d.ts', `
         export { default as sum } from './utils/sum';
         export { default as mul } from './utils/mul';
     `);

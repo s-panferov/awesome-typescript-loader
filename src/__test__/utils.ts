@@ -247,15 +247,19 @@ export function expectWarnings(stats: any, count: number, warnings: string[] = [
 
 export function tsconfig(
     compilerOptions?: any,
-    config?: any
+    config?: any,
+    fileName = 'tsconfig.json'
 ) {
     const res = _.merge({
         compilerOptions: _.merge({
             target: 'es6',
-            moduleResolution: 'node'
+            moduleResolution: 'node',
+            typeRoots: [
+                './node_modules/@types'
+            ]
         }, compilerOptions)
     }, config);
-    return file('tsconfig.json', json(res));
+    return file(fileName, json(res));
 }
 
 export function install(...name: string[]) {

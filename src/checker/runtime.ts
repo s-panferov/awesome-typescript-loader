@@ -46,7 +46,7 @@ if (!module.parent) {
 import * as ts from 'typescript';
 import * as path from 'path';
 import * as colors from 'colors';
-import { findResultFor } from '../helpers';
+import { findResultFor, toUnix } from '../helpers';
 import {
     Req,
     Res,
@@ -261,6 +261,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             };
         });
 
+
         const program = service.getProgram();
         program.getSourceFiles().forEach(file => {
             files[file.fileName] = {
@@ -269,6 +270,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 snapshot: compiler.ScriptSnapshot.fromString(file.text)
             };
         });
+
 
         if (loaderConfig.debug) {
             console.log(`[${instanceName}] @DEBUG Initial files`, Object.keys(files));
@@ -280,11 +282,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             });
         }
 
-
         replyOk(seq, null);
     }
 
-    function updateFile(fileName: string, text: string) {
+    function updateFile(fileName: string, text: string, ifExist = false) {
         const file = files[fileName];
         if (file) {
             if (file.text === text) { return; }
@@ -292,7 +293,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             file.version++;
             file.text = text;
             file.snapshot = compiler.ScriptSnapshot.fromString(text);
-        } else {
+        } else if (!ifExist) {
             projectVersion++;
             files[fileName] = {
                 text,
@@ -337,7 +338,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function processUpdate({seq, payload}: UpdateFile.Request) {
-        updateFile(payload.fileName, payload.text);
+        updateFile(payload.fileName, payload.text, payload.ifExist);
         replyOk(seq, null);
     }
 
@@ -407,8 +408,12 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             .filter(diag => !ignoreDiagnostics[diag.code])
             .map(diagnostic => {
                 const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-                const fileName = diagnostic.file && './'+path.relative(context, diagnostic.file.fileName);
-                
+                let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
+
+                if (fileName[0] !== '.') {
+                    fileName = './' + toUnix(fileName);
+                }
+
                 let pretty = '';
                 let line = 0;
                 let character = 0;

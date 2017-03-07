@@ -235,6 +235,7 @@ function applyDefaults(
     _.defaults(compilerConfig.options, {
         sourceMap: true,
         verbose: false,
+        declarationDir: compilerConfig.options.outDir,
         skipDefaultLibCheck: true,
         suppressOutputPathCheck: true
     });
@@ -330,13 +331,13 @@ function setupWatchRun(compiler, instanceName: string) {
         const watcher = watching.compiler.watchFileSystem.watcher
             || watching.compiler.watchFileSystem.wfs.watcher;
 
-        const mtimes = watcher.getTimes();
+        const mtimes = watcher.mtimes || (watcher.getTimes && watcher.getTimes()) || {};
         const changedFiles = Object.keys(mtimes).map(toUnix);
         const updates = changedFiles
             .filter(file => EXTENSIONS.test(file))
             .map(changedFile => {
                 if (fs.existsSync(changedFile)) {
-                    checker.updateFile(changedFile, fs.readFileSync(changedFile).toString());
+                    checker.updateFile(changedFile, fs.readFileSync(changedFile).toString(), true);
                 } else {
                     checker.removeFile(changedFile);
                 }
