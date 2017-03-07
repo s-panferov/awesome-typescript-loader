@@ -410,7 +410,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
                 let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
 
-                if (fileName[0] !== '.') {
+                if (fileName && fileName[0] !== '.') {
                     fileName = './' + toUnix(fileName);
                 }
 
