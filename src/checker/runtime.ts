@@ -407,7 +407,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             .filter(diag => !ignoreDiagnostics[diag.code])
             .map(diagnostic => {
                 const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-                const fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
+                const fileName = diagnostic.file && './'+path.relative(context, diagnostic.file.fileName);
+                
                 let pretty = '';
                 let line = 0;
                 let character = 0;

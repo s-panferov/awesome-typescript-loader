@@ -17,6 +17,7 @@ spec(__filename, async function() {
     let stats = await compile(webpackConfig());
 
     expectErrors(stats, 1, [
+        './src/index.ts',
         `Argument of type '"test"' is not assignable to parameter of type 'number'`
     ]);
 
