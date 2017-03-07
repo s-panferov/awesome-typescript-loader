@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.1.0"></a>
+# [3.1.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.8...v3.1.0) (2017-03-07)
+
+
+### Bug Fixes
+
+* always output unix-like path ([905e14b](https://github.com/s-panferov/awesome-typescript-loader/commit/905e14b))
+
+
+### Features
+
+* support declarationDir ([4b6459c](https://github.com/s-panferov/awesome-typescript-loader/commit/4b6459c))
+
+
+
 <a name="3.0.8"></a>
 ## [3.0.8](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.0.7...v3.0.8) (2017-02-26)
 
