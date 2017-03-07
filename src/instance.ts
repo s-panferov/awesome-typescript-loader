@@ -330,7 +330,7 @@ function setupWatchRun(compiler, instanceName: string) {
         const watcher = watching.compiler.watchFileSystem.watcher
             || watching.compiler.watchFileSystem.wfs.watcher;
 
-        const mtimes = watcher.mtimes || {};
+        const mtimes = watcher.getTimes();
         const changedFiles = Object.keys(mtimes).map(toUnix);
         const updates = changedFiles
             .filter(file => EXTENSIONS.test(file))
