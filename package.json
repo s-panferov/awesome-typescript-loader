@@ -60,7 +60,7 @@
     "standard-version": "^4.0.0",
     "temp": "^0.8.3",
     "tslint": "^4.5.1",
-    "typescript": "^2.2.1",
+    "typescript": "^2.3.0",
     "webpack": "^2.2.1"
   }
 }

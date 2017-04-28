@@ -231,6 +231,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         directoryExists(path: string) {
             return compiler.sys.directoryExists(path);
         }
+        getCustomTransformers=loaderConfig.getCustomTransformers
     }
 
     function processInit({seq, payload}: Init.Request) {
