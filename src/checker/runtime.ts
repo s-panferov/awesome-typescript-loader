@@ -82,6 +82,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let ignoreDiagnostics: {[id: number]: boolean} = {};
     let instanceName: string;
     let context: string;
+    let getCustomTransformers: ()=>ts.CustomTransformers | undefined;
 
     function ensureFile(fileName: string) {
         if (!files[fileName]) {
@@ -136,6 +137,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
     class Host implements ts.LanguageServiceHost {
         filesRegex: RegExp;
+        getCustomTransformers=getCustomTransformers;
 
         constructor(filesRegex: RegExp) {
             this.filesRegex = filesRegex;
@@ -231,13 +233,17 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         directoryExists(path: string) {
             return compiler.sys.directoryExists(path);
         }
-        getCustomTransformers=loaderConfig.getCustomTransformers
     }
 
     function processInit({seq, payload}: Init.Request) {
         compiler = require(payload.compilerInfo.compilerPath);
         compilerInfo = payload.compilerInfo;
         loaderConfig = payload.loaderConfig;
+
+        if (loaderConfig.customTranformersPath !== undefined) {
+            getCustomTransformers = require(loaderConfig.customTranformersPath)
+        }
+
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
         webpackOptions = payload.webpackOptions;
