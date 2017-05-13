@@ -263,8 +263,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         });
 
         const program = service.getProgram();
-
-        if (loaderConfig.customTranformersPath !== undefined) {
+        if (loaderConfig.getCustomTransformers !== undefined) {
+            host.getCustomTransformers = loaderConfig.getCustomTransformers(program);
+        } else if (loaderConfig.customTranformersPath !== undefined) {
             host.getCustomTransformers = require(loaderConfig.customTranformersPath)(program);
         }
 

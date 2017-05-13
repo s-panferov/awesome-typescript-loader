@@ -25,6 +25,7 @@ export interface LoaderConfig {
     entryFileIsJs?: boolean;
     debug?: boolean;
     customTranformersPath?: string;
+    getCustomTransformers?: (program: ts.Program) => ts.CustomTransformers
 }
 
 export interface OutputFile {
