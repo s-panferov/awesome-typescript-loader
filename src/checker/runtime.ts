@@ -396,6 +396,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
         if (allDiagnostics.length) {
             console.error(colors.red(`\n[${ instanceName }] Checking finished with ${ allDiagnostics.length } errors`));
+            allDiagnostics.map(function(err) { console.error(colors.red(err.messageText)); });
         } else {
             if (!silent) {
                 let timeEnd = +new Date();
