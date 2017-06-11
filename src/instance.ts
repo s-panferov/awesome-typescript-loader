@@ -43,6 +43,7 @@ export interface Loader {
     emitFile: (fileName: string, text: string) => void;
     emitWarning: (msg: string) => void;
     emitError: (msg: string) => void;
+    context: string;
     options: {
         ts?: LoaderConfig
     };
