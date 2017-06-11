@@ -43,6 +43,7 @@ export interface Loader {
     emitFile: (fileName: string, text: string) => void;
     emitWarning: (msg: string) => void;
     emitError: (msg: string) => void;
+    context: string;
     options: {
         ts?: LoaderConfig
     };
@@ -87,7 +88,7 @@ export function ensureInstance(
     }
 
     const watching = isWatching(rootCompiler);
-    const context = process.cwd();
+    const context = webpack.context || process.cwd ();
 
     let compilerInfo = setupTs(query.compiler);
     let { tsImpl } = compilerInfo;
