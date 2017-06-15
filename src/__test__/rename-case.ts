@@ -29,7 +29,7 @@ spec(__filename, async function() {
         `;
     });
 
-    file.move('MyFile.ts');
+    file.move('src/MyFile.ts');
     file.update(text => {
         return `
             export let a: number = 10
