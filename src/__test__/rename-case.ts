@@ -4,8 +4,8 @@ import {
 } from './utils';
 
 spec(__filename, async function() {
-    src('Index.ts', `
-        import { a } from './MyFile'
+    const index = src('index.ts', `
+        import { a } from './MyFIle'
     `);
 
     const file = src('MyFIle.ts', `
@@ -22,6 +22,12 @@ spec(__filename, async function() {
             `Type '"10"' is not assignable to type 'number'`
         ]);
     }
+
+    index.update(text => {
+        return `
+            import { a } from './MyFile'
+        `;
+    });
 
     file.move('MyFile.ts');
     file.update(text => {
