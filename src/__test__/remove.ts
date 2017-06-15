@@ -34,12 +34,11 @@ xspec(__filename, async function() {
         `Cannot find name 'c'`
     ]);
 
+    mul.remove();
     index.update(() => `
         import sum from './sum'
         sum(1, 1)
     `);
-
-    mul.remove();
 
     stats = await watcher.wait();
     expectErrors(stats, 0);

@@ -330,6 +330,8 @@ export function readConfigFile(
 
 let EXTENSIONS = /\.tsx?$|\.jsx?$/;
 
+type Dict<T> = {[key: string]: T};
+
 function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', function (watching, callback) {
         const instance = resolveInstance(watching.compiler, instanceName);
@@ -339,10 +341,24 @@ function setupWatchRun(compiler, instanceName: string) {
 
         const mtimes = watcher.mtimes || (watcher.getTimes && watcher.getTimes()) || {};
         const changedFiles = Object.keys(mtimes).map(toUnix);
+        const dirCache = {} as Dict<Dict<boolean>>;
+
         const updates = changedFiles
             .filter(file => EXTENSIONS.test(file))
             .map(changedFile => {
-                if (fs.existsSync(changedFile)) {
+                // Collecting parent dir files to find out if file was renamed in case-insensitive
+                // file system
+                const parentDir = path.dirname(changedFile);
+                const baseName = path.basename(changedFile);
+                let parentDirFiles = dirCache[parentDir];
+                if (!parentDirFiles) {
+                    const dirInfo = fs.readdirSync(path.dirname(changedFile));
+                    parentDirFiles = {};
+                    dirInfo.forEach(file => parentDirFiles[file] = true);
+                    dirCache[parentDir] = parentDirFiles;
+                }
+
+                if (parentDirFiles[baseName]) {
                     checker.updateFile(changedFile, fs.readFileSync(changedFile).toString(), true);
                 } else {
                     checker.removeFile(changedFile);
