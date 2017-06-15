@@ -2,6 +2,8 @@ environment:
   nodejs_version: "6"
   matrix:
   - TYPESCRIPT: typescript@2.1.5
+  - TYPESCRIPT: typescript@2.3.4
+  - TYPESCRIPT: typescript@2.4.0
 cache:
  - "%LOCALAPPDATA%\\Yarn"
 install:

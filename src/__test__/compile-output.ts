@@ -1,5 +1,5 @@
 import {
-    src, tsconfig, stdout, stderr,
+    src, tsconfig, stdout,
     spec, file, execWebpack
 } from './utils';
 
@@ -47,7 +47,6 @@ spec(__filename, async function(env, done) {
     webpack.strictOutput();
 
     await webpack.wait(
-        stderr('Checking finished with 1 errors'),
         stdout([
             'ERROR in [at-loader]',
             `Argument of type '"1"' is not assignable to parameter of type 'number'`
@@ -57,4 +56,3 @@ spec(__filename, async function(env, done) {
     webpack.close();
     done();
 });
-

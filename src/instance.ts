@@ -88,7 +88,7 @@ export function ensureInstance(
     }
 
     const watching = isWatching(rootCompiler);
-    const context = webpack.context || process.cwd ();
+    const context = options.context || process.cwd();
 
     let compilerInfo = setupTs(query.compiler);
     let { tsImpl } = compilerInfo;
@@ -219,7 +219,7 @@ function setupBabel(loaderConfig: LoaderConfig, context: string): any {
             let babelPath = loaderConfig.babelCore || path.join(context, 'node_modules', 'babel-core');
             babelImpl = require(babelPath);
         } catch (e) {
-            console.error(BABEL_ERROR);
+            console.error(BABEL_ERROR, e);
             process.exit(1);
         }
     }
@@ -404,10 +404,22 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 Array.prototype.push.apply(compilation.fileDependencies, files.map(path.normalize));
             });
 
+        const timeStart = +(new Date());
         const diag = instance.loaderConfig.transpileOnly
             ? Promise.resolve()
             : instance.checker.getDiagnostics()
                 .then(diags => {
+                    if (!silent) {
+                        if (diags.length) {
+                            console.error(colors.red(`\n[${instanceName}] Checking finished with ${diags.length} errors`));
+                        } else {
+                            let timeEnd = +new Date();
+                            console.log(
+                                colors.green(`\n[${instanceName}] Ok, ${(timeEnd - timeStart) / 1000} sec.`)
+                            );
+                        }
+                    }
+
                     diags.forEach(diag => emitError(diag.pretty));
                 });
 

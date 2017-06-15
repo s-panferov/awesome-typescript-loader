@@ -50,9 +50,18 @@ export function entry(file: string) {
 export function query(q: any) {
     return config => {
         _.merge(
-            config.module.loaders.find(loader =>
-                loader.loader === LOADER).query,
+            config.module.loaders.find(loader => loader.loader === LOADER).query,
             q
+        );
+    };
+}
+
+export function include(...folders: string[]) {
+    return config => {
+        config.module.loaders.find(loader => loader.loader === LOADER).include.push(
+            ...folders.map(f => {
+                return path.join(process.cwd(), f);
+            })
         );
     };
 }
@@ -288,6 +297,10 @@ export function touchFile(fileName: string): Promise<any> {
         .then(source => writeFile(fileName, source));
 }
 
+export function moveFile(from: string, to: string) {
+    fs.renameSync(from, to);
+}
+
 export function compile(config): Promise<any> {
     return new Promise((resolve, reject) => {
         const compiler = webpack(config);
@@ -434,6 +447,11 @@ export class Fixture {
 
     touch() {
         touchFile(this.fileName);
+    }
+
+    move(to: string) {
+        mkdirp.sync(path.dirname(to));
+        moveFile(this.fileName, to);
     }
 
     update(updater: (text: string) => string) {

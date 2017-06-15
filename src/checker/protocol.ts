@@ -22,7 +22,7 @@ export type Req =
     UpdateFile.Request |
     Diagnostics.Request |
     RemoveFile.Request |
-    Files.Request
+    Files.Request;
 
 export interface Res {
     seq?: number;
