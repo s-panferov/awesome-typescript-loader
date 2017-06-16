@@ -336,7 +336,7 @@ export function readConfigFile(
 let EXTENSIONS = /\.tsx?$|\.jsx?$/;
 export type Dict<T> = {[key: string]: T};
 
-const filterMtimes = (mtimes: any) {
+const filterMtimes = (mtimes: any) => {
     const res = {};
     Object.keys(mtimes).forEach(fileName => {
         if (!!EXTENSIONS.test(fileName)) {
