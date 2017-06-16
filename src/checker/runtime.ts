@@ -85,9 +85,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let webpackOptions: any;
     let compiler: typeof ts;
     let compilerInfo: CompilerInfo;
-    let files = caseInsensitive
-        ? (new CaseInsensitiveMap<File>())
-        : (new CaseSensitiveMap<File>());
+    let files = new CaseInsensitiveMap<File>();
     let host: ts.LanguageServiceHost;
     let service: ts.LanguageService;
     let ignoreDiagnostics: { [id: number]: boolean } = {};
@@ -95,7 +93,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let context: string;
 
     function ensureFile(fileName: string) {
-        if (!files.has(fileName)) {
+        const file = files.get(fileName);
+        if (!file) {
             const text = compiler.sys.readFile(fileName);
             if (text) {
                 files.set(fileName, {
@@ -104,6 +103,26 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                     version: 0,
                     snapshot: compiler.ScriptSnapshot.fromString(text)
                 });
+            }
+        } else {
+            if (file.fileName !== fileName) {
+                if (caseInsensitive) {
+                    file.fileName = fileName; // use most recent name for case-sensitive file systems
+                    file.version++;
+                    projectVersion++;
+                } else {
+                    removeFile(file.fileName);
+                    projectVersion++;
+
+                    const text = compiler.sys.readFile(fileName);
+                    files.set(fileName, {
+                        fileName,
+                        text,
+                        version: 0,
+                        snapshot: compiler.ScriptSnapshot.fromString(text)
+                    });
+                    return;
+                }
             }
         }
     }
@@ -159,13 +178,11 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         getScriptFileNames() {
             const names = files.map(file => file.fileName)
                 .filter(fileName => this.filesRegex.test(fileName));
-
             return names;
         }
 
         getScriptVersion(fileName: string) {
             ensureFile(fileName);
-
             const file = files.get(fileName);
             if (file) {
                 return file.version.toString();
@@ -308,8 +325,27 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     function updateFile(fileName: string, text: string, ifExist = false) {
         const file = files.get(fileName);
         if (file) {
-            file.fileName = fileName; // use most recent name for case-sensitive file systems
-            if (file.text === text) { return; }
+            let updated = false;
+            if (file.fileName !== fileName) {
+                if (caseInsensitive) {
+                    file.fileName = fileName; // use most recent name for case-sensitive file systems
+                    updated = true;
+                } else {
+                    removeFile(file.fileName);
+                    projectVersion++;
+                    files.set(fileName, {
+                        fileName,
+                        text,
+                        version: 0,
+                        snapshot: compiler.ScriptSnapshot.fromString(text)
+                    });
+                    return;
+                }
+            }
+            if (file.text !== text) { updated = updated || true; }
+            if (!updated) {
+                return;
+            }
             projectVersion++;
             file.version++;
             file.text = text;
@@ -326,7 +362,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function removeFile(fileName: string) {
-        files.delete(fileName);
+        if (files.has(fileName)) {
+            files.delete(fileName);
+            projectVersion++;
+        }
     }
 
     function emit(fileName: string) {
@@ -490,6 +529,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 case MessageType.Init:
                     processInit(req);
                     break;
+                case MessageType.RemoveFile:
+                    processRemove(req);
+                    break;
                 case MessageType.UpdateFile:
                     processUpdate(req);
                     break;
@@ -502,9 +544,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 case MessageType.Files:
                     processFiles(req);
                     break;
-                case MessageType.RemoveFile:
-                    processRemove(req);
-                    break;
+
             }
         } catch (e) {
             console.error(`[${instanceName}]: Child process failed to process the request: `, e);

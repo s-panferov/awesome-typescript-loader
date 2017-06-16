@@ -374,6 +374,7 @@ function setupWatchRun(compiler, instanceName: string) {
                 });
 
                 removedFiles.forEach(file => {
+                    console.log('REMOVE FILE', file);
                     checker.removeFile(file);
                 });
             }
@@ -382,7 +383,7 @@ function setupWatchRun(compiler, instanceName: string) {
 
         const times = (mtimes && filterMtimes(mtimes)) || fullTimes;
         const compareTime = !mtimes;
-        const dirCache = {} as Dict<Dict<boolean>>;
+        // const dirCache = {} as Dict<Dict<boolean>>;
         const updates = Object.keys(times)
             .filter(fileName => {
                 return EXTENSIONS.test(fileName) && (
@@ -393,23 +394,20 @@ function setupWatchRun(compiler, instanceName: string) {
             })
             .map(fileName => {
                 instance.times[fileName] = times[fileName];
-
                 const unixFileName = toUnix(fileName);
-                const parentDir = path.dirname(unixFileName);
-                const baseName = path.basename(unixFileName);
-                let parentDirFiles = dirCache[parentDir];
-                if (!parentDirFiles) {
-                    const dirInfo = fs.readdirSync(path.dirname(unixFileName));
-                    parentDirFiles = {};
-                    dirInfo.forEach(file => parentDirFiles[file] = true);
-                    dirCache[parentDir] = parentDirFiles;
-                }
+                // const parentDir = path.dirname(unixFileName);
+                // const baseName = path.basename(unixFileName);
+                // let parentDirFiles = dirCache[parentDir];
+                // if (!parentDirFiles) {
+                //     const dirInfo = fs.readdirSync(path.dirname(unixFileName));
+                //     parentDirFiles = {};
+                //     dirInfo.forEach(file => parentDirFiles[file] = true);
+                //     dirCache[parentDir] = parentDirFiles;
+                // }
 
-                if (parentDirFiles[baseName]) {
+                // if (parentDirFiles[baseName]) {
                     checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
-                } else {
-                    checker.removeFile(unixFileName);
-                }
+                // }
             });
 
         Promise.all(updates)
