@@ -13,25 +13,65 @@ export function toUnix(fileName: string): string {
     return res;
 }
 
+let caseInsensitiveFs: boolean | undefined;
+export function isCaseInsensitive() {
+    if (typeof caseInsensitiveFs !== 'undefined') {
+        return caseInsensitiveFs;
+    }
+
+    const lowerCaseStat = statSyncNoException(process.execPath.toLowerCase());
+    const upperCaseStat = statSyncNoException(process.execPath.toUpperCase());
+
+    if (lowerCaseStat && upperCaseStat) {
+        caseInsensitiveFs = lowerCaseStat.dev === upperCaseStat.dev && lowerCaseStat.ino === upperCaseStat.ino;
+    } else {
+        caseInsensitiveFs = false;
+    }
+
+    return caseInsensitiveFs;
+}
+
+function statSyncNoException(path: string) {
+    try {
+        return fs.statSync(path);
+    } catch (e) {
+        return undefined;
+    }
+}
+
 function withoutExt(fileName: string): string {
     return path.basename(fileName).split('.')[0];
 }
 
+function compareFileName(first: string, second: string) {
+    if (isCaseInsensitive()) {
+        return first.toLowerCase() === second.toLowerCase();
+    } else {
+        return first === second;
+    }
+}
+
 function isFileEmit(fileName, outputFileName, sourceFileName) {
-    return sourceFileName === fileName
+    return compareFileName(sourceFileName, fileName)
         // typescript now emits .jsx files for .tsx files.
-        && (outputFileName.substr(-3) === '.js' ||  outputFileName.substr(-4) === '.jsx');
+        && (
+            outputFileName.substr(-3).toLowerCase() === '.js' ||
+            outputFileName.substr(-4).toLowerCase() === '.jsx'
+        );
 }
 
 function isSourceMapEmit(fileName, outputFileName, sourceFileName) {
-    return sourceFileName === fileName
+    return compareFileName(sourceFileName, fileName)
         // typescript now emits .jsx files for .tsx files.
-        && (outputFileName.substr(-7) === '.js.map' || outputFileName.substr(-8) === '.jsx.map');
+        && (
+            outputFileName.substr(-7).toLowerCase() === '.js.map' ||
+            outputFileName.substr(-8).toLowerCase() === '.jsx.map'
+        );
 }
 
 function isDeclarationEmit(fileName, outputFileName, sourceFileName) {
-    return sourceFileName === fileName
-        && (outputFileName.substr(-5) === '.d.ts');
+    return compareFileName(sourceFileName, fileName)
+        && (outputFileName.substr(-5).toLowerCase() === '.d.ts');
 }
 
 export function findResultFor(fileName: string, output: ts.EmitOutput): OutputFile {

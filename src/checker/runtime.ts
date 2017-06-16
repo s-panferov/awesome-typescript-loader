@@ -1,15 +1,40 @@
+import * as ts from 'typescript';
+import * as path from 'path';
+import * as minimatch from 'minimatch';
+import * as colors from 'colors';
+import { findResultFor, toUnix } from '../helpers';
+import {
+    Req,
+    Res,
+    LoaderConfig,
+    CompilerInfo,
+    Init,
+    EmitFile,
+    UpdateFile,
+    Diagnostics,
+    RemoveFile,
+    Files,
+    MessageType,
+    TsConfig
+} from './protocol';
+
+import { CaseInsensitiveMap } from './fs';
+import { isCaseInsensitive } from '../helpers';
+
+const caseInsensitive = isCaseInsensitive();
+
 if (!module.parent) {
     process.on('uncaughtException', function (err) {
         console.log("UNCAUGHT EXCEPTION in awesome-typescript-loader");
         console.log("[Inside 'uncaughtException' event] ", err.message, err.stack);
     });
 
-    process.on('disconnect', function() {
+    process.on('disconnect', function () {
         process.exit();
     });
 
     process.on('exit', () => {
-        console.log('EXIT RUNTIME');
+        // console.log('EXIT RUNTIME');
     });
 
     createChecker(
@@ -19,7 +44,7 @@ if (!module.parent) {
 } else {
     module.exports.run = function run() {
         let send: (msg: Req, cb: (err?: Error) => void) => void;
-        let receive = (msg) => {};
+        let receive = (msg) => { };
 
         createChecker(
             (receive: (msg: Req) => void) => {
@@ -38,35 +63,19 @@ if (!module.parent) {
                 }
             },
             send,
-            kill: () => {}
+            kill: () => { }
         };
     };
 }
 
-import * as ts from 'typescript';
-import * as path from 'path';
-import * as colors from 'colors';
-import { findResultFor, toUnix } from '../helpers';
-import {
-    Req,
-    Res,
-    LoaderConfig,
-    CompilerInfo,
-    Init,
-    EmitFile,
-    UpdateFile,
-    Diagnostics,
-    RemoveFile,
-    Files,
-    MessageType,
-    TsConfig
-} from './protocol';
-
 interface File {
+    fileName: string;
     text: string;
     version: number;
     snapshot: ts.IScriptSnapshot;
 }
+
+type Filter = (file: ts.SourceFile) => boolean;
 
 function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Res) => void) {
     let projectVersion = 0;
@@ -76,28 +85,50 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let webpackOptions: any;
     let compiler: typeof ts;
     let compilerInfo: CompilerInfo;
-    let files: {[fileName: string]: File} = {};
+    let files = new CaseInsensitiveMap<File>();
     let host: ts.LanguageServiceHost;
     let service: ts.LanguageService;
-    let ignoreDiagnostics: {[id: number]: boolean} = {};
+    let ignoreDiagnostics: { [id: number]: boolean } = {};
     let instanceName: string;
     let context: string;
 
     function ensureFile(fileName: string) {
-        if (!files[fileName]) {
+        const file = files.get(fileName);
+        if (!file) {
             const text = compiler.sys.readFile(fileName);
             if (text) {
-                files[fileName] = {
+                files.set(fileName, {
+                    fileName: fileName,
                     text,
                     version: 0,
                     snapshot: compiler.ScriptSnapshot.fromString(text)
-                };
+                });
+            }
+        } else {
+            if (file.fileName !== fileName) {
+                if (caseInsensitive) {
+                    file.fileName = fileName; // use most recent name for case-sensitive file systems
+                    file.version++;
+                    projectVersion++;
+                } else {
+                    removeFile(file.fileName);
+                    projectVersion++;
+
+                    const text = compiler.sys.readFile(fileName);
+                    files.set(fileName, {
+                        fileName,
+                        text,
+                        version: 0,
+                        snapshot: compiler.ScriptSnapshot.fromString(text)
+                    });
+                    return;
+                }
             }
         }
     }
 
     class FileDeps {
-        files: {[fileName: string]: string[]} = {};
+        files: { [fileName: string]: string[] } = {};
 
         add(containingFile: string, ...dep: string[]) {
             if (!this.files[containingFile]) {
@@ -112,7 +143,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             return this.files[containingFile] || [];
         }
 
-        getAllDeps(containingFile: string, allDeps: {[key: string]: boolean} = {}, initial = true): string[] {
+        getAllDeps(containingFile: string, allDeps: { [key: string]: boolean } = {}, initial = true): string[] {
             const deps = this.getDeps(containingFile);
             deps.forEach(dep => {
                 if (!allDeps[dep]) {
@@ -136,6 +167,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
     class Host implements ts.LanguageServiceHost {
         filesRegex: RegExp;
+        getCustomTransformers = loaderConfig.getCustomTransformers;
 
         constructor(filesRegex: RegExp) {
             this.filesRegex = filesRegex;
@@ -144,20 +176,24 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         getProjectVersion() { return projectVersion.toString(); }
 
         getScriptFileNames() {
-            return Object.keys(files).filter(filePath => this.filesRegex.test(filePath));
+            const names = files.map(file => file.fileName)
+                .filter(fileName => this.filesRegex.test(fileName));
+            return names;
         }
 
         getScriptVersion(fileName: string) {
             ensureFile(fileName);
-            if (files[fileName]) {
-                return files[fileName].version.toString();
+            const file = files.get(fileName);
+            if (file) {
+                return file.version.toString();
             }
         }
 
         getScriptSnapshot(fileName: string) {
             ensureFile(fileName);
-            if (files[fileName]) {
-                return files[fileName].snapshot;
+            const file = files.get(fileName);
+            if (file) {
+                return file.snapshot;
             }
         }
 
@@ -188,7 +224,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         resolveModuleNames(moduleNames: string[], containingFile: string) {
-            const resolved =  moduleNames.map(module =>
+            const resolved = moduleNames.map(module =>
                 compiler.resolveModuleName(module, containingFile, compilerOptions, compiler.sys).resolvedModule);
 
             resolved.forEach(res => {
@@ -217,7 +253,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         getDefaultLibFileName(options: ts.CompilerOptions) {
-        return compiler.getDefaultLibFilePath(options);
+            return compiler.getDefaultLibFilePath(options);
         }
 
         useCaseSensitiveFileNames() {
@@ -231,10 +267,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         directoryExists(path: string) {
             return compiler.sys.directoryExists(path);
         }
-        getCustomTransformers=loaderConfig.getCustomTransformers
+
     }
 
-    function processInit({seq, payload}: Init.Request) {
+    function processInit({ seq, payload }: Init.Request) {
         compiler = require(payload.compilerInfo.compilerPath);
         compilerInfo = payload.compilerInfo;
         loaderConfig = payload.loaderConfig;
@@ -255,23 +291,23 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         compilerConfig.fileNames.forEach(fileName => {
             const text = compiler.sys.readFile(fileName);
             if (!text) { return; }
-            files[fileName] = {
+            files.set(fileName, {
+                fileName,
                 text,
                 version: 0,
                 snapshot: compiler.ScriptSnapshot.fromString(text)
-            };
+            });
         });
-
 
         const program = service.getProgram();
         program.getSourceFiles().forEach(file => {
-            files[file.fileName] = {
+            files.set(file.fileName, {
+                fileName: file.fileName,
                 text: file.text,
                 version: 0,
                 snapshot: compiler.ScriptSnapshot.fromString(file.text)
-            };
+            });
         });
-
 
         if (loaderConfig.debug) {
             console.log(`[${instanceName}] @DEBUG Initial files`, Object.keys(files));
@@ -287,27 +323,48 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function updateFile(fileName: string, text: string, ifExist = false) {
-        const file = files[fileName];
+        const file = files.get(fileName);
         if (file) {
-            if (file.text === text) { return; }
+            let updated = false;
+            if (file.fileName !== fileName) {
+                if (caseInsensitive) {
+                    file.fileName = fileName; // use most recent name for case-sensitive file systems
+                    updated = true;
+                } else {
+                    removeFile(file.fileName);
+                    projectVersion++;
+                    files.set(fileName, {
+                        fileName,
+                        text,
+                        version: 0,
+                        snapshot: compiler.ScriptSnapshot.fromString(text)
+                    });
+                    return;
+                }
+            }
+            if (file.text !== text) { updated = updated || true; }
+            if (!updated) {
+                return;
+            }
             projectVersion++;
             file.version++;
             file.text = text;
             file.snapshot = compiler.ScriptSnapshot.fromString(text);
         } else if (!ifExist) {
             projectVersion++;
-            files[fileName] = {
+            files.set(fileName, {
+                fileName,
                 text,
                 version: 0,
                 snapshot: compiler.ScriptSnapshot.fromString(text)
-            };
+            });
         }
     }
 
     function removeFile(fileName: string) {
-        const file = files[fileName];
-        if (file) {
-            delete files[fileName];
+        if (files.has(fileName)) {
+            files.delete(fileName);
+            projectVersion++;
         }
     }
 
@@ -326,7 +383,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function fastEmit(fileName: string) {
-        const trans = compiler.transpileModule(files[fileName].text, {
+        const trans = compiler.transpileModule(files.get(fileName).text, {
             compilerOptions: compilerOptions,
             fileName,
             reportDiagnostics: false
@@ -338,50 +395,65 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         };
     }
 
-    function processUpdate({seq, payload}: UpdateFile.Request) {
+    function processUpdate({ seq, payload }: UpdateFile.Request) {
         updateFile(payload.fileName, payload.text, payload.ifExist);
         replyOk(seq, null);
     }
 
-    function processRemove({seq, payload}: RemoveFile.Request) {
+    function processRemove({ seq, payload }: RemoveFile.Request) {
         removeFile(payload.fileName);
         replyOk(seq, null);
     }
 
-    function processEmit({seq, payload}: EmitFile.Request) {
+    function processEmit({ seq, payload }: EmitFile.Request) {
         updateFile(payload.fileName, payload.text);
         const emitResult = emit(payload.fileName);
         const deps = fileDeps.getAllDeps(payload.fileName);
 
-        replyOk(seq, {emitResult, deps});
+        replyOk(seq, { emitResult, deps });
     }
 
-    function processFiles({seq}: Files.Request) {
+    function processFiles({ seq }: Files.Request) {
         replyOk(seq, {
             files: service.getProgram().getSourceFiles().map(f => f.fileName)
         });
     }
 
-    function processDiagnostics({seq}: Diagnostics.Request) {
+    function processDiagnostics({ seq }: Diagnostics.Request) {
         let silent = !!loaderConfig.silent;
 
-        const timeStart = +new Date();
-
         if (!silent) {
-            console.log(colors.cyan(`\n[${ instanceName }] Checking started in a separate process...`));
+            console.log(colors.cyan(`\n[${instanceName}] Checking started in a separate process...`));
         }
 
         const program = service.getProgram();
 
         const allDiagnostics = program
-            .getOptionsDiagnostics().concat(
-                program.getGlobalDiagnostics()
-            );
+            .getOptionsDiagnostics()
+            .concat(program.getGlobalDiagnostics());
 
-        const nativeGetter = program.getSourceFiles;
+        const filters: Filter[] = [];
+
         if (compilerConfig.options.skipLibCheck) {
-            program.getSourceFiles = () => nativeGetter().filter(file => {
+            filters.push(file => {
                 return !file.isDeclarationFile;
+            });
+        }
+
+        if (loaderConfig.reportFiles) {
+            filters.push(file => {
+                const fileName = path.relative(context, file.fileName);
+                return loaderConfig.reportFiles.every(pattern => {
+                    return minimatch(fileName, pattern);
+                });
+            });
+        }
+
+        let nativeGetter: () => ts.SourceFile[];
+        if (filters.length > 0) {
+            nativeGetter = program.getSourceFiles;
+            program.getSourceFiles = () => nativeGetter().filter(file => {
+                return filters.every(f => f(file));
             });
         }
 
@@ -392,17 +464,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             console.log(`[${instanceName}] @DEBUG Typechecked files`, program.getSourceFiles());
         }
 
-        program.getSourceFiles = nativeGetter;
-
-        if (allDiagnostics.length) {
-            console.error(colors.red(`\n[${ instanceName }] Checking finished with ${ allDiagnostics.length } errors`));
-        } else {
-            if (!silent) {
-                let timeEnd = +new Date();
-                console.log(
-                    colors.green(`\n[${ instanceName }] Ok, ${(timeEnd - timeStart) / 1000} sec.`)
-                );
-            }
+        if (nativeGetter) {
+            program.getSourceFiles = nativeGetter;
         }
 
         const processedDiagnostics = allDiagnostics
@@ -424,9 +487,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                     const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
                     line = pos.line;
                     character = pos.character;
-                    pretty = (`[${ instanceName }] ${colors.red(fileName)}:${line + 1}:${character + 1} \n    TS${code}: ${colors.red(message)}`);
+                    pretty = (`[${instanceName}] ${colors.red(fileName)}:${line + 1}:${character + 1} \n    TS${code}: ${colors.red(message)}`);
                 } else {
-                    pretty = (colors.red(`[${ instanceName }] TS${code}: ${ message }`));
+                    pretty = (colors.red(`[${instanceName}] TS${code}: ${message}`));
                 }
 
                 return {
@@ -460,11 +523,14 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         } as Res);
     }
 
-    receive(function(req: Req) {
+    receive(function (req: Req) {
         try {
             switch (req.type) {
                 case MessageType.Init:
                     processInit(req);
+                    break;
+                case MessageType.RemoveFile:
+                    processRemove(req);
                     break;
                 case MessageType.UpdateFile:
                     processUpdate(req);
@@ -478,9 +544,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 case MessageType.Files:
                     processFiles(req);
                     break;
-                case MessageType.RemoveFile:
-                    processRemove(req);
-                    break;
+
             }
         } catch (e) {
             console.error(`[${instanceName}]: Child process failed to process the request: `, e);
@@ -488,4 +552,3 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
     });
 }
-

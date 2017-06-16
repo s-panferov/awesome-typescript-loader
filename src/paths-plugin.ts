@@ -116,7 +116,10 @@ export class PathPlugin implements ResolverPlugin {
         }
 
         mappings.forEach(mapping => {
-            resolver.plugin(this.source, this.createPlugin(resolver, mapping));
+            if (mapping.target.indexOf('@types') === -1) {
+                // skip "phantom" type references
+                resolver.plugin(this.source, this.createPlugin(resolver, mapping));
+            }
         });
     }
 

@@ -1,9 +1,9 @@
 import {
     src, webpackConfig, tsconfig,
-    watch, expectErrors, xspec
+    watch, expectErrors, spec
 } from './utils';
 
-xspec(__filename, async function() {
+spec(__filename, async function() {
     const index = src('index.ts', `
         import sum from './sum'
         import mul from './mul'
@@ -34,12 +34,11 @@ xspec(__filename, async function() {
         `Cannot find name 'c'`
     ]);
 
+    mul.remove();
     index.update(() => `
         import sum from './sum'
         sum(1, 1)
     `);
-
-    mul.remove();
 
     stats = await watcher.wait();
     expectErrors(stats, 0);

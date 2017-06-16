@@ -163,6 +163,16 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 
 Directory when cache is stored.
 
+### reportFiles *(string[])*
+
+Specify [globs](https://github.com/isaacs/minimatch) to report file diagnistics. ALL OTHER ERRORS WILL NOT BE REPORTED. Example:
+
+```
+reportFiles: [
+    "src/**/*.{ts,tsx}"
+]
+```
+
 ## Compiler options
 
 You can pass compiler options inside loader query string or in tsconfig file.
