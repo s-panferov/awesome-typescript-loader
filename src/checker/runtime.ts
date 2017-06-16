@@ -18,7 +18,7 @@ import {
     TsConfig
 } from './protocol';
 
-import { CaseInsensitiveMap, CaseSensitiveMap } from './fs';
+import { CaseInsensitiveMap } from './fs';
 import { isCaseInsensitive } from '../helpers';
 
 const caseInsensitive = isCaseInsensitive();
