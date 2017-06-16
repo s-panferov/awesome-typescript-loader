@@ -355,63 +355,49 @@ function setupWatchRun(compiler, instanceName: string) {
             || watching.compiler.watchFileSystem.wfs.watcher;
 
         const startTime = instance.startTime || watching.startTime;
-        const fullTimes = watcher.getTimes && filterMtimes(watcher.getTimes());
-        const mtimes = watcher.mtimes;
+        const times = filterMtimes(watcher.getTimes());
         const lastCompiled = instance.compiledFiles;
 
         instance.compiledFiles = {};
         instance.startTime = startTime;
 
-        if (fullTimes) {
-            const set = new Set(Object.keys(fullTimes).map(toUnix));
-            if (lastCompiled) {
-                const removedFiles = [];
-                const checkFiles = (instance.watchedFiles || Object.keys(lastCompiled)) as any;
-                checkFiles.forEach(file => {
-                    if (!set.has(file)) {
-                        removedFiles.push(file);
-                    }
-                });
+        const set = new Set(Object.keys(times).map(toUnix));
+        if (instance.watchedFiles || lastCompiled) {
+            const removedFiles = [];
+            const checkFiles = (instance.watchedFiles || Object.keys(lastCompiled)) as any;
+            checkFiles.forEach(file => {
+                if (!set.has(file)) {
+                    removedFiles.push(file);
+                }
+            });
 
-                removedFiles.forEach(file => {
-                    console.log('REMOVE FILE', file);
-                    checker.removeFile(file);
-                });
-            }
-            instance.watchedFiles = set;
+            removedFiles.forEach(file => {
+                checker.removeFile(file);
+            });
         }
+        instance.watchedFiles = set;
 
-        const times = (mtimes && filterMtimes(mtimes)) || fullTimes;
-        const compareTime = !mtimes;
-        // const dirCache = {} as Dict<Dict<boolean>>;
+        const instanceTimes = instance.times;
+        instance.times = Object.assign({}, times) as any;
+
         const updates = Object.keys(times)
             .filter(fileName => {
-                return EXTENSIONS.test(fileName) && (
-                    compareTime
-                        ? times[fileName] > (instance.times[fileName] || startTime)
-                        : true
-                );
+                const updated = times[fileName] > (instanceTimes[fileName] || startTime);
+                return updated;
             })
             .map(fileName => {
-                instance.times[fileName] = times[fileName];
                 const unixFileName = toUnix(fileName);
-                // const parentDir = path.dirname(unixFileName);
-                // const baseName = path.basename(unixFileName);
-                // let parentDirFiles = dirCache[parentDir];
-                // if (!parentDirFiles) {
-                //     const dirInfo = fs.readdirSync(path.dirname(unixFileName));
-                //     parentDirFiles = {};
-                //     dirInfo.forEach(file => parentDirFiles[file] = true);
-                //     dirCache[parentDir] = parentDirFiles;
-                // }
-
-                // if (parentDirFiles[baseName]) {
+                if (fs.existsSync(unixFileName)) {
                     checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
-                // }
+                } else {
+                    checker.removeFile(unixFileName);
+                }
             });
 
         Promise.all(updates)
-            .then(() => callback())
+            .then(() => {
+                callback();
+            })
             .catch(callback);
     });
 }
