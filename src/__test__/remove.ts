@@ -1,9 +1,9 @@
 import {
     src, webpackConfig, tsconfig,
-    watch, expectErrors, xspec
+    watch, expectErrors, spec
 } from './utils';
 
-xspec(__filename, async function() {
+spec(__filename, async function() {
     const index = src('index.ts', `
         import sum from './sum'
         import mul from './mul'

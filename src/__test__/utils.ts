@@ -452,6 +452,7 @@ export class Fixture {
     move(to: string) {
         mkdirp.sync(path.dirname(to));
         moveFile(this.fileName, to);
+        this.fileName = to;
     }
 
     update(updater: (text: string) => string) {

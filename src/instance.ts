@@ -21,6 +21,10 @@ export interface Instance {
     checker: Checker;
     cacheIdentifier: any;
     context: string;
+
+    times: Dict<number>;
+    watchedFiles?: Set<string>;
+    startTime?: number;
 }
 
 export interface Compiler {
@@ -59,7 +63,7 @@ export function getRootCompiler(compiler) {
     }
 }
 
-function resolveInstance(compiler, instanceName) {
+function resolveInstance(compiler, instanceName): Instance {
      if (!compiler._tsInstances) {
         compiler._tsInstances = {};
     }
@@ -145,7 +149,8 @@ export function ensureInstance(
         compilerConfig,
         checker,
         cacheIdentifier,
-        context
+        context,
+        times: {}
     };
 }
 
@@ -329,8 +334,18 @@ export function readConfigFile(
 }
 
 let EXTENSIONS = /\.tsx?$|\.jsx?$/;
+export type Dict<T> = {[key: string]: T};
 
-type Dict<T> = {[key: string]: T};
+const filterMtimes = (mtimes: any) {
+    const res = {};
+    Object.keys(mtimes).forEach(fileName => {
+        if (!!EXTENSIONS.test(fileName)) {
+            res[fileName] = mtimes[fileName];
+        }
+    });
+
+    return res;
+};
 
 function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', function (watching, callback) {
@@ -339,29 +354,61 @@ function setupWatchRun(compiler, instanceName: string) {
         const watcher = watching.compiler.watchFileSystem.watcher
             || watching.compiler.watchFileSystem.wfs.watcher;
 
-        const mtimes = watcher.mtimes || (watcher.getTimes && watcher.getTimes()) || {};
-        const changedFiles = Object.keys(mtimes).map(toUnix);
-        const dirCache = {} as Dict<Dict<boolean>>;
+        const startTime = instance.startTime || watching.startTime;
+        const fullTimes = watcher.getTimes && filterMtimes(watcher.getTimes());
+        const mtimes = watcher.mtimes;
+        const lastCompiled = instance.compiledFiles;
 
-        const updates = changedFiles
-            .filter(file => EXTENSIONS.test(file))
-            .map(changedFile => {
-                // Collecting parent dir files to find out if file was renamed in case-insensitive
-                // file system
-                const parentDir = path.dirname(changedFile);
-                const baseName = path.basename(changedFile);
+        instance.compiledFiles = {};
+        instance.startTime = startTime;
+
+        if (fullTimes) {
+            const set = new Set(Object.keys(fullTimes).map(toUnix));
+            if (lastCompiled) {
+                const removedFiles = [];
+                const checkFiles = (instance.watchedFiles || Object.keys(lastCompiled)) as any;
+                checkFiles.forEach(file => {
+                    if (!set.has(file)) {
+                        removedFiles.push(file);
+                    }
+                });
+
+                removedFiles.forEach(file => {
+                    checker.removeFile(file);
+                });
+            }
+            instance.watchedFiles = set;
+        }
+
+        const times = (mtimes && filterMtimes(mtimes)) || fullTimes;
+        const compareTime = !mtimes;
+        const dirCache = {} as Dict<Dict<boolean>>;
+        const updates = Object.keys(times)
+            .filter(fileName => {
+                return EXTENSIONS.test(fileName) && (
+                    compareTime
+                        ? times[fileName] > (instance.times[fileName] || startTime)
+                        : true
+                );
+            })
+            .map(fileName => {
+                instance.times[fileName] = times[fileName];
+
+                const unixFileName = toUnix(fileName);
+                const parentDir = path.dirname(unixFileName);
+                const baseName = path.basename(unixFileName);
                 let parentDirFiles = dirCache[parentDir];
                 if (!parentDirFiles) {
-                    const dirInfo = fs.readdirSync(path.dirname(changedFile));
+                    const dirInfo = fs.readdirSync(path.dirname(unixFileName));
                     parentDirFiles = {};
                     dirInfo.forEach(file => parentDirFiles[file] = true);
                     dirCache[parentDir] = parentDirFiles;
                 }
 
                 if (parentDirFiles[baseName]) {
-                    checker.updateFile(changedFile, fs.readFileSync(changedFile).toString(), true);
+                    checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
                 } else {
-                    checker.removeFile(changedFile);
+                    checker.removeFile(unixFileName);
                 }
             });
 
@@ -414,10 +461,14 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             }
         };
 
-        instance.compiledFiles = {};
         const files = instance.checker.getFiles()
             .then(({files}) => {
-                Array.prototype.push.apply(compilation.fileDependencies, files.map(path.normalize));
+                const normalized = files.map(file => {
+                    const rpath = path.normalize(file);
+                    instance.compiledFiles[file] = true;
+                    return rpath;
+                });
+                Array.prototype.push.apply(compilation.fileDependencies, normalized);
             });
 
         const timeStart = +(new Date());
