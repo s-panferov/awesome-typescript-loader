@@ -128,7 +128,7 @@ Allows the use of several TypeScript compilers with different settings in one ap
 
 Specifies the path to a TS config file. This is useful when you have multiple config files. This setting is useless *inside* a TS config file.
 
-### transpileOnly *(boolean) (default=true)*
+### transpileOnly *(boolean)*
 
 Use this setting to disable type checking.
 
