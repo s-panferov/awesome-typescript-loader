@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.2.0-rc.0"></a>
+# [3.2.0-rc.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.1.3...v3.2.0-rc.0) (2017-06-16)
+
+
+### Features
+
+* case errors, silent, diagnostics, paths-plugin fixes ([#446](https://github.com/s-panferov/awesome-typescript-loader/issues/446)) ([a15de0a](https://github.com/s-panferov/awesome-typescript-loader/commit/a15de0a))
+
+
+
 <a name="3.1.3"></a>
 ## [3.1.3](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.1.2...v3.1.3) (2017-04-28)
 
