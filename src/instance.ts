@@ -119,6 +119,7 @@ export function ensureInstance(
 
     let babelImpl = setupBabel(loaderConfig, context);
     let cacheIdentifier = setupCache(
+        compilerConfig,
         loaderConfig,
         tsImpl,
         webpack,
@@ -190,13 +191,13 @@ export function setupTs(compiler: string): CompilerInfo {
 }
 
 function setupCache(
+    compilerConfig: TsConfig,
     loaderConfig: LoaderConfig,
     tsImpl: typeof ts,
     webpack: Loader,
     babelImpl: any,
     context: string
 ) {
-    let cacheIdentifier = null;
     if (loaderConfig.useCache) {
         if (!loaderConfig.cacheDirectory) {
             loaderConfig.cacheDirectory = path.join(context, '.awcache');
@@ -206,13 +207,14 @@ function setupCache(
             mkdirp.sync(loaderConfig.cacheDirectory);
         }
 
-        cacheIdentifier = {
-            'typescript': tsImpl.version,
+        return {
+            typescript: tsImpl.version,
             'awesome-typescript-loader': pkg.version,
-            'awesome-typescript-loader-query': webpack.query,
-            'babel-core': babelImpl
-                ? babelImpl.version
-                : null
+            'babel-core': babelImpl ? babelImpl.version : null,
+            babelPkg: pkg.babel,
+            // TODO: babelrc.json/babelrc.js
+            compilerConfig,
+            env: process.env.BABEL_ENV || process.env.NODE_ENV || 'development'
         };
     }
 }
