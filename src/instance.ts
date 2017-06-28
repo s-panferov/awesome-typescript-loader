@@ -435,11 +435,6 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         const asyncErrors = watchMode === WatchMode.Enabled && !silent;
 
         let emitError = (msg) => {
-            if (compilation.bail) {
-                console.error('Error in bail mode:', msg);
-                process.exit(1);
-            }
-
             if (asyncErrors) {
                 console.log(msg, '\n');
             } else {
