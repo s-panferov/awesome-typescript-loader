@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import * as path from 'path';
-import * as minimatch from 'minimatch';
+import * as micromatch from 'micromatch';
 import * as colors from 'colors';
 import { findResultFor, toUnix } from '../helpers';
 import {
@@ -443,9 +443,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         if (loaderConfig.reportFiles) {
             filters.push(file => {
                 const fileName = path.relative(context, file.fileName);
-                return loaderConfig.reportFiles.every(pattern => {
-                    return minimatch(fileName, pattern);
-                });
+                return micromatch(fileName, loaderConfig.reportFiles).length > 0;
             });
         }
 
