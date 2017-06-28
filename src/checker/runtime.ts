@@ -386,7 +386,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         const trans = compiler.transpileModule(files.get(fileName).text, {
             compilerOptions: compilerOptions,
             fileName,
-            reportDiagnostics: false
+            reportDiagnostics: false,
+            transformers: loaderConfig.getCustomTransformers ? loaderConfig.getCustomTransformers() : undefined
         });
 
         return {
