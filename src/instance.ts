@@ -6,6 +6,7 @@ import { toUnix } from './helpers';
 import { Checker } from './checker';
 import { CompilerInfo, LoaderConfig, TsConfig } from './interfaces';
 import { WatchModeSymbol } from './watch-mode';
+import { createHash } from 'crypto';
 
 let colors = require('colors/safe');
 let pkg = require('../package.json');
@@ -19,7 +20,7 @@ export interface Instance {
     compilerConfig: TsConfig;
     loaderConfig: LoaderConfig;
     checker: Checker;
-    cacheIdentifier: any;
+    cacheIdentifier: string;
     context: string;
 
     times: Dict<number>;
@@ -197,7 +198,7 @@ function setupCache(
     webpack: Loader,
     babelImpl: any,
     context: string
-) {
+): string {
     if (loaderConfig.useCache) {
         if (!loaderConfig.cacheDirectory) {
             loaderConfig.cacheDirectory = path.join(context, '.awcache');
@@ -207,7 +208,8 @@ function setupCache(
             mkdirp.sync(loaderConfig.cacheDirectory);
         }
 
-        return {
+        let hash = createHash('sha512') as any;
+        let contents = JSON.stringify({
             typescript: tsImpl.version,
             'awesome-typescript-loader': pkg.version,
             'babel-core': babelImpl ? babelImpl.version : null,
@@ -215,7 +217,10 @@ function setupCache(
             // TODO: babelrc.json/babelrc.js
             compilerConfig,
             env: process.env.BABEL_ENV || process.env.NODE_ENV || 'development'
-        };
+        });
+
+        hash.end(contents);
+        return hash.read().toString('hex');
     }
 }
 
