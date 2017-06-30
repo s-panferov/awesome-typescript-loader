@@ -64,6 +64,7 @@ function compiler(loader: Loader, text: string): void {
 
     if (compiledModule) {
         transformation = Promise.resolve({
+            deps: [],
             text: compiledModule.text,
             map: compiledModule.map
                 ? JSON.parse(compiledModule.map)

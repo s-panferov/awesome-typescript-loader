@@ -21,7 +21,7 @@ spec(__filename, async function() {
     src('app.tsx', `
         import * as React from 'react'
 
-        export default class App extends React.Component<{title: string}, void> {
+        export default class App extends React.Component<{title: string}, {}> {
             render() {
                 return <div>{ this.props.title }</div>
             }

@@ -116,8 +116,15 @@ export class PathPlugin implements ResolverPlugin {
         }
 
         mappings.forEach(mapping => {
-            resolver.plugin(this.source, this.createPlugin(resolver, mapping));
+            // skip "phantom" type references
+            if (!this.isTyping(mapping.target)) {
+                resolver.plugin(this.source, this.createPlugin(resolver, mapping));
+            }
         });
+    }
+
+    isTyping(target: string) {
+        return target.indexOf('@types') !== -1 || target.indexOf('.d.ts') !== -1;
     }
 
     createPlugin(resolver: Resolver, mapping: Mapping) {

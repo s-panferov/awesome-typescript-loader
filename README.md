@@ -128,7 +128,7 @@ Allows the use of several TypeScript compilers with different settings in one ap
 
 Specifies the path to a TS config file. This is useful when you have multiple config files. This setting is useless *inside* a TS config file.
 
-### transpileOnly *(boolean) (default=true)*
+### transpileOnly *(boolean)*
 
 Use this setting to disable type checking.
 
@@ -162,6 +162,16 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 ### cacheDirectory *(string) (default='.awcache')*
 
 Directory when cache is stored.
+
+### reportFiles *(string[])*
+
+Specify [globs](https://github.com/isaacs/minimatch) to report file diagnistics. ALL OTHER ERRORS WILL NOT BE REPORTED. Example:
+
+```
+reportFiles: [
+    "src/**/*.{ts,tsx}"
+]
+```
 
 ## Compiler options
 

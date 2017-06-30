@@ -1,10 +1,10 @@
 import {
-    exec as run, spec, expect, stdout
+    exec as run, xspec, expect, stdout
 } from './utils';
 
 import { exec, ln } from 'shelljs';
 
-spec(__filename, async function(_env, done) {
+xspec(__filename, async function(_env, done) {
     this.timeout(5 * 60 * 1000);
 
     exec('rimraf package.json');

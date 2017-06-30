@@ -1,5 +1,5 @@
 import {
-    src, tsconfig, stdout, stderr,
+    src, tsconfig, stdout,
     spec, execWebpack
 } from './utils';
 
@@ -22,7 +22,6 @@ spec(__filename, async function(env, done) {
 
     await webpack.wait(
         stdout('Webpack is watching the files…'),
-        stderr('Checking finished with 1 errors'),
         stdout([
             'ERROR in [at-loader] ./src/index.ts',
             `TS2345: Argument of type '"1"' is not assignable to parameter of type 'number'`

@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.2.1"></a>
+## [3.2.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.2.0...v3.2.1) (2017-06-28)
+
+
+### Bug Fixes
+
+* speedup caching by pre-hashing cacheIdentifier ([589683f](https://github.com/s-panferov/awesome-typescript-loader/commit/589683f))
+
+
+
+<a name="3.2.0"></a>
+# [3.2.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.2.0-rc.0...v3.2.0) (2017-06-28)
+
+
+### Bug Fixes
+
+* **paths-plugin:** properly skip .d.ts files ([f14eaab](https://github.com/s-panferov/awesome-typescript-loader/commit/f14eaab))
+* don't kill the loader when compilation.bail = true ([#448](https://github.com/s-panferov/awesome-typescript-loader/issues/448)) ([3d8f91a](https://github.com/s-panferov/awesome-typescript-loader/commit/3d8f91a))
+* environment cache invalidation ([#449](https://github.com/s-panferov/awesome-typescript-loader/issues/449)) ([c073af1](https://github.com/s-panferov/awesome-typescript-loader/commit/c073af1))
+
+
+
+<a name="3.2.0-rc.0"></a>
+# [3.2.0-rc.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.1.3...v3.2.0-rc.0) (2017-06-16)
+
+
+### Features
+
+* case errors, silent, diagnostics, paths-plugin fixes ([#446](https://github.com/s-panferov/awesome-typescript-loader/issues/446)) ([a15de0a](https://github.com/s-panferov/awesome-typescript-loader/commit/a15de0a))
+
+
+
+<a name="3.1.3"></a>
+## [3.1.3](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.1.2...v3.1.3) (2017-04-28)
+
+
+
 <a name="3.1.2"></a>
 ## [3.1.2](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.1.1...v3.1.2) (2017-03-07)
 
