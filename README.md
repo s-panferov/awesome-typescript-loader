@@ -12,7 +12,7 @@ npm install awesome-typescript-loader --save-dev
 ## Differences between [`ts-loader`](https://github.com/TypeStrong/ts-loader)
 
 `awesome-typescript-loader` loader was created mostly to speed-up compilation in my own projects.
-Some of them are quite big and I wanted to have full control on how my files are compiled. There are three major points:
+Some of them are quite big and I wanted to have full control on how my files are compiled. There are two major points:
 
 1) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who use Typescript with Babel.
 When `useBabel` and `useCache` flags are enabled, typescript's emit will be transpiled with Babel and cached.
