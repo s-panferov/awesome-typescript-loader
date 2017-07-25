@@ -33,7 +33,7 @@
   "homepage": "https://github.com/s-panferov/awesome-typescript-loader",
   "dependencies": {
     "colors": "^1.1.2",
-    "enhanced-resolve": "^3.1.0",
+    "enhanced-resolve": "3.3.0",
     "loader-utils": "^1.1.0",
     "lodash": "^4.17.4",
     "micromatch": "^3.0.3",
@@ -63,6 +63,6 @@
     "temp": "^0.8.3",
     "tslint": "^5.4.3",
     "typescript": "^2.4.1",
-    "webpack": "^2.6.1"
+    "webpack": "~2.7.0"
   }
 }

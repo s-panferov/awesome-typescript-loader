@@ -12,9 +12,13 @@
         "noFallthroughCasesInSwitch": true,
         "removeComments": true,
         "suppressImplicitAnyIndexErrors": true,
-        "lib": [ "es6", "dom" ]
+        "lib": [ "es6", "dom" ],
+        "types" : ["node", "lodash", "mocha"]
     },
     "include": [
         "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
     ]
 }
