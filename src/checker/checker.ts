@@ -157,7 +157,8 @@ function getExecArgv() {
         if (match) {
             let currentPort = match[3] !== undefined ? +match[3] : match[1] === "debug" ? 5858 : 9229;
             execArgv.push("--" + match[1] + "=" + (currentPort + 1));
-            break;
+        } else {
+            execArgv.push(arg);
         }
     }
 
