@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.2.3"></a>
+## [3.2.3](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.2.2...v3.2.3) (2017-08-14)
+
+
+### Bug Fixes
+
+* **checker:** pass through execArgv to checker child process ([#479](https://github.com/s-panferov/awesome-typescript-loader/issues/479)) ([5c7b0de](https://github.com/s-panferov/awesome-typescript-loader/commit/5c7b0de))
+* delay sending diagnotics request ([90022ae](https://github.com/s-panferov/awesome-typescript-loader/commit/90022ae))
+
+
+
 <a name="3.2.2"></a>
 ## [3.2.2](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.2.1...v3.2.2) (2017-07-26)
 
