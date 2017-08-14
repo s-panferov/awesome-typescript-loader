@@ -12,7 +12,7 @@ npm install awesome-typescript-loader --save-dev
 ## Differences between [`ts-loader`](https://github.com/TypeStrong/ts-loader)
 
 `awesome-typescript-loader` loader was created mostly to speed-up compilation in my own projects.
-Some of them are quite big and I wanted to have full control on how my files are compiled. There are three major points:
+Some of them are quite big and I wanted to have full control on how my files are compiled. There are two major points:
 
 1) atl has first-class integration with Babel and enables caching possibilities. This can be useful for those who use Typescript with Babel.
 When `useBabel` and `useCache` flags are enabled, typescript's emit will be transpiled with Babel and cached.
@@ -97,7 +97,7 @@ const { TsConfigPathsPlugin } = require('awesome-typescript-loader');
 
 resolve: {
     plugins: [
-        new TsConfigPathsPlugin(/* { tsconfig, compiler } */)
+        new TsConfigPathsPlugin(/* { configFileName, compiler } */)
     ]
 }
 ```
@@ -161,11 +161,11 @@ Use pre-compiled files if any. Files must be named as `{filename}.js` and `{file
 
 ### cacheDirectory *(string) (default='.awcache')*
 
-Directory when cache is stored.
+Directory where cache is stored.
 
 ### reportFiles *(string[])*
 
-Specify [globs](https://github.com/isaacs/minimatch) to report file diagnistics. ALL OTHER ERRORS WILL NOT BE REPORTED. Example:
+Specify [globs](https://github.com/isaacs/minimatch) to report file diagnostics. ALL OTHER ERRORS WILL NOT BE REPORTED. Example:
 
 ```
 reportFiles: [
@@ -175,4 +175,4 @@ reportFiles: [
 
 ## Compiler options
 
-You can pass compiler options inside loader query string or in tsconfig file.
+You can pass compiler options inside the loader query string or in a TS config file.
