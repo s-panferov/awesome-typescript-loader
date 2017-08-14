@@ -132,7 +132,7 @@ export class Checker {
         } as RemoveFile.Request);
     }
 
-    getDiagnostics(): any {
+    getDiagnostics(): Promise<any> {
         return this.req({
             type: 'Diagnostics'
         } as Diagnostics.Request);

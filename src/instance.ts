@@ -458,7 +458,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             });
 
         const timeStart = +(new Date());
-        const diag = instance.loaderConfig.transpileOnly
+        const diag = () => instance.loaderConfig.transpileOnly
             ? Promise.resolve()
             : instance.checker.getDiagnostics()
                 .then(diags => {
@@ -479,10 +479,10 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         files
             .then(() => {
                 if (asyncErrors) {
-                    // Don't wait for diags in watch mode
+                    diag(); // Don't wait for diags in watch mode
                     return;
                 } else {
-                    return diag;
+                    return diag();
                 }
             })
             .then(() => callback())
