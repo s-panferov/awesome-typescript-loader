@@ -313,7 +313,7 @@ export function readConfigFile(
                 query.configFileContent || {},
                 tsImpl.sys,
                 context,
-                _.extend({}, tsImpl.getDefaultCompilerOptions(), existingOptions.options) as ts.CompilerOptions
+                existingOptions.options
             ),
             loaderConfig: query as LoaderConfig
         };
