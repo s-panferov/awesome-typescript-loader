@@ -28,7 +28,7 @@ export interface LoaderConfig {
     debug?: boolean;
     reportFiles?: string[];
     context?: string;
-    getCustomTransformers?(): ts.CustomTransformers | undefined;
+    getCustomTransformers?: string | (() => ts.CustomTransformers | undefined);
 }
 
 export interface OutputFile {
