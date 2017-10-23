@@ -20,6 +20,7 @@ export interface LoaderConfig {
     babelOptions?: any;
     usePrecompiledFiles?: boolean;
     silent?: boolean;
+    verbose?: boolean;
     useCache?: boolean;
     cacheDirectory?: string;
     entryFileIsJs?: boolean;

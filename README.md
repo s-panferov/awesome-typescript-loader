@@ -109,6 +109,10 @@ resolve: {
 No logging from the checker. Please note that this option disables async error reporting because
 this option bans `console.log()` usage.
 
+### verbose *(boolean) (default=false)*
+
+Enable verbose logging. Log more than just errors (e.g. typescript path, execution time).
+
 ### compiler *(string) (default='typescript')*
 
 Allows use of TypeScript compilers other than the official one. Must be

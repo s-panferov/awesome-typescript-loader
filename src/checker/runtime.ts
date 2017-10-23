@@ -420,9 +420,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function processDiagnostics({ seq }: Diagnostics.Request) {
-        let silent = !!loaderConfig.silent;
-
-        if (!silent) {
+        if (loaderConfig.verbose) {
             console.log(colors.cyan(`\n[${instanceName}] Checking started in a separate process...`));
         }
 
