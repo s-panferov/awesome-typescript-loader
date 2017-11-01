@@ -1,4 +1,4 @@
-# The best TypeScript loader for Webpack
+# TypeScript loader for Webpack
 
 [![Join the chat at https://gitter.im/s-panferov/awesome-typescript-loader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-panferov/awesome-typescript-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/s-panferov/awesome-typescript-loader.svg?branch=master)](https://travis-ci.org/s-panferov/awesome-typescript-loader)
@@ -16,6 +16,9 @@ Please note that ATL works **the same way as a TypeScript compiler** as much as 
 **ADVICE**: Typically you want your `files` section to include only entry points.
 
 **ADVICE**: The loader works faster if you use `isolatedModules` or `forceIsolatedModules` options.
+
+**ADVICE**: The loader works faster if you will use `reportFiles` to restrict
+checking scope.
 
 The world is changing, other solutions are evolving and ATL may work **slower**
 for [some workloads](https://github.com/s-panferov/awesome-typescript-loader/issues/497). Feel free to try [`ts-loader`](https://github.com/TypeStrong/ts-loader) with [`HappyPack` ](https://github.com/amireh/happypack) or [`thread-loader`](https://webpack.js.org/loaders/thread-loader/) and [hard-source-webpack-plugin](https://github.com/mzgoddard/hard-source-webpack-plugin).
