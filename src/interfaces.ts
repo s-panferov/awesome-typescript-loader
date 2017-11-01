@@ -12,7 +12,7 @@ export interface LoaderConfig {
     configFileName?: string;
     configFileContent?: string;
     forceIsolatedModules?: boolean;
-    errorsAsWarnings?: boolean
+    errorsAsWarnings?: boolean;
     transpileOnly?: boolean;
     ignoreDiagnostics?: number[];
     compilerOptions?: ts.CompilerOptions;
