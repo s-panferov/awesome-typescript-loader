@@ -9,6 +9,17 @@
 npm install awesome-typescript-loader --save-dev
 ```
 
+## Performance issues
+
+Please note that ATL works **the same way as a TypeScript compiler** as much as possible. So please be careful with your `files`/`exclude`/`include` sections.
+
+**ADVICE**: Typically you want your `files` section to include only entry points.
+
+**ADVICE**: The loader works faster if you use `isolatedModules` or `forceIsolatedModules` options.
+
+The world is changing, other solutions are evolving and ATL may work **slower**
+for [some workloads](https://github.com/s-panferov/awesome-typescript-loader/issues/497). Feel free to try [`ts-loader`](https://github.com/TypeStrong/ts-loader) with [`HappyPack` ](https://github.com/amireh/happypack) or [`thread-loader`](https://webpack.js.org/loaders/thread-loader/) and [hard-source-webpack-plugin](https://github.com/mzgoddard/hard-source-webpack-plugin).
+
 ## Differences between [`ts-loader`](https://github.com/TypeStrong/ts-loader)
 
 `awesome-typescript-loader` loader was created mostly to speed-up compilation in my own projects.
@@ -101,14 +112,6 @@ resolve: {
     ]
 }
 ```
-
-## Performance issues
-
-Please note that ATL works **the same way as a TypeScript compiler** as much as possible. So please be careful with your `files`/`exclude`/`include` sections.
-
-**ADVICE**: Typically you want your `files` section to include only entry points.
-
-**ADVICE**: The loader works faster if you use `isolatedModules` or `forceIsolatedModules` options.
 
 ## Loader options
 
