@@ -102,6 +102,12 @@ resolve: {
 }
 ```
 
+## Performance issues
+
+Please note that ATL works **the same way as a TypeScript compiler** as much as possible. So please be careful with your `files`/`exclude`/`include` sections.
+
+**ADVICE**: Typically you want your `files` section to include only entry points.
+
 ## Loader options
 
 ### silent *(boolean) (default=false)*
