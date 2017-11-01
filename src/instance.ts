@@ -449,7 +449,11 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             if (asyncErrors) {
                 console.log(msg, '\n');
             } else {
-                compilation.errors.push(new Error(msg));
+                if (!instance.loaderConfig.errorsAsWarnings) {
+                    compilation.errors.push(new Error(msg));
+                } else {
+                    compilation.warnings.push(new Error(msg));
+                }
             }
         };
 

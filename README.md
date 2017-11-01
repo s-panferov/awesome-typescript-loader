@@ -143,6 +143,10 @@ Specifies the path to a TS config file. This is useful when you have multiple co
 
 Use this setting to disable type checking.
 
+### errorsAsWarnings *(boolean)*
+
+Emit all typescript errors as warnings.
+
 ### forceIsolatedModules *(boolean)*
 
 Use this setting to disable dependent module recompilation.
