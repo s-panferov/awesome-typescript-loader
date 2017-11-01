@@ -142,6 +142,22 @@ For example, you can transpile [stage 1 properties](https://github.com/jeffmo/es
 Invoke Babel to transpile files. Useful with ES6 target. Please see `useCache` option
 which can improve warm-up time.
 
+If you're using `babelOptions`, anything in `.babelrc` will take precedence. This breaks expected usage for scenarios where you need two sets of Babel configs (example: one for Webpack, one for your build tools).
+
+You may want to `"babelrc": false to disable `.babelrc` if you don't want it:
+
+```json
+{
+    "useBabel": true,
+    "babelOptions": {
+        "babelrc": false, /* Important line */
+        "presets": [
+            ["env", { "targets": "last 2 versions, ie 11", "modules": false }]
+        ]
+    }
+}
+```
+
 ### babelCore *(string) (default=undefined)*
 
 Override the path used to find `babel-core`. Useful if `node_modules` is installed in a non-standard place or webpack is being invoked from a directory not at the root of the project.
