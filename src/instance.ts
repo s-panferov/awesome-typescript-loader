@@ -11,6 +11,7 @@ import { createHash } from 'crypto';
 let colors = require('colors/safe');
 let pkg = require('../package.json');
 let mkdirp = require('mkdirp');
+let enhancedResolve = require('enhanced-resolve');
 
 export interface Instance {
     id: number;
@@ -224,11 +225,13 @@ function setupCache(
     }
 }
 
+const resolver = enhancedResolve.create.sync();
+
 function setupBabel(loaderConfig: LoaderConfig, context: string): any {
     let babelImpl: any;
     if (loaderConfig.useBabel) {
         try {
-            let babelPath = loaderConfig.babelCore || path.join(context, 'node_modules', 'babel-core');
+            let babelPath = loaderConfig.babelCore || resolver(context, 'babel-core');
             babelImpl = require(babelPath);
         } catch (e) {
             console.error(BABEL_ERROR, e);
