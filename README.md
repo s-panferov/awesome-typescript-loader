@@ -108,6 +108,8 @@ Please note that ATL works **the same way as a TypeScript compiler** as much as 
 
 **ADVICE**: Typically you want your `files` section to include only entry points.
 
+**ADVICE**: The loader works faster if you use `isolatedModules` or `forceIsolatedModules` options.
+
 ## Loader options
 
 ### silent *(boolean) (default=false)*
@@ -137,6 +139,10 @@ Specifies the path to a TS config file. This is useful when you have multiple co
 ### transpileOnly *(boolean)*
 
 Use this setting to disable type checking.
+
+### forceIsolatedModules *(boolean)*
+
+Use this setting to disable dependent module recompilation.
 
 ### ignoreDiagnostics *(number[]) (default=[])*
 

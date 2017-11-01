@@ -39,6 +39,9 @@ export interface Compiler {
 
 export interface Loader {
     _compiler: Compiler;
+    _module: {
+        meta: any
+    };
     cacheable: () => void;
     query: string;
     async: () => (err: Error, source?: string, map?: string) => void;

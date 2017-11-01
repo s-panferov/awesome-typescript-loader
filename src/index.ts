@@ -93,7 +93,11 @@ function compiler(loader: Loader, text: string): void {
 
     transformation
         .then(({cached, result}) => {
-            if (!instance.compilerConfig.options.isolatedModules && result.deps) {
+            const isolated =
+                instance.loaderConfig.forceIsolatedModules ||
+                instance.compilerConfig.options.isolatedModules;
+
+            if (!isolated && result.deps) {
                 // If our modules are isolated we don't need to recompile all the deps
                 result.deps.forEach(dep => loader.addDependency(path.normalize(dep)));
             }
@@ -101,6 +105,7 @@ function compiler(loader: Loader, text: string): void {
                 // Update file in checker in case we read it from the cache
                 instance.checker.updateFile(fileName, text);
             }
+
             return result;
         })
         .then(({text, map}) => {
