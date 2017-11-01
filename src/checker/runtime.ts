@@ -106,7 +106,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             }
         } else {
             if (file.fileName !== fileName) {
-                if (caseInsensitive) {
+                if (!caseInsensitive) {
                     file.fileName = fileName; // use most recent name for case-sensitive file systems
                     file.version++;
                     projectVersion++;
