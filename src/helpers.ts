@@ -74,14 +74,14 @@ function isDeclarationEmit(fileName, outputFileName, sourceFileName) {
         && (outputFileName.substr(-5).toLowerCase() === '.d.ts');
 }
 
-export function findResultFor(fileName: string, output: ts.EmitOutput): OutputFile {
+export function findResultFor(fileName: string, outputFiles: ts.OutputFile[]): OutputFile {
     let text;
     let sourceMap;
     let declaration: ts.OutputFile;
     fileName = withoutExt(fileName);
 
-    for (let i = 0; i < output.outputFiles.length; i++) {
-        let o = output.outputFiles[i];
+    for (let i = 0; i < outputFiles.length; i++) {
+        let o = outputFiles[i];
         let outputFileName = o.name;
         let sourceFileName = withoutExt(o.name);
         if (isFileEmit(fileName, outputFileName, sourceFileName)) {
@@ -160,4 +160,23 @@ const TYPESCRIPT_EXTENSION = /\.(d\.)?(t|j)s$/;
 
 export function withoutTypeScriptExtension(fileName: string): string {
     return fileName.replace(TYPESCRIPT_EXTENSION, '');
+}
+
+/** Does nothing. */
+export function noop(_?: {} | null | undefined): void { } // tslint:disable-line no-empty
+/** Throws an error because a function is not implemented. */
+export function notImplemented(): never {
+    throw new Error("Not implemented");
+}
+
+export function unorderedRemoveItem<T>(array: T[], item: T): boolean {
+    for (let i = 0; i < array.length; i++) {
+        if (array[i] === item) {
+            // Fill in the "hole" left at `index`.
+            array[i] = array[array.length - 1];
+            array.pop();
+            return true;
+        }
+    }
+    return false;
 }
