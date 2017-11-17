@@ -1,6 +1,6 @@
 {
   "name": "awesome-typescript-loader",
-  "version": "3.3.0",
+  "version": "3.4.0-0",
   "description": "Awesome TS loader for webpack",
   "main": "dist/entry.js",
   "typings": "./dist/index.d.ts",
