@@ -27,7 +27,7 @@ export function createQueuedSender(childProcess: ChildProcess | NodeJS.Process):
         };
 
         const doSendLoop = function(): void {
-            childProcess.send(msgQueue.shift(), cb);
+            (childProcess.send as any)(msgQueue.shift(), cb);
         };
 
         const send = function (msg: any): void {
@@ -43,7 +43,7 @@ export function createQueuedSender(childProcess: ChildProcess | NodeJS.Process):
         return { send };
     } else {
         const send = function (msg: any): void {
-            childProcess.send(msg, logOnError);
+            (childProcess.send as any)(msg, logOnError);
         };
 
         return { send };

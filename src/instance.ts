@@ -388,22 +388,25 @@ function setupWatchRun(compiler, instanceName: string) {
                 checker.removeFile(file);
             });
         }
+
         instance.watchedFiles = set;
 
         const instanceTimes = instance.times;
         instance.times = Object.assign({}, times) as any;
 
-        const updates = Object.keys(times)
-            .filter(fileName => {
-                const updated = times[fileName] > (instanceTimes[fileName] || startTime);
-                return updated;
-            })
+        const changedFiles = Object.keys(times)
+        .filter(fileName => {
+            const updated = times[fileName] > (instanceTimes[fileName] || startTime);
+            return updated;
+        });
+
+        const updates = changedFiles
             .map(fileName => {
                 const unixFileName = toUnix(fileName);
                 if (fs.existsSync(unixFileName)) {
-                    checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
+                    return checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
                 } else {
-                    checker.removeFile(unixFileName);
+                    return checker.removeFile(unixFileName);
                 }
             });
 

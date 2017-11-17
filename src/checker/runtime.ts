@@ -18,7 +18,7 @@ import {
     TsConfig
 } from './protocol';
 
-import { CaseInsensitiveMap } from './fs';
+import { CaseInsensitiveMap, MapLike } from './fs';
 import { isCaseInsensitive } from '../helpers';
 
 const caseInsensitive = isCaseInsensitive();
@@ -85,31 +85,29 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let webpackOptions: any;
     let compiler: typeof ts;
     let compilerInfo: CompilerInfo;
-    let files = new CaseInsensitiveMap<File>();
+    let files: MapLike<File>;
     let host: ts.LanguageServiceHost;
     let service: ts.LanguageService;
     let ignoreDiagnostics: { [id: number]: boolean } = {};
     let instanceName: string;
     let context: string;
+    let cache: ts.ModuleResolutionCache;
 
     function ensureFile(fileName: string) {
         const file = files.get(fileName);
         if (!file) {
             const text = compiler.sys.readFile(fileName);
-            if (text) {
-                files.set(fileName, {
-                    fileName: fileName,
-                    text,
-                    version: 0,
-                    snapshot: compiler.ScriptSnapshot.fromString(text)
-                });
-            }
+            if (text == null) { return; }
+            files.set(fileName, {
+                fileName: fileName,
+                text,
+                version: 0,
+                snapshot: compiler.ScriptSnapshot.fromString(text)
+            });
         } else {
             if (file.fileName !== fileName) {
                 if (caseInsensitive) {
-                    file.fileName = fileName; // use most recent name for case-sensitive file systems
-                    file.version++;
-                    projectVersion++;
+                    file.fileName = fileName;
                 } else {
                     removeFile(file.fileName);
                     projectVersion++;
@@ -225,7 +223,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
         resolveModuleNames(moduleNames: string[], containingFile: string) {
             const resolved = moduleNames.map(module =>
-                compiler.resolveModuleName(module, containingFile, compilerOptions, compiler.sys).resolvedModule);
+                compiler.resolveModuleName(module, containingFile, compilerOptions, compiler.sys, cache).resolvedModule);
 
             resolved.forEach(res => {
                 if (res && res.resolvedFileName) {
@@ -270,6 +268,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
     }
 
+    let normalize: (f: string) => string;
+
     function processInit({ seq, payload }: Init.Request) {
         compiler = require(payload.compilerInfo.compilerPath);
         compilerInfo = payload.compilerInfo;
@@ -278,6 +278,18 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         compilerOptions = compilerConfig.options;
         webpackOptions = payload.webpackOptions;
         context = payload.context;
+        normalize = (f: string) => {
+            return compiler.sys.useCaseSensitiveFileNames ? f : f.toLowerCase();
+        };
+
+        files = new CaseInsensitiveMap();
+
+        if (compiler.createModuleResolutionCache) {
+            cache = ts.createModuleResolutionCache(
+                context,
+                normalize
+            );
+        }
 
         instanceName = loaderConfig.instance || 'at-loader';
 
@@ -290,7 +302,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
         compilerConfig.fileNames.forEach(fileName => {
             const text = compiler.sys.readFile(fileName);
-            if (!text) { return; }
+            if (text == null) { return; }
             files.set(fileName, {
                 fileName,
                 text,
@@ -328,7 +340,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             let updated = false;
             if (file.fileName !== fileName) {
                 if (caseInsensitive) {
-                    file.fileName = fileName; // use most recent name for case-sensitive file systems
+                    file.fileName = fileName;
                 } else {
                     removeFile(file.fileName);
                     projectVersion++;
@@ -343,12 +355,13 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             }
             if (file.text !== text) { updated = updated || true; }
             if (!updated) {
-                return;
+                return false;
             }
             projectVersion++;
             file.version++;
             file.text = text;
             file.snapshot = compiler.ScriptSnapshot.fromString(text);
+            return true;
         } else if (!ifExist) {
             projectVersion++;
             files.set(fileName, {
@@ -357,7 +370,11 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 version: 0,
                 snapshot: compiler.ScriptSnapshot.fromString(text)
             });
+
+            return true;
         }
+
+        return false;
     }
 
     function removeFile(fileName: string) {
@@ -395,8 +412,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function processUpdate({ seq, payload }: UpdateFile.Request) {
-        updateFile(payload.fileName, payload.text, payload.ifExist);
-        replyOk(seq, null);
+        replyOk(seq, updateFile(payload.fileName, payload.text, payload.ifExist));
     }
 
     function processRemove({ seq, payload }: RemoveFile.Request) {
@@ -446,7 +462,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             });
         }
 
-        let nativeGetter: () => ts.SourceFile[];
+        let nativeGetter: () => ReadonlyArray<ts.SourceFile>;
         if (filters.length > 0) {
             nativeGetter = program.getSourceFiles;
             program.getSourceFiles = () => nativeGetter().filter(file => {
