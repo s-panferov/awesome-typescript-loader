@@ -270,8 +270,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let normalize: (f: string) => string;
 
     function processInit({ seq, payload }: Init.Request) {
-        compiler = require(payload.compilerInfo.compilerPath);
         compilerInfo = payload.compilerInfo;
+        compiler = require(compilerInfo.compilerPath);
         loaderConfig = payload.loaderConfig;
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
