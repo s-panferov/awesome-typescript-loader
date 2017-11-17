@@ -82,7 +82,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let loaderConfig: LoaderConfig;
     let compilerConfig: TsConfig;
     let compilerOptions: ts.CompilerOptions;
-    let webpackOptions: any;
     let compiler: typeof ts;
     let compilerInfo: CompilerInfo;
     let files: MapLike<File>;
@@ -276,7 +275,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         loaderConfig = payload.loaderConfig;
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
-        webpackOptions = payload.webpackOptions;
         context = payload.context;
         normalize = (f: string) => {
             return compiler.sys.useCaseSensitiveFileNames ? f : f.toLowerCase();

@@ -9,19 +9,13 @@
     "eofline": true,
     "indent": [true],
     "jsdoc-format": true,
-    "member-ordering": [
-      true,
-      "public-before-private",
-      "static-before-instance",
-      "variables-before-functions"
-    ],
     "no-arg": true,
     "no-consecutive-blank-lines": [true],
     "no-debugger": true,
     "no-duplicate-variable": true,
     "no-trailing-whitespace": true,
     "no-var-keyword": true,
-    "quotemark": [true],
+    "quotemark": [false],
     "typedef-whitespace": [true],
     "semicolon": [true]
   }
