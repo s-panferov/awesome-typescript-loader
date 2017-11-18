@@ -13,6 +13,8 @@ npm install awesome-typescript-loader --save-dev
 
 Please note that ATL works **the same way as a TypeScript compiler** as much as possible. So please be careful with your `files`/`exclude`/`include` sections.
 
+**ADVICE**: Turn on `useCache` option.
+
 **ADVICE**: Typically you want your `files` section to include only entry points.
 
 **ADVICE**: The loader works faster if you use `isolatedModules` or `forceIsolatedModules` options.
