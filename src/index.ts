@@ -92,15 +92,27 @@ function compiler(loader: Loader, text: string): void {
     }
 
     transformation
-        .then(({cached, result}) => {
-            if (!instance.compilerConfig.options.isolatedModules && result.deps) {
+        .then(async ({cached, result}) => {
+            const isolated =
+                instance.loaderConfig.forceIsolatedModules ||
+                instance.compilerConfig.options.isolatedModules;
+
+            if (!isolated && result.deps) {
                 // If our modules are isolated we don't need to recompile all the deps
                 result.deps.forEach(dep => loader.addDependency(path.normalize(dep)));
             }
             if (cached) {
                 // Update file in checker in case we read it from the cache
-                instance.checker.updateFile(fileName, text);
+                const updated = await instance.checker.updateFile(fileName, text);
+                if (updated) {
+                    if (typeof loader._module.meta.tsLoaderFileVersion === 'number') {
+                        loader._module.meta.tsLoaderFileVersion++;
+                    } else {
+                        loader._module.meta.tsLoaderFileVersion = 0;
+                    }
+                }
             }
+
             return result;
         })
         .then(({text, map}) => {

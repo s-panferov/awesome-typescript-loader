@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.4.0-0"></a>
+# [3.4.0-0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.3.0...v3.4.0-0) (2017-11-17)
+
+
+
+<a name="3.3.0"></a>
+# [3.3.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.2.3...v3.3.0) (2017-11-01)
+
+
+### Bug Fixes
+
+* performance issue on case-insensitive file systems [#507](https://github.com/s-panferov/awesome-typescript-loader/issues/507) ([fc04d29](https://github.com/s-panferov/awesome-typescript-loader/commit/fc04d29))
+* use enhancedResolve to resolve babel-core ([9f7e978](https://github.com/s-panferov/awesome-typescript-loader/commit/9f7e978))
+
+
+### Features
+
+* add `errorsAsWarnings` option ([bc9b544](https://github.com/s-panferov/awesome-typescript-loader/commit/bc9b544))
+* add `forceIsolatedModules` ([7f74bba](https://github.com/s-panferov/awesome-typescript-loader/commit/7f74bba))
+
+
+
 <a name="3.2.3"></a>
 ## [3.2.3](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.2.2...v3.2.3) (2017-08-14)
 

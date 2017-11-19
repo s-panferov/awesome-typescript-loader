@@ -1,4 +1,4 @@
-# The best TypeScript loader for Webpack
+# TypeScript loader for Webpack
 
 [![Join the chat at https://gitter.im/s-panferov/awesome-typescript-loader](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/s-panferov/awesome-typescript-loader?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/s-panferov/awesome-typescript-loader.svg?branch=master)](https://travis-ci.org/s-panferov/awesome-typescript-loader)
@@ -8,6 +8,20 @@
 ```
 npm install awesome-typescript-loader --save-dev
 ```
+
+## Performance issues
+
+Please note that ATL works **the same way as a TypeScript compiler** as much as possible. So please be careful with your `files`/`exclude`/`include` sections.
+
+**ADVICE**: Typically you want your `files` section to include only entry points.
+
+**ADVICE**: The loader works faster if you use `isolatedModules` or `forceIsolatedModules` options.
+
+**ADVICE**: The loader works faster if you will use `reportFiles` to restrict
+checking scope.
+
+The world is changing, other solutions are evolving and ATL may work **slower**
+for [some workloads](https://github.com/s-panferov/awesome-typescript-loader/issues/497). Feel free to try [`ts-loader`](https://github.com/TypeStrong/ts-loader) with [`HappyPack` ](https://github.com/amireh/happypack) or [`thread-loader`](https://webpack.js.org/loaders/thread-loader/) and [hard-source-webpack-plugin](https://github.com/mzgoddard/hard-source-webpack-plugin).
 
 ## Differences between [`ts-loader`](https://github.com/TypeStrong/ts-loader)
 
@@ -132,6 +146,14 @@ Specifies the path to a TS config file. This is useful when you have multiple co
 
 Use this setting to disable type checking.
 
+### errorsAsWarnings *(boolean)*
+
+Emit all typescript errors as warnings.
+
+### forceIsolatedModules *(boolean)*
+
+Use this setting to disable dependent module recompilation.
+
 ### ignoreDiagnostics *(number[]) (default=[])*
 
 You can squelch certain TypeScript errors by specifying an array of [diagnostic codes](https://github.com/Microsoft/TypeScript/blob/master/src/compiler/diagnosticMessages.json) to ignore.
@@ -141,6 +163,22 @@ For example, you can transpile [stage 1 properties](https://github.com/jeffmo/es
 
 Invoke Babel to transpile files. Useful with ES6 target. Please see `useCache` option
 which can improve warm-up time.
+
+If you're using `babelOptions`, anything in `.babelrc` will take precedence. This breaks expected usage for scenarios where you need two sets of Babel configs (example: one for Webpack, one for your build tools).
+
+You may want to `"babelrc": false to disable `.babelrc` if you don't want it:
+
+```json
+{
+    "useBabel": true,
+    "babelOptions": {
+        "babelrc": false, /* Important line */
+        "presets": [
+            ["env", { "targets": "last 2 versions, ie 11", "modules": false }]
+        ]
+    }
+}
+```
 
 ### babelCore *(string) (default=undefined)*
 

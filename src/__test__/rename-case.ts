@@ -30,6 +30,14 @@ spec(__filename, async function() {
     });
 
     file.move('src/MyFile.ts');
+
+    {
+        let stats = await watcher.wait();
+        expectErrors(stats, 1, [
+            `Type '"10"' is not assignable to type 'number'`
+        ]);
+    }
+
     file.update(text => {
         return `
             export let a: number = 10

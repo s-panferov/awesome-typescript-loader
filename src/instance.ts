@@ -11,6 +11,7 @@ import { createHash } from 'crypto';
 let colors = require('colors/safe');
 let pkg = require('../package.json');
 let mkdirp = require('mkdirp');
+let enhancedResolve = require('enhanced-resolve');
 
 export interface Instance {
     id: number;
@@ -38,6 +39,9 @@ export interface Compiler {
 
 export interface Loader {
     _compiler: Compiler;
+    _module: {
+        meta: any
+    };
     cacheable: () => void;
     query: string;
     async: () => (err: Error, source?: string, map?: string) => void;
@@ -224,11 +228,13 @@ function setupCache(
     }
 }
 
+const resolver = enhancedResolve.create.sync();
+
 function setupBabel(loaderConfig: LoaderConfig, context: string): any {
     let babelImpl: any;
     if (loaderConfig.useBabel) {
         try {
-            let babelPath = loaderConfig.babelCore || path.join(context, 'node_modules', 'babel-core');
+            let babelPath = loaderConfig.babelCore || resolver(context, 'babel-core');
             babelImpl = require(babelPath);
         } catch (e) {
             console.error(BABEL_ERROR, e);
@@ -381,22 +387,25 @@ function setupWatchRun(compiler, instanceName: string) {
                 checker.removeFile(file);
             });
         }
+
         instance.watchedFiles = set;
 
         const instanceTimes = instance.times;
         instance.times = Object.assign({}, times) as any;
 
-        const updates = Object.keys(times)
-            .filter(fileName => {
-                const updated = times[fileName] > (instanceTimes[fileName] || startTime);
-                return updated;
-            })
+        const changedFiles = Object.keys(times)
+        .filter(fileName => {
+            const updated = times[fileName] > (instanceTimes[fileName] || startTime);
+            return updated;
+        });
+
+        const updates = changedFiles
             .map(fileName => {
                 const unixFileName = toUnix(fileName);
                 if (fs.existsSync(unixFileName)) {
-                    checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
+                    return checker.updateFile(unixFileName, fs.readFileSync(unixFileName).toString(), true);
                 } else {
-                    checker.removeFile(unixFileName);
+                    return checker.removeFile(unixFileName);
                 }
             });
 
@@ -442,7 +451,11 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             if (asyncErrors) {
                 console.log(msg, '\n');
             } else {
-                compilation.errors.push(new Error(msg));
+                if (!instance.loaderConfig.errorsAsWarnings) {
+                    compilation.errors.push(new Error(msg));
+                } else {
+                    compilation.warnings.push(new Error(msg));
+                }
             }
         };
 
