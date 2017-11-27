@@ -178,13 +178,16 @@ You may want to `"babelrc": false to disable `.babelrc` if you don't want it:
         "presets": [
             ["env", { "targets": "last 2 versions, ie 11", "modules": false }]
         ]
-    }
+    },
+    "babelCore": "@babel/core", // needed for Babel v7
 }
 ```
 
 ### babelCore *(string) (default=undefined)*
 
 Override the path used to find `babel-core`. Useful if `node_modules` is installed in a non-standard place or webpack is being invoked from a directory not at the root of the project.
+
+For Babel 7, this should be set to `"@babel/core"`.
 
 ### babelOptions *(object) (default=null)*
 
