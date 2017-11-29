@@ -22,6 +22,8 @@ Please note that ATL works **the same way as a TypeScript compiler** as much as 
 **ADVICE**: The loader works faster if you will use `reportFiles` to restrict
 checking scope.
 
+**ADVICE**: Use the loader together with [hard-source-webpack-plugin](https://github.com/mzgoddard/hard-source-webpack-plugin)
+
 The world is changing, other solutions are evolving and ATL may work **slower**
 for [some workloads](https://github.com/s-panferov/awesome-typescript-loader/issues/497). Feel free to try [`ts-loader`](https://github.com/TypeStrong/ts-loader) with [`HappyPack` ](https://github.com/amireh/happypack) or [`thread-loader`](https://webpack.js.org/loaders/thread-loader/) and [hard-source-webpack-plugin](https://github.com/mzgoddard/hard-source-webpack-plugin).
 
