@@ -283,7 +283,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         files = new CaseInsensitiveMap();
 
         if (compiler.createModuleResolutionCache) {
-            cache = ts.createModuleResolutionCache(
+            cache = compiler.createModuleResolutionCache(
                 context,
                 normalize
             );
