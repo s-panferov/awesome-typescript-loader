@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import * as path from 'path';
 import * as micromatch from 'micromatch';
 import * as colors from 'colors';
-import { findResultFor, toUnix, noop, notImplemented, unorderedRemoveItem } from '../helpers';
+import { findResultFor, toUnix, unorderedRemoveItem } from '../helpers';
 import {
     Req,
     Res,
@@ -85,53 +85,41 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     let context: string;
     let rootFilesChanged = false;
 
-    let system: ts.System;
     let filesRegex: RegExp;
     type WatchCallbacks<T> = Map<string, T[]>;
     const watchedFiles: WatchCallbacks<ts.FileWatcherCallback> = new Map();
     const watchedDirectories: WatchCallbacks<ts.DirectoryWatcherCallback> = new Map();
     const watchedDirectoriesRecursive: WatchCallbacks<ts.DirectoryWatcherCallback> = new Map();
+    const useCaseSensitiveFileNames = () => !caseInsensitive;
     const getCanonicalFileName: (fileName: string) => string = caseInsensitive ?
         fileName => fileName.toLowerCase() :
         (fileName => fileName);
 
-    let watchHost: ts.WatchOfFilesAndCompilerOptionsHost;
+    let watchHost: ts.WatchCompilerHostOfFilesAndCompilerOptions;
     let watch: ts.WatchOfFilesAndCompilerOptions;
-    let _program: ts.Program;
-    const builder = ts.createSemanticDiagnosticsBuilder({
-        computeHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args),
-        getCanonicalFileName
+    const _builder = ts.createSemanticDiagnosticsBuilder({
+        useCaseSensitiveFileNames,
+        createHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args),
     });
 
-    function createSystem(): ts.System {
+    function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions {
         return {
-            args: [],
-            newLine: compiler.sys.newLine,
-            useCaseSensitiveFileNames: compiler.sys.useCaseSensitiveFileNames,
+            rootFiles: getRootFiles(),
+            options: compilerOptions,
 
+            useCaseSensitiveFileNames,
+            getNewLine: () => compiler.sys.newLine,
             getCurrentDirectory: () => context,
-            getExecutingFilePath: () => compiler.sys.getExecutingFilePath(),
-
-            readFile,
+            getDefaultLibFileName,
             fileExists: (...args) => compiler.sys.fileExists.apply(compiler.sys, args),
+            readFile,
             directoryExists: (...args) => compiler.sys.directoryExists.apply(compiler.sys, args),
             getDirectories: (...args) => compiler.sys.getDirectories.apply(compiler.sys, args),
             readDirectory: (...args) => compiler.sys.readDirectory.apply(compiler.sys, args),
-
-            resolvePath: (...args) => compiler.sys.resolvePath.apply(compiler.sys, args),
-
-            write: noop,
-
-            // All write operations are noop and we will deal with them separately
-            createDirectory: notImplemented,
-            writeFile: notImplemented,
-
-            createHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args),
-
-            exit: noop,
+            realpath: (...args) => compiler.sys.resolvePath.apply(compiler.sys, args),
 
             watchFile,
-            watchDirectory
+            watchDirectory,
         };
 
         function readFile(fileName: string) {
@@ -141,20 +129,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 return file.text;
             }
         }
-    }
-
-    function createWatchHost(): ts.WatchOfFilesAndCompilerOptionsHost {
-        system = createSystem();
-        return {
-            rootFiles: getRootFiles(),
-            options: compilerOptions,
-            system,
-            beforeProgramCreate: noop,
-            afterProgramCreate: (host, newProgram) => {
-                _program = newProgram;
-                builder.updateProgram(newProgram);
-            }
-        };
     }
 
     function createWatch(): ts.WatchOfFilesAndCompilerOptions {
@@ -167,8 +141,13 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             rootFilesChanged = false;
             watch.updateRootFileNames(getRootFiles());
         }
-        watch.synchronizeProgram();
-        return _program;
+        return watch.getProgram();
+    }
+
+    function getBuilderAndProgram(): { builder: ts.SemanticDiagnosticsBuilder; program: ts.Program; } {
+        const program = getProgram();
+        _builder.updateProgram(program);
+        return { program, builder: _builder };
     }
 
     function getRootFiles() {
@@ -177,6 +156,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         return names;
     }
 
+    function getDefaultLibFileName(options: ts.CompilerOptions) {
+        return path.join(path.dirname(compiler.sys.getExecutingFilePath()), compiler.getDefaultLibFileName(options));
+    }
     function invokeWatcherCallbacks(callbacks: ts.FileWatcherCallback[] | undefined, fileName: string, eventKind: ts.FileWatcherEventKind): void;
     function invokeWatcherCallbacks(callbacks: ts.DirectoryWatcherCallback[] | undefined, fileName: string): void;
     function invokeWatcherCallbacks(callbacks: ts.FileWatcherCallback[] | ts.DirectoryWatcherCallback[] | undefined, fileName: string, eventKind?: ts.FileWatcherEventKind) {
@@ -400,7 +382,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     function processEmit({ seq, payload }: EmitFile.Request) {
         updateFile(payload.fileName, payload.text);
         const emitResult = emit(payload.fileName);
-        const program = getProgram();
+        const { program, builder }= getBuilderAndProgram();
         const sourceFile = program.getSourceFile(payload.fileName);
         const deps = builder.getAllDependencies(program, sourceFile);
 
@@ -420,7 +402,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             console.log(colors.cyan(`\n[${instanceName}] Checking started in a separate process...`));
         }
 
-        const program = getProgram();
+        const { program, builder } = getBuilderAndProgram();
         const sourceFiles = program.getSourceFiles();
 
         const allDiagnostics = program
