@@ -1,15 +1,15 @@
-import * as _ from 'lodash';
-import * as path from 'path';
-import * as fs from 'fs';
+import * as _ from "lodash";
+import * as path from "path";
+import * as fs from "fs";
 
-import { findCompiledModule, cache } from './cache';
-import * as helpers from './helpers';
-import { QueryOptions, Loader, ensureInstance, Instance, getRootCompiler } from './instance';
-import { PathPlugin } from './paths-plugin';
-import { CheckerPlugin as _CheckerPlugin } from './watch-mode';
+import { findCompiledModule, cache } from "./cache";
+import * as helpers from "./helpers";
+import { QueryOptions, Loader, ensureInstance, Instance, getRootCompiler } from "./instance";
+import { PathPlugin } from "./paths-plugin";
+import { CheckerPlugin as _CheckerPlugin } from "./watch-mode";
 
-const loaderUtils = require('loader-utils');
-const mkdirp = require('mkdirp');
+const loaderUtils = require("loader-utils");
+const mkdirp = require("mkdirp");
 
 function loader(text) {
     try {
@@ -43,7 +43,7 @@ function compiler(loader: Loader, text: string): void {
 
     const query = <QueryOptions>(loaderUtils.getOptions(loader) || {});
     const options = (loader.options && loader.options.ts) || {};
-    const instanceName = query.instance || 'at-loader';
+    const instanceName = query.instance || "at-loader";
     const instance = ensureInstance(loader, query, options, instanceName, rootCompiler);
     const callback = loader.async();
 
@@ -52,7 +52,7 @@ function compiler(loader: Loader, text: string): void {
 
     if (DECLARATION.test(fileName)) {
         loader.emitWarning(`[${instanceName}] TypeScript declaration files should never be required`);
-        return callback(null, '');
+        return callback(null, "");
     }
 
     let compiledModule;
@@ -98,7 +98,7 @@ function compiler(loader: Loader, text: string): void {
                 instance.compilerConfig.options.isolatedModules;
 
             if (!isolated && result.deps) {
-                // If our modules are isolated we don't need to recompile all the deps
+                // If our modules are isolated we don"t need to recompile all the deps
                 result.deps.forEach(dep => loader.addDependency(path.normalize(dep)));
             }
             if (cached) {
@@ -113,8 +113,8 @@ function compiler(loader: Loader, text: string): void {
         })
         .catch(callback)
         .catch(e => {
-            console.error('Error in bail mode:', e, e.stack.join
-                ? e.stack.join ('\n')
+            console.error("Error in bail mode:", e, e.stack.join
+                ? e.stack.join ("\n")
                 : e.stack
             );
             process.exit(1);
@@ -134,14 +134,14 @@ function transform(
         resultSourceMap = emitResult.sourceMap;
         resultText = emitResult.text;
 
-        let sourceFileName = fileName.replace(instance.context + '/', '');
+        let sourceFileName = fileName.replace(instance.context + "/", "");
         if (resultSourceMap) {
             resultSourceMap = JSON.parse(resultSourceMap);
             resultSourceMap.sources = [ sourceFileName ];
             resultSourceMap.file = sourceFileName;
             resultSourceMap.sourcesContent = [ text ];
 
-            resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, '');
+            resultText = resultText.replace(/^\/\/# sourceMappingURL=[^\r\n]*/gm, "");
         }
 
         if (instance.loaderConfig.useBabel) {

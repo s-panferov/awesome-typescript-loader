@@ -1,4 +1,4 @@
-export const WatchModeSymbol = Symbol('WatchMode');
+export const WatchModeSymbol = Symbol("WatchMode");
 
 export class CheckerPlugin {
     apply(compiler) {

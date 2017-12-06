@@ -1,14 +1,14 @@
-import { LoaderConfig, CompilerInfo, TsConfig } from '../interfaces';
+import { LoaderConfig, CompilerInfo, TsConfig } from "../interfaces";
 export { CompilerInfo, LoaderConfig, TsConfig }
 
-export type MessageType = 'Init' | 'UpdateFile' | 'Diagnostics' | 'EmitFile' | 'Files' | 'RemoveFile'
+export type MessageType = "Init" | "UpdateFile" | "Diagnostics" | "EmitFile" | "Files" | "RemoveFile"
 export const MessageType = {
-    Init: 'Init' as 'Init',
-    Files: 'Files' as 'Files',
-    UpdateFile: 'UpdateFile' as 'UpdateFile',
-    RemoveFile: 'RemoveFile' as 'RemoveFile',
-    Diagnostics: 'Diagnostics' as 'Diagnostics',
-    EmitFile: 'EmitFile' as 'EmitFile',
+    Init: "Init" as "Init",
+    Files: "Files" as "Files",
+    UpdateFile: "UpdateFile" as "UpdateFile",
+    RemoveFile: "RemoveFile" as "RemoveFile",
+    Diagnostics: "Diagnostics" as "Diagnostics",
+    EmitFile: "EmitFile" as "EmitFile",
 };
 
 export interface ReqBase {
@@ -44,7 +44,7 @@ export namespace Init {
     }
 
     export interface Request extends ReqBase {
-        type: 'Init';
+        type: "Init";
         payload: Payload;
     }
 
@@ -59,7 +59,7 @@ export namespace UpdateFile {
     }
 
     export interface Request extends ReqBase {
-        type: 'UpdateFile';
+        type: "UpdateFile";
         payload: Payload;
     }
 
@@ -77,7 +77,7 @@ export namespace RemoveFile {
     }
 
     export interface Request extends ReqBase {
-        type: 'RemoveFile';
+        type: "RemoveFile";
         payload: Payload;
     }
 
@@ -94,7 +94,7 @@ export namespace EmitFile {
     }
 
     export interface Request extends ReqBase {
-        type: 'EmitFile';
+        type: "EmitFile";
         payload: ReqPayload;
     }
 
@@ -114,7 +114,7 @@ export namespace EmitFile {
 
 export namespace Files {
     export interface Request extends ReqBase {
-        type: 'Files';
+        type: "Files";
     }
 
     export interface Response {
@@ -126,7 +126,7 @@ export namespace Files {
 
 export namespace Diagnostics {
     export interface Request extends ReqBase {
-        type: 'Diagnostics';
+        type: "Diagnostics";
     }
 
     export interface Response {

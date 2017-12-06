@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import * as zlib from 'zlib';
-import { createHash } from 'crypto';
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import * as zlib from "zlib";
+import { createHash } from "crypto";
 
 export interface CompiledModule {
     fileName: string;
@@ -12,7 +12,7 @@ export interface CompiledModule {
 }
 
 export function findCompiledModule(fileName: string): CompiledModule {
-    let baseFileName = fileName.replace(/(\.ts|\.tsx)$/, '');
+    let baseFileName = fileName.replace(/(\.ts|\.tsx)$/, "");
     let compiledFileName = `${baseFileName}.js`;
 
     if (fs.existsSync(compiledFileName)) {
@@ -64,7 +64,7 @@ function write(filename: string, result: any) {
  * @return {String}
  */
 function filename(source: string, identifier, options) {
-    let hash = createHash('sha512') as any;
+    let hash = createHash("sha512") as any;
     let contents = JSON.stringify({
         identifier: identifier,
         options: options,
@@ -73,7 +73,7 @@ function filename(source: string, identifier, options) {
 
     hash.end(contents);
 
-    return hash.read().toString('hex') + '.json.gzip';
+    return hash.read().toString("hex") + ".json.gzip";
 }
 
 export interface CacheParams<T> {
@@ -94,7 +94,7 @@ export function cache<T>(params: CacheParams<T>): Promise<{cached: boolean, resu
     let options = params.options || {};
     let transform = params.transform;
     let identifier = params.identifier;
-    let directory = (typeof params.directory === 'string') ?
+    let directory = (typeof params.directory === "string") ?
         params.directory :
         os.tmpdir();
 
