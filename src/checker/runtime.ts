@@ -96,13 +96,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         (fileName => fileName);
 
     let watchHost: ts.WatchCompilerHostOfFilesAndCompilerOptions;
-    let watch: ts.WatchOfFilesAndCompilerOptions;
-    const _builder = ts.createSemanticDiagnosticsBuilder({
-        useCaseSensitiveFileNames,
-        createHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args),
-    });
+    let watch: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>;
 
-    function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions {
+    function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions & ts.BuilderProgramHost {
         return {
             rootFiles: getRootFiles(),
             options: compilerOptions,
@@ -120,6 +116,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
             watchFile,
             watchDirectory,
+
+            createHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args)
         };
 
         function readFile(fileName: string) {
@@ -131,23 +129,17 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
     }
 
-    function createWatch(): ts.WatchOfFilesAndCompilerOptions {
+    function createWatch(): ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> {
         watchHost = createWatchHost();
-        return compiler.createWatch(watchHost);
+        return compiler.createWatchBuilderProgram(watchHost, compiler.createSemanticDiagnosticsBuilderProgram);
     }
 
-    function getProgram(): ts.Program {
+    function getProgram(): ts.SemanticDiagnosticsBuilderProgram {
         if (rootFilesChanged) {
             rootFilesChanged = false;
             watch.updateRootFileNames(getRootFiles());
         }
         return watch.getProgram();
-    }
-
-    function getBuilderAndProgram(): { builder: ts.SemanticDiagnosticsBuilder; program: ts.Program; } {
-        const program = getProgram();
-        _builder.updateProgram(program);
-        return { program, builder: _builder };
     }
 
     function getRootFiles() {
@@ -382,9 +374,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     function processEmit({ seq, payload }: EmitFile.Request) {
         updateFile(payload.fileName, payload.text);
         const emitResult = emit(payload.fileName);
-        const { program, builder }= getBuilderAndProgram();
+        const program = getProgram();
         const sourceFile = program.getSourceFile(payload.fileName);
-        const deps = builder.getAllDependencies(program, sourceFile);
+        const deps = program.getAllDependencies(sourceFile);
 
         replyOk(seq, { emitResult, deps });
     }
@@ -395,6 +387,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         });
     }
 
+    function isAffectedSourceFile(affected: ts.SourceFile | ts.Program): affected is ts.SourceFile {
+        return (affected as ts.SourceFile).kind === compiler.SyntaxKind.SourceFile;
+    }
+
     function processDiagnostics({ seq }: Diagnostics.Request) {
         let silent = !!loaderConfig.silent;
 
@@ -402,7 +398,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             console.log(colors.cyan(`\n[${instanceName}] Checking started in a separate process...`));
         }
 
-        const { program, builder } = getBuilderAndProgram();
+        const program = getProgram();
         const sourceFiles = program.getSourceFiles();
 
         const allDiagnostics = program
@@ -429,10 +425,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         };
 
         let result: ts.AffectedFileResult<ReadonlyArray<ts.Diagnostic>>;
-        while (result = builder.getSemanticDiagnosticsOfNextAffectedFile(program, /*cancellationToken*/ undefined, ignoreSouceFile)) {
+        while (result = program.getSemanticDiagnosticsOfNextAffectedFile(/*cancellationToken*/ undefined, ignoreSouceFile)) {
             // If whole program is affected, just get those diagnostics from cache again in later pass
             // But if its single file, set the results push the results
-            if (result.affected !== program) {
+            if (isAffectedSourceFile(result.affected)) {
                 const file = result.affected as ts.SourceFile;
                 allDiagnostics.push(...program.getSyntacticDiagnostics(file));
                 // Semantic diagnostics
@@ -448,7 +444,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             }
 
             allDiagnostics.push(...program.getSyntacticDiagnostics(file));
-            allDiagnostics.push(...builder.getSemanticDiagnostics(program, file));
+            allDiagnostics.push(...program.getSemanticDiagnostics(file));
         });
 
         if (loaderConfig.debug) {
