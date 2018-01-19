@@ -95,10 +95,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         fileName => fileName.toLowerCase() :
         (fileName => fileName);
 
-    let watchHost: ts.WatchCompilerHostOfFilesAndCompilerOptions;
+    let watchHost: ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>;
     let watch: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>;
 
-    function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions & ts.BuilderProgramHost {
+    function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> & ts.BuilderProgramHost {
         return {
             rootFiles: getRootFiles(),
             options: compilerOptions,
@@ -117,6 +117,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             watchFile,
             watchDirectory,
 
+            createProgram: compiler.createSemanticDiagnosticsBuilderProgram,
+
             createHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args)
         };
 
@@ -131,7 +133,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
     function createWatch(): ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> {
         watchHost = createWatchHost();
-        return compiler.createWatchBuilderProgram(watchHost, compiler.createSemanticDiagnosticsBuilderProgram);
+        return compiler.createWatchProgram(watchHost);
     }
 
     function getProgram(): ts.SemanticDiagnosticsBuilderProgram {
