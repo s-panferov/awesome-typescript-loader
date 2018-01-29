@@ -38,8 +38,10 @@
     "lodash": "^4.17.4",
     "micromatch": "^3.0.3",
     "mkdirp": "^0.5.1",
-    "object-assign": "^4.1.1",
-    "source-map-support": "^0.4.15"
+    "source-map-support": "^0.5.3"
+  },
+  "peerDependencies": {
+    "typescript": "^2"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
