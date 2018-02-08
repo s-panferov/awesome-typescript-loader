@@ -362,12 +362,13 @@ const filterMtimes = (mtimes: any) => {
 
 function setupWatchRun(compiler, instanceName: string) {
     compiler.plugin('watch-run', function (watching, callback) {
-        const instance = resolveInstance(watching.compiler, instanceName);
+        const compiler = watching.compiler || watching;
+        const instance = resolveInstance(compiler, instanceName);
         const checker = instance.checker;
-        const watcher = watching.compiler.watchFileSystem.watcher
-            || watching.compiler.watchFileSystem.wfs.watcher;
+        const watcher = compiler.watchFileSystem.watcher
+            || compiler.watchFileSystem.wfs.watcher;
 
-        const startTime = instance.startTime || watching.startTime;
+        const startTime = instance.startTime || compiler.startTime;
         const times = filterMtimes(watcher.getTimes());
         const lastCompiled = instance.compiledFiles;
 
