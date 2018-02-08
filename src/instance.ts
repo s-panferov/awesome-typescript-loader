@@ -361,7 +361,8 @@ const filterMtimes = (mtimes: any) => {
 };
 
 function setupWatchRun(compiler, instanceName: string) {
-    compiler.plugin('watch-run', function (compiler, callback) {
+    compiler.plugin('watch-run', function (watching, callback) {
+        const compiler = watching.compiler || watching;
         const instance = resolveInstance(compiler, instanceName);
         const checker = instance.checker;
         const watcher = compiler.watchFileSystem.watcher
