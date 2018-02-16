@@ -460,7 +460,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             });
         }
 
-        let nativeGetter: () => ReadonlyArray<ts.SourceFile>;
+        let nativeGetter: typeof program.getSourceFiles;
         if (filters.length > 0) {
             nativeGetter = program.getSourceFiles;
             program.getSourceFiles = () => nativeGetter().filter(file => {
