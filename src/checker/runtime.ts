@@ -264,7 +264,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         directoryExists(path: string) {
             return compiler.sys.directoryExists(path);
         }
-
     }
 
     let normalize: (f: string) => string;
@@ -273,6 +272,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         compilerInfo = payload.compilerInfo;
         compiler = require(compilerInfo.compilerPath);
         loaderConfig = payload.loaderConfig;
+
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
         context = payload.context;
@@ -310,6 +310,12 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         });
 
         const program = service.getProgram();
+        if (loaderConfig.getCustomTransformers !== undefined) {
+            host.getCustomTransformers = loaderConfig.getCustomTransformers(program);
+        } else if (loaderConfig.customTranformersPath !== undefined) {
+            host.getCustomTransformers = require(loaderConfig.customTranformersPath)(program);
+        }
+
         program.getSourceFiles().forEach(file => {
             files.set(file.fileName, {
                 fileName: file.fileName,

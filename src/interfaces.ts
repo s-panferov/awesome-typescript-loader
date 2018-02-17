@@ -26,9 +26,10 @@ export interface LoaderConfig {
     cacheDirectory?: string;
     entryFileIsJs?: boolean;
     debug?: boolean;
+    customTranformersPath?: string;
+    getCustomTransformers?: (program: ts.Program) => ts.CustomTransformers | undefined;
     reportFiles?: string[];
     context?: string;
-    getCustomTransformers?(): ts.CustomTransformers | undefined;
 }
 
 export interface OutputFile {
