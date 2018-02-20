@@ -116,7 +116,7 @@ export function ensureInstance(
         context
     );
 
-    if (!loaderConfig.silent) {
+    if (loaderConfig.verbose) {
         const sync = watching === WatchMode.Enabled ? ' (in a forked process)' : '';
         console.log(`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
             + `"tsconfig.json" from ${configFilePath}${sync}.\n`);
@@ -446,6 +446,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         const watchMode = isWatching(compilation.compiler);
         const instance: Instance = resolveInstance(compilation.compiler, instanceName);
         const silent = instance.loaderConfig.silent;
+        const verbose = instance.loaderConfig.verbose;
         const asyncErrors = watchMode === WatchMode.Enabled && !silent;
 
         let emitError = (msg) => {
@@ -475,7 +476,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
             ? Promise.resolve()
             : instance.checker.getDiagnostics()
                 .then(diags => {
-                    if (!silent) {
+                    if (verbose) {
                         if (diags.length) {
                             console.error(colors.red(`\n[${instanceName}] Checking finished with ${diags.length} errors`));
                         } else {
