@@ -122,7 +122,7 @@ export function formatError(diagnostic) {
 		(diagnostic.file ? path.normalize(diagnostic.file.fileName) : '') +
 		(lineChar ? formatLineChar(lineChar) + ' ' : '') +
 		'\n' +
-		(typeof diagnostic.messageText == 'string'
+		(typeof diagnostic.messageText === 'string'
 			? diagnostic.messageText
 			: formatMessageChain(<ts.DiagnosticMessageChain>diagnostic.messageText))
 	)
