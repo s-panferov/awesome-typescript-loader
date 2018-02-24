@@ -148,7 +148,7 @@ Specifies the path to a TS config file. This is useful when you have multiple co
 
 ### transpileOnly *(boolean)*
 
-Use this setting to disable type checking.
+Use this setting to disable type checking, enabling this will nullify the `CheckerPlugin` usage in your webpack configuration.
 
 ### errorsAsWarnings *(boolean)*
 
