@@ -1,10 +1,9 @@
-import {
-    src, tsconfig, stdout,
-    spec, file, execWebpack
-} from './utils';
+import { src, tsconfig, stdout, spec, file, execWebpack } from './utils'
 
 export function config(env) {
-    file(`webpack.config.js`, `
+	file(
+		`webpack.config.js`,
+		`
         const path = require('path')
         module.exports = {
             entry: { index: path.join(process.cwd(), '${env.SRC_DIR}', 'index.ts') },
@@ -28,31 +27,35 @@ export function config(env) {
                 ]
             }
         }
-    `);
+    `
+	)
 }
 
 spec(__filename, async function(env, done) {
-    src('index.ts', `
+	src(
+		'index.ts',
+		`
         export default function sum(a: number, b: number) {
             return a + b;
         }
 
         sum(1, '1');
-    `);
+    `
+	)
 
-    tsconfig();
-    config(env);
+	tsconfig()
+	config(env)
 
-    const webpack = execWebpack();
-    webpack.strictOutput();
+	const webpack = execWebpack()
+	webpack.strictOutput()
 
-    await webpack.wait(
-        stdout([
-            'ERROR in [at-loader]',
-            `Argument of type '"1"' is not assignable to parameter of type 'number'`
-        ])
-    );
+	await webpack.wait(
+		stdout([
+			'ERROR in [at-loader]',
+			`Argument of type '"1"' is not assignable to parameter of type 'number'`
+		])
+	)
 
-    webpack.close();
-    done();
-});
+	webpack.close()
+	done()
+})

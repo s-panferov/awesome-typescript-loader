@@ -1,31 +1,34 @@
-import {
-    src, webpackConfig, tsconfig,
-    compile, checkOutput, expectErrors, spec
-} from './utils';
+import { src, webpackConfig, tsconfig, compile, checkOutput, expectErrors, spec } from './utils'
 
 spec(__filename, async function() {
-    src('index.ts', `
+	src(
+		'index.ts',
+		`
         function sum(a: number, b: number) {
             return a + b;
         }
 
         sum('test', 1);
-    `);
+    `
+	)
 
-    tsconfig();
+	tsconfig()
 
-    let stats = await compile(webpackConfig());
+	let stats = await compile(webpackConfig())
 
-    expectErrors(stats, 1, [
-        './src/index.ts',
-        `Argument of type '"test"' is not assignable to parameter of type 'number'`
-    ]);
+	expectErrors(stats, 1, [
+		'./src/index.ts',
+		`Argument of type '"test"' is not assignable to parameter of type 'number'`
+	])
 
-    checkOutput('index.js', `
+	checkOutput(
+		'index.js',
+		`
         function sum(a, b) {
             return a + b;
         }
 
         sum('test', 1);
-    `);
-});
+    `
+	)
+})

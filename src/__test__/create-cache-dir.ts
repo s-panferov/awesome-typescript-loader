@@ -1,30 +1,32 @@
-import {
-    src, webpackConfig, tsconfig, compile, expect,
-    query, spec
-} from './utils';
+import { src, webpackConfig, tsconfig, compile, expect, query, spec } from './utils'
 
-import * as path from 'path';
-import * as fs from 'fs';
+import * as path from 'path'
+import * as fs from 'fs'
 
 spec(__filename, async function() {
-    src('index.ts', `
+	src(
+		'index.ts',
+		`
         class HiThere {
             constructor(a: number, b: string) {
                 const t = a + b;
             }
         }
-    `);
+    `
+	)
 
-    tsconfig();
+	tsconfig()
 
-    const config = webpackConfig(query({
-        useCache: true,
-        // test that we create cache dir
-        cacheDirectory: path.join(process.cwd(), 'cache', '.cache'),
-    }));
+	const config = webpackConfig(
+		query({
+			useCache: true,
+			// test that we create cache dir
+			cacheDirectory: path.join(process.cwd(), 'cache', '.cache')
+		})
+	)
 
-    await compile(config);
+	await compile(config)
 
-    const exists = fs.existsSync(path.join(process.cwd(), 'cache', '.cache'));
-    expect(exists).true;
-});
+	const exists = fs.existsSync(path.join(process.cwd(), 'cache', '.cache'))
+	expect(exists).true
+})

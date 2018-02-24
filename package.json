@@ -13,7 +13,9 @@
     "build": "rimraf dist && tsc --pretty",
     "lint": "tslint src/*.ts",
     "release": "standard-version",
-    "test": "rimraf .test && mocha --timeout 30000 dist/__test__"
+    "test": "rimraf .test && mocha --timeout 30000 dist/__test__",
+    "postinstall": "node node_modules/husky/bin/install.js || true",
+    "precommit": "lint-staged"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
   "repository": {
@@ -50,7 +52,6 @@
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.5",
     "@types/shelljs": "^0.7.2",
-    "@types/chalk": "^2.2.0",
     "@types/sinon": "^2.3.2",
     "@types/webpack": "^3.0.1",
     "bluebird": "^3.5.0",
@@ -64,6 +65,9 @@
     "standard-version": "^4.2.0",
     "temp": "^0.8.3",
     "tslint": "^5.4.3",
+    "prettier": "^1.10.2",
+    "lint-staged": "^7.0.0",
+    "husky": "^0.14.3",
     "typescript": "^2.7.2",
     "webpack": "~2.7.0"
   }

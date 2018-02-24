@@ -1,22 +1,28 @@
-import {
-    src, webpackConfig, tsconfig,
-    compile, expectErrors, spec, query
-} from './utils';
+import { src, webpackConfig, tsconfig, compile, expectErrors, spec, query } from './utils'
 
 spec(__filename, async function() {
-    src('index.ts', `
+	src(
+		'index.ts',
+		`
         const a = {}
         const b = Object.values(a);
-    `);
+    `
+	)
 
-    tsconfig({
-        target: 'es2017'
-    }, undefined, './config/tsconfig.json');
+	tsconfig(
+		{
+			target: 'es2017'
+		},
+		undefined,
+		'./config/tsconfig.json'
+	)
 
-    const config = webpackConfig(query({
-        configFileName: './config/tsconfig.json'
-    }));
+	const config = webpackConfig(
+		query({
+			configFileName: './config/tsconfig.json'
+		})
+	)
 
-    let stats = await compile(config);
-    expectErrors(stats, 0);
-});
+	let stats = await compile(config)
+	expectErrors(stats, 0)
+})
