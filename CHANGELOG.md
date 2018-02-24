@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="3.5.0"></a>
+# [3.5.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.4.1...v3.5.0) (2018-02-24)
+
+
+### Features
+
+* allow setting getCustomTransformers as a path to a module ([#531](https://github.com/s-panferov/awesome-typescript-loader/issues/531)) ([ad7cfad](https://github.com/s-panferov/awesome-typescript-loader/commit/ad7cfad))
+
+
+
 <a name="3.4.1"></a>
 ## [3.4.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v3.4.0...v3.4.1) (2017-12-01)
 
