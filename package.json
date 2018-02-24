@@ -69,6 +69,6 @@
     "lint-staged": "^7.0.0",
     "husky": "^0.14.3",
     "typescript": "^2.7.2",
-    "webpack": "~2.7.0"
+    "webpack": "^3.11.0"
   }
 }
