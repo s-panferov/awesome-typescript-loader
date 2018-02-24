@@ -392,7 +392,7 @@ function setupWatchRun(compiler, instanceName: string) {
         instance.watchedFiles = set;
 
         const instanceTimes = instance.times;
-        instance.times = Object.assign({}, times) as any;
+        instance.times = { ...times } as any;
 
         const changedFiles = Object.keys(times)
         .filter(fileName => {
