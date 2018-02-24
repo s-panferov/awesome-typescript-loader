@@ -71,6 +71,12 @@ interface File {
 	text: string
 }
 
+type WatchCallbacks<T> = Map<string, T[]>
+type WatchHost = ts.WatchCompilerHostOfFilesAndCompilerOptions<
+	ts.SemanticDiagnosticsBuilderProgram
+> &
+	ts.BuilderProgramHost
+
 type Filter = (file: ts.SourceFile) => boolean
 
 function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Res) => void) {
@@ -85,7 +91,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 	let rootFilesChanged = false
 
 	let filesRegex: RegExp
-	type WatchCallbacks<T> = Map<string, T[]>
 	const watchedFiles: WatchCallbacks<ts.FileWatcherCallback> = new Map()
 	const watchedDirectories: WatchCallbacks<ts.DirectoryWatcherCallback> = new Map()
 	const watchedDirectoriesRecursive: WatchCallbacks<ts.DirectoryWatcherCallback> = new Map()
@@ -94,17 +99,12 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 		? fileName => fileName.toLowerCase()
 		: fileName => fileName
 
-	let watchHost: ts.WatchCompilerHostOfFilesAndCompilerOptions<
-		ts.SemanticDiagnosticsBuilderProgram
-	>
+	let watchHost: WatchHost
 	let watch: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>
 
 	let finalTransformers: undefined | (() => ts.CustomTransformers)
 
-	function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions<
-		ts.SemanticDiagnosticsBuilderProgram
-	> &
-		ts.BuilderProgramHost {
+	function createWatchHost(): WatchHost {
 		return {
 			rootFiles: getRootFiles(),
 			options: compilerOptions,
@@ -163,6 +163,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 			compiler.getDefaultLibFileName(options)
 		)
 	}
+
 	function invokeWatcherCallbacks(
 		callbacks: ts.FileWatcherCallback[] | undefined,
 		fileName: string,
