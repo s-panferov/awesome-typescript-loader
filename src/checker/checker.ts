@@ -1,7 +1,7 @@
-import * as _ from 'lodash';
-import * as childProcess from 'child_process';
-import * as path from 'path';
-import { QueuedSender, createQueuedSender } from './send';
+import * as _ from "lodash";
+import * as childProcess from "child_process";
+import * as path from "path";
+import { QueuedSender, createQueuedSender } from "./send";
 
 import {
     CompilerInfo,
@@ -15,7 +15,7 @@ import {
     UpdateFile,
     TsConfig,
     RemoveFile
-} from './protocol';
+} from "./protocol";
 
 export interface Resolve {
     resolve: (...args: any[]) => void;
@@ -44,8 +44,8 @@ export class Checker {
     ) {
         const execArgv = getExecArgv();
         const checker: childProcess.ChildProcess = fork
-            ? childProcess.fork(path.join(__dirname, 'runtime.js'), [], { execArgv })
-            : require('./runtime').run();
+            ? childProcess.fork(path.join(__dirname, "runtime.js"), [], { execArgv })
+            : require("./runtime").run();
 
         this.sender = fork
             ? createQueuedSender(checker)
@@ -57,11 +57,11 @@ export class Checker {
         this.compilerConfig = compilerConfig;
         this.webpackOptions = webpackOptions;
 
-        checker.on('error', (e) => {
-            console.error('Typescript checker error:', e);
+        checker.on("error", (e) => {
+            console.error("Typescript checker error:", e);
         });
 
-        checker.on('message', (res: Res) => {
+        checker.on("message", (res: Res) => {
             const {seq, success, payload} = res;
             if (seq && this.pending.has(seq)) {
                 const resolver = this.pending.get(seq);
@@ -73,14 +73,14 @@ export class Checker {
 
                 this.pending.delete(seq);
             } else {
-                console.warn('Unknown message: ', payload);
+                console.warn("Unknown message: ", payload);
             }
         });
 
         this.req({
-            type: 'Init',
+            type: "Init",
             payload: {
-                compilerInfo: _.omit(compilerInfo, 'tsImpl'),
+                compilerInfo: _.omit(compilerInfo, "tsImpl"),
                 loaderConfig,
                 compilerConfig,
                 webpackOptions,
@@ -104,7 +104,7 @@ export class Checker {
 
     emitFile(fileName: string, text: string): Promise<EmitFile.ResPayload> {
         return this.req({
-            type: 'EmitFile',
+            type: "EmitFile",
             payload: {
                 fileName,
                 text
@@ -114,7 +114,7 @@ export class Checker {
 
     updateFile(fileName: string, text: string, ifExist = false) {
         return this.req({
-            type: 'UpdateFile',
+            type: "UpdateFile",
             payload: {
                 fileName,
                 text,
@@ -125,7 +125,7 @@ export class Checker {
 
     removeFile(fileName: string) {
         return this.req({
-            type: 'RemoveFile',
+            type: "RemoveFile",
             payload: {
                 fileName,
             }
@@ -134,18 +134,18 @@ export class Checker {
 
     getDiagnostics(): Promise<any> {
         return this.req({
-            type: 'Diagnostics'
+            type: "Diagnostics"
         } as Diagnostics.Request);
     }
 
     getFiles(): any {
         return this.req({
-            type: 'Files'
+            type: "Files"
         } as Files.Request);
     }
 
     kill() {
-        this.checker.kill('SIGKILL');
+        this.checker.kill("SIGKILL");
     }
 }
 

@@ -118,7 +118,7 @@ export function ensureInstance(
     );
 
     if (!loaderConfig.silent) {
-        const sync = watching === WatchMode.Enabled ? ' (in a forked process)' : '';
+        const sync = watching === WatchMode.Enabled ? " (in a forked process)" : "";
         console.log(`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${compilerInfo.compilerPath} and `
             + `"tsconfig.json" from ${configFilePath}${sync}.\n`);
     }
@@ -137,7 +137,7 @@ export function ensureInstance(
     setupWatchRun(compiler, instanceName);
     setupAfterCompile(compiler, instanceName);
 
-    const webpackOptions = _.pick(webpack._compiler.options, 'resolve');
+    const webpackOptions = _.pick(webpack._compiler.options, "resolve");
     const checker = new Checker(
         compilerInfo,
         loaderConfig,
@@ -163,15 +163,15 @@ export function ensureInstance(
 
 function findTsImplPackage(inputPath: string) {
     let pkgDir = path.dirname(inputPath);
-    if (fs.readdirSync(pkgDir).find((value) => value === 'package.json')) {
-        return path.join(pkgDir, 'package.json');
+    if (fs.readdirSync(pkgDir).find((value) => value === "package.json")) {
+        return path.join(pkgDir, "package.json");
     } else {
         return findTsImplPackage(pkgDir);
     }
 }
 
 export function setupTs(compiler: string): CompilerInfo {
-    let compilerPath = compiler || 'typescript';
+    let compilerPath = compiler || "typescript";
 
     let tsImpl: typeof ts;
     let tsImplPath: string;
@@ -206,26 +206,26 @@ function setupCache(
 ): string {
     if (loaderConfig.useCache) {
         if (!loaderConfig.cacheDirectory) {
-            loaderConfig.cacheDirectory = path.join(context, '.awcache');
+            loaderConfig.cacheDirectory = path.join(context, ".awcache");
         }
 
         if (!fs.existsSync(loaderConfig.cacheDirectory)) {
             mkdirp.sync(loaderConfig.cacheDirectory);
         }
 
-        let hash = createHash('sha512') as any;
+        let hash = createHash("sha512") as any;
         let contents = JSON.stringify({
             typescript: tsImpl.version,
-            'awesome-typescript-loader': pkg.version,
-            'babel-core': babelImpl ? babelImpl.version : null,
+            "awesome-typescript-loader": pkg.version,
+            "babel-core": babelImpl ? babelImpl.version : null,
             babelPkg: pkg.babel,
             // TODO: babelrc.json/babelrc.js
             compilerConfig,
-            env: process.env.BABEL_ENV || process.env.NODE_ENV || 'development'
+            env: process.env.BABEL_ENV || process.env.NODE_ENV || "development"
         });
 
         hash.end(contents);
-        return hash.read().toString('hex');
+        return hash.read().toString("hex");
     }
 }
 
@@ -235,7 +235,7 @@ function setupBabel(loaderConfig: LoaderConfig, context: string): any {
     let babelImpl: any;
     if (loaderConfig.useBabel) {
         try {
-            let babelPath = loaderConfig.babelCore || resolver(context, 'babel-core');
+            let babelPath = loaderConfig.babelCore || resolver(context, "babel-core");
             babelImpl = require(babelPath);
         } catch (e) {
             console.error(BABEL_ERROR, e);
@@ -311,11 +311,11 @@ export function readConfigFile(
         configFilePath = tsImpl.findConfigFile(context, tsImpl.sys.fileExists);
     }
 
-    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, context, 'atl.query');
+    let existingOptions = tsImpl.convertCompilerOptionsFromJson(query, context, "atl.query");
 
     if (!configFilePath || query.configFileContent) {
         return {
-            configFilePath: configFilePath || path.join(context, 'tsconfig.json'),
+            configFilePath: configFilePath || path.join(context, "tsconfig.json"),
             compilerConfig: tsImpl.parseJsonConfigFileContent(
                 query.configFileContent || {},
                 tsImpl.sys,
@@ -362,7 +362,7 @@ const filterMtimes = (mtimes: any) => {
 };
 
 function setupWatchRun(compiler, instanceName: string) {
-    compiler.plugin('watch-run', function (watching, callback) {
+    compiler.plugin("watch-run", function (watching, callback) {
         const instance = resolveInstance(watching.compiler, instanceName);
         const checker = instance.checker;
         const watcher = watching.compiler.watchFileSystem.watcher
@@ -437,8 +437,8 @@ function isWatching(compiler: any): WatchMode {
 }
 
 function setupAfterCompile(compiler, instanceName, forkChecker = false) {
-    compiler.plugin('after-compile', function (compilation, callback) {
-        // Don't add errors for child compilations
+    compiler.plugin("after-compile", function (compilation, callback) {
+        // Don"t add errors for child compilations
         if (compilation.compiler.isChild()) {
             callback();
             return;
@@ -451,7 +451,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
         let emitError = (msg) => {
             if (asyncErrors) {
-                console.log(msg, '\n');
+                console.log(msg, "\n");
             } else {
                 if (!instance.loaderConfig.errorsAsWarnings) {
                     compilation.errors.push(new Error(msg));
@@ -493,7 +493,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
         files
             .then(() => {
                 if (asyncErrors) {
-                    diag(); // Don't wait for diags in watch mode
+                    diag(); // Don"t wait for diags in watch mode
                     return;
                 } else {
                     return diag();

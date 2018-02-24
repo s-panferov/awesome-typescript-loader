@@ -1,13 +1,12 @@
-import * as ts from "typescript";
-import * as path from "path";
-import * as micromatch from "micromatch";
-import chalk from "chalk";
-import { findResultFor, toUnix } from "../helpers";
+import * as ts from 'typescript';
+import * as path from 'path';
+import * as micromatch from 'micromatch';
+import chalk from 'chalk';
+import { findResultFor, toUnix, unorderedRemoveItem } from '../helpers';
 import {
     Req,
     Res,
     LoaderConfig,
-    CompilerInfo,
     Init,
     EmitFile,
     UpdateFile,
@@ -16,53 +15,54 @@ import {
     Files,
     MessageType,
     TsConfig
-} from "./protocol";
+} from './protocol';
 
-import { CaseInsensitiveMap, MapLike } from "./fs";
-import { isCaseInsensitive } from "../helpers";
+import { CaseInsensitiveMap } from './fs';
+import { isCaseInsensitive } from '../helpers';
 
 const caseInsensitive = isCaseInsensitive();
 
 if (!module.parent) {
-    process.on("uncaughtException", function(err) {
+    process.on('uncaughtException', function (err) {
         console.log("UNCAUGHT EXCEPTION in awesome-typescript-loader");
         console.log("[Inside 'uncaughtException' event] ", err.message, err.stack);
     });
 
-    process.on("disconnect", function() {
+    process.on('disconnect', function () {
         process.exit();
     });
 
-    process.on("exit", () => {
+    process.on('exit', () => {
         // console.log('EXIT RUNTIME');
     });
 
-    createChecker(process.on.bind(process, "message"), process.send.bind(process));
+    createChecker(
+        process.on.bind(process, 'message'),
+        process.send.bind(process)
+    );
 } else {
     module.exports.run = function run() {
         let send: (msg: Req, cb: (err?: Error) => void) => void;
-        let receive = msg => {};
+        let receive = (msg) => { };
 
         createChecker(
             (receive: (msg: Req) => void) => {
                 send = (msg: Req, cb: (err?: Error) => void) => {
                     receive(msg);
-                    if (cb) {
-                        cb();
-                    }
+                    if (cb) { cb(); }
                 };
             },
-            msg => receive(msg)
+            (msg) => receive(msg)
         );
 
         return {
             on: (type: string, cb) => {
-                if (type === "message") {
+                if (type === 'message') {
                     receive = cb;
                 }
             },
             send,
-            kill: () => {}
+            kill: () => { }
         };
     };
 }
@@ -70,280 +70,211 @@ if (!module.parent) {
 interface File {
     fileName: string;
     text: string;
-    version: number;
-    snapshot: ts.IScriptSnapshot;
 }
 
 type Filter = (file: ts.SourceFile) => boolean;
 
 function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Res) => void) {
-    let projectVersion = 0;
     let loaderConfig: LoaderConfig;
     let compilerConfig: TsConfig;
     let compilerOptions: ts.CompilerOptions;
     let compiler: typeof ts;
-    let compilerInfo: CompilerInfo;
-    let files: MapLike<File>;
-    let host: ts.LanguageServiceHost;
-    let service: ts.LanguageService;
+    let files = new CaseInsensitiveMap<File>();
     let ignoreDiagnostics: { [id: number]: boolean } = {};
     let instanceName: string;
     let context: string;
-    let cache: ts.ModuleResolutionCache;
+    let rootFilesChanged = false;
+
+    let filesRegex: RegExp;
+    type WatchCallbacks<T> = Map<string, T[]>;
+    const watchedFiles: WatchCallbacks<ts.FileWatcherCallback> = new Map();
+    const watchedDirectories: WatchCallbacks<ts.DirectoryWatcherCallback> = new Map();
+    const watchedDirectoriesRecursive: WatchCallbacks<ts.DirectoryWatcherCallback> = new Map();
+    const useCaseSensitiveFileNames = () => !caseInsensitive;
+    const getCanonicalFileName: (fileName: string) => string = caseInsensitive ?
+        fileName => fileName.toLowerCase() :
+        (fileName => fileName);
+
+    let watchHost: ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>;
+    let watch: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>;
+
+    let finalTransformers: undefined | (() => ts.CustomTransformers);
+
+    function createWatchHost(): ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> & ts.BuilderProgramHost {
+        return {
+            rootFiles: getRootFiles(),
+            options: compilerOptions,
+
+            useCaseSensitiveFileNames,
+            getNewLine: () => compiler.sys.newLine,
+            getCurrentDirectory: () => context,
+            getDefaultLibFileName,
+            fileExists: (...args) => compiler.sys.fileExists.apply(compiler.sys, args),
+            readFile,
+            directoryExists: (...args) => compiler.sys.directoryExists.apply(compiler.sys, args),
+            getDirectories: (...args) => compiler.sys.getDirectories.apply(compiler.sys, args),
+            readDirectory: (...args) => compiler.sys.readDirectory.apply(compiler.sys, args),
+            realpath: (...args) => compiler.sys.resolvePath.apply(compiler.sys, args),
+
+            watchFile,
+            watchDirectory,
+
+            createProgram: compiler.createSemanticDiagnosticsBuilderProgram,
+
+            createHash: (...args) => compiler.sys.createHash.apply(compiler.sys, args)
+        };
+
+        function readFile(fileName: string) {
+            ensureFile(fileName);
+            const file = files.get(fileName);
+            if (file) {
+                return file.text;
+            }
+        }
+    }
+
+    function createWatch(): ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> {
+        watchHost = createWatchHost();
+        return compiler.createWatchProgram(watchHost);
+    }
+
+    function getProgram(): ts.SemanticDiagnosticsBuilderProgram {
+        if (rootFilesChanged) {
+            rootFilesChanged = false;
+            watch.updateRootFileNames(getRootFiles());
+        }
+        return watch.getProgram();
+    }
+
+    function getRootFiles() {
+        const names = files.map(file => file.fileName)
+            .filter(fileName => filesRegex.test(fileName));
+        return names;
+    }
+
+    function getDefaultLibFileName(options: ts.CompilerOptions) {
+        return path.join(path.dirname(compiler.sys.getExecutingFilePath()), compiler.getDefaultLibFileName(options));
+    }
+    function invokeWatcherCallbacks(callbacks: ts.FileWatcherCallback[] | undefined, fileName: string, eventKind: ts.FileWatcherEventKind): void;
+    function invokeWatcherCallbacks(callbacks: ts.DirectoryWatcherCallback[] | undefined, fileName: string): void;
+    function invokeWatcherCallbacks(callbacks: ts.FileWatcherCallback[] | ts.DirectoryWatcherCallback[] | undefined, fileName: string, eventKind?: ts.FileWatcherEventKind) {
+        if (callbacks) {
+            // The array copy is made to ensure that even if one of the callback removes the callbacks,
+            // we dont miss any callbacks following it
+            const cbs = callbacks.slice();
+            for (const cb of cbs) {
+                cb(fileName, eventKind as ts.FileWatcherEventKind);
+            }
+        }
+    }
+
+    function invokeFileWatcher(fileName: string, eventKind: ts.FileWatcherEventKind) {
+        fileName = getCanonicalFileName(fileName);
+        invokeWatcherCallbacks(watchedFiles.get(fileName), fileName, eventKind);
+    }
+
+    function invokeDirectoryWatcher(directory: string, fileAddedOrRemoved: string) {
+        directory = getCanonicalFileName(directory);
+        invokeWatcherCallbacks(watchedDirectories.get(directory), fileAddedOrRemoved);
+        invokeRecursiveDirectoryWatcher(directory, fileAddedOrRemoved);
+    }
+
+    function invokeRecursiveDirectoryWatcher(directory: string, fileAddedOrRemoved: string) {
+        invokeWatcherCallbacks(watchedDirectoriesRecursive.get(directory), fileAddedOrRemoved);
+        const basePath = path.dirname(directory);
+        if (directory !== basePath) {
+            invokeRecursiveDirectoryWatcher(basePath, fileAddedOrRemoved);
+        }
+    }
+
+    function createWatcher<T>(file: string, callbacks: WatchCallbacks<T>, callback: T): ts.FileWatcher {
+        file = getCanonicalFileName(file);
+        const existing = callbacks.get(file);
+        if (existing) {
+            existing.push(callback);
+        }
+        else {
+            callbacks.set(file, [callback]);
+        }
+        return {
+            close: () => {
+                const existing = callbacks.get(file);
+                if (existing) {
+                    unorderedRemoveItem(existing, callback);
+                }
+            }
+        };
+    }
+
+    function watchFile(fileName: string, callback: ts.FileWatcherCallback, _pollingInterval?: number) {
+        return createWatcher(fileName, watchedFiles, callback);
+    }
+
+    function watchDirectory(fileName: string, callback: ts.DirectoryWatcherCallback, recursive?: boolean) {
+        return createWatcher(fileName, recursive ? watchedDirectoriesRecursive : watchedDirectories, callback);
+    }
+
+    function onFileCreated(fileName: string) {
+        rootFilesChanged = true;
+        invokeFileWatcher(fileName, compiler.FileWatcherEventKind.Created);
+        invokeDirectoryWatcher(path.dirname(fileName), fileName);
+    }
+
+    function onFileRemoved(fileName: string) {
+        rootFilesChanged = true;
+        invokeFileWatcher(fileName, compiler.FileWatcherEventKind.Deleted);
+        invokeDirectoryWatcher(path.dirname(fileName), fileName);
+    }
+
+    function onFileChanged(fileName: string) {
+        invokeFileWatcher(fileName, compiler.FileWatcherEventKind.Changed);
+    }
 
     function ensureFile(fileName: string) {
         const file = files.get(fileName);
         if (!file) {
             const text = compiler.sys.readFile(fileName);
-            if (text == null) {
-                return;
+            if (text) {
+                files.set(fileName, {
+                    fileName: fileName,
+                    text,
+                });
+                onFileCreated(fileName);
             }
-            files.set(fileName, {
-                fileName: fileName,
-                text,
-                version: 0,
-                snapshot: compiler.ScriptSnapshot.fromString(text)
-            });
         } else {
             if (file.fileName !== fileName) {
                 if (caseInsensitive) {
-                    file.fileName = fileName;
+                    file.fileName = fileName; // use most recent name for case-sensitive file systems
+                    onFileChanged(fileName);
                 } else {
                     removeFile(file.fileName);
-                    projectVersion++;
 
                     const text = compiler.sys.readFile(fileName);
                     files.set(fileName, {
                         fileName,
                         text,
-                        version: 0,
-                        snapshot: compiler.ScriptSnapshot.fromString(text)
                     });
-                    return;
+                    onFileCreated(fileName);
                 }
             }
         }
     }
-
-    class FileDeps {
-        files: { [fileName: string]: string[] } = {};
-
-        add(containingFile: string, ...dep: string[]) {
-            if (!this.files[containingFile]) {
-                this.files[containingFile] = Array.from(dep);
-            } else {
-                const deps = this.files[containingFile];
-                deps.push.apply(deps, dep);
-            }
-        }
-
-        getDeps(containingFile: string): string[] {
-            return this.files[containingFile] || [];
-        }
-
-        getAllDeps(containingFile: string, allDeps: { [key: string]: boolean } = {}, initial = true): string[] {
-            const deps = this.getDeps(containingFile);
-            deps.forEach(dep => {
-                if (!allDeps[dep]) {
-                    allDeps[dep] = true;
-                    this.getAllDeps(dep, allDeps, false);
-                }
-            });
-
-            if (initial) {
-                return Object.keys(allDeps);
-            } else {
-                return [];
-            }
-        }
-    }
-
-    const fileDeps = new FileDeps();
 
     const TS_AND_JS_FILES = /\.tsx?$|\.jsx?$/i;
     const TS_FILES = /\.tsx?$/i;
 
-    class Host implements ts.LanguageServiceHost {
-        filesRegex: RegExp;
-        getCustomTransformers?: () => ts.CustomTransformers | undefined;
-
-        constructor(filesRegex: RegExp) {
-            this.filesRegex = filesRegex;
-
-            let { getCustomTransformers } = loaderConfig;
-
-            if (typeof getCustomTransformers === "function") {
-                this.getCustomTransformers = getCustomTransformers;
-            } else if (typeof getCustomTransformers === "string") {
-                try {
-                    getCustomTransformers = require(getCustomTransformers);
-                } catch (err) {
-                    throw new Error(
-                        `Failed to load customTransformers from "${loaderConfig.getCustomTransformers}": ${err.message}`
-                    );
-                }
-
-                if (typeof getCustomTransformers !== "function") {
-                    throw new Error(
-                        `Custom transformers in "${
-                            loaderConfig.getCustomTransformers
-                        }" should export a function, got ${typeof getCustomTransformers}`
-                    );
-                }
-
-                this.getCustomTransformers = getCustomTransformers;
-            }
-        }
-
-        getProjectVersion() {
-            return projectVersion.toString();
-        }
-
-        getScriptFileNames() {
-            const names = files.map(file => file.fileName).filter(fileName => this.filesRegex.test(fileName));
-            return names;
-        }
-
-        getScriptVersion(fileName: string) {
-            ensureFile(fileName);
-            const file = files.get(fileName);
-            if (file) {
-                return file.version.toString();
-            }
-        }
-
-        getScriptSnapshot(fileName: string) {
-            ensureFile(fileName);
-            const file = files.get(fileName);
-            if (file) {
-                return file.snapshot;
-            }
-        }
-
-        getCurrentDirectory() {
-            return context;
-        }
-
-        getScriptIsOpen() {
-            return true;
-        }
-
-        getCompilationSettings() {
-            return compilerOptions;
-        }
-
-        resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
-            const resolved = typeDirectiveNames.map(
-                directive =>
-                    compiler.resolveTypeReferenceDirective(directive, containingFile, compilerOptions, compiler.sys)
-                        .resolvedTypeReferenceDirective
-            );
-
-            resolved.forEach(res => {
-                if (res && res.resolvedFileName) {
-                    fileDeps.add(containingFile, res.resolvedFileName);
-                }
-            });
-
-            return resolved;
-        }
-
-        resolveModuleNames(moduleNames: string[], containingFile: string) {
-            const resolved = moduleNames.map(
-                module =>
-                    compiler.resolveModuleName(module, containingFile, compilerOptions, compiler.sys, cache)
-                        .resolvedModule
-            );
-
-            resolved.forEach(res => {
-                if (res && res.resolvedFileName) {
-                    fileDeps.add(containingFile, res.resolvedFileName);
-                }
-            });
-
-            return resolved;
-        }
-
-        log(message) {
-            console.log(message);
-        }
-
-        fileExists(...args) {
-            return compiler.sys.fileExists.apply(compiler.sys, args);
-        }
-
-        readFile(...args) {
-            return compiler.sys.readFile.apply(compiler.sys, args);
-        }
-
-        readDirectory(...args) {
-            return compiler.sys.readDirectory.apply(compiler.sys, args);
-        }
-
-        getDefaultLibFileName(options: ts.CompilerOptions) {
-            return compiler.getDefaultLibFilePath(options);
-        }
-
-        useCaseSensitiveFileNames() {
-            return compiler.sys.useCaseSensitiveFileNames;
-        }
-
-        getDirectories(...args) {
-            return compiler.sys.getDirectories.apply(compiler.sys, args);
-        }
-
-        directoryExists(path: string) {
-            return compiler.sys.directoryExists(path);
-        }
-    }
-
-    let normalize: (f: string) => string;
-
     function processInit({ seq, payload }: Init.Request) {
-        compilerInfo = payload.compilerInfo;
-        compiler = require(compilerInfo.compilerPath);
+        compiler = require(payload.compilerInfo.compilerPath);
         loaderConfig = payload.loaderConfig;
         compilerConfig = payload.compilerConfig;
         compilerOptions = compilerConfig.options;
         context = payload.context;
-        normalize = (f: string) => {
-            return compiler.sys.useCaseSensitiveFileNames ? f : f.toLowerCase();
-        };
+        filesRegex = compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES;
 
-        files = new CaseInsensitiveMap();
+        instanceName = loaderConfig.instance || 'at-loader';
 
-        if (compiler.createModuleResolutionCache) {
-            cache = compiler.createModuleResolutionCache(context, normalize);
-        }
-
-        instanceName = loaderConfig.instance || "at-loader";
-
-        host = new Host(compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES);
-
-        service = compiler.createLanguageService(host);
-
-        compilerConfig.fileNames.forEach(fileName => {
-            const text = compiler.sys.readFile(fileName);
-            if (text == null) {
-                return;
-            }
-            files.set(fileName, {
-                fileName,
-                text,
-                version: 0,
-                snapshot: compiler.ScriptSnapshot.fromString(text)
-            });
-        });
-
-        const program = service.getProgram();
-        program.getSourceFiles().forEach(file => {
-            files.set(file.fileName, {
-                fileName: file.fileName,
-                text: file.text,
-                version: 0,
-                snapshot: compiler.ScriptSnapshot.fromString(file.text)
-            });
-        });
+        compilerConfig.fileNames.forEach(fileName => ensureFile(fileName));
+        watch = createWatch();
 
         if (loaderConfig.debug) {
             console.log(`[${instanceName}] @DEBUG Initial files`, Object.keys(files));
@@ -355,6 +286,29 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             });
         }
 
+        let { getCustomTransformers } = loaderConfig;
+        if (typeof getCustomTransformers === "function") {
+            finalTransformers = getCustomTransformers;
+        } else if (typeof getCustomTransformers === "string") {
+            try {
+                getCustomTransformers = require(getCustomTransformers);
+            } catch (err) {
+                throw new Error(
+                    `Failed to load customTransformers from "${loaderConfig.getCustomTransformers}": ${err.message}`
+                );
+            }
+
+            if (typeof getCustomTransformers !== "function") {
+                throw new Error(
+                    `Custom transformers in "${
+                        loaderConfig.getCustomTransformers
+                    }" should export a function, got ${typeof getCustomTransformers}`
+                );
+            }
+
+            finalTransformers = getCustomTransformers;
+        }
+
         replyOk(seq, null);
     }
 
@@ -364,59 +318,56 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             let updated = false;
             if (file.fileName !== fileName) {
                 if (caseInsensitive) {
-                    file.fileName = fileName;
+                    file.fileName = fileName; // use most recent name for case-sensitive file systems
                 } else {
                     removeFile(file.fileName);
-                    projectVersion++;
+
                     files.set(fileName, {
                         fileName,
                         text,
-                        version: 0,
-                        snapshot: compiler.ScriptSnapshot.fromString(text)
                     });
-                    return;
+                    onFileCreated(fileName);
                 }
             }
-            if (file.text !== text) {
-                updated = updated || true;
-            }
+            if (file.text !== text) { updated = updated || true; }
             if (!updated) {
-                return false;
+                return;
             }
-            projectVersion++;
-            file.version++;
             file.text = text;
-            file.snapshot = compiler.ScriptSnapshot.fromString(text);
-            return true;
+            onFileChanged(fileName);
         } else if (!ifExist) {
-            projectVersion++;
             files.set(fileName, {
                 fileName,
-                text,
-                version: 0,
-                snapshot: compiler.ScriptSnapshot.fromString(text)
+                text
             });
-
-            return true;
+            onFileCreated(fileName);
         }
-
-        return false;
     }
 
     function removeFile(fileName: string) {
         if (files.has(fileName)) {
             files.delete(fileName);
-            projectVersion++;
+            onFileRemoved(fileName);
         }
+    }
+
+    function getEmitOutput(fileName: string) {
+        const program = getProgram();
+        const outputFiles: ts.OutputFile[] = [];
+        const writeFile = (fileName: string, text: string, writeByteOrderMark: boolean) =>
+            outputFiles.push({ name: fileName, writeByteOrderMark, text });
+        const sourceFile = program.getSourceFile(fileName);
+        program.emit(sourceFile, writeFile, /*cancellationToken*/ undefined, /*emitOnlyDtsFiles*/ false, finalTransformers && finalTransformers());
+        return outputFiles;
     }
 
     function emit(fileName: string) {
         if (loaderConfig.useTranspileModule || loaderConfig.transpileOnly) {
             return fastEmit(fileName);
         } else {
-            const output = service.getEmitOutput(fileName, false);
-            if (output.outputFiles.length > 0) {
-                return findResultFor(fileName, output);
+            const outputFiles = getEmitOutput(fileName);
+            if (outputFiles.length > 0) {
+                return findResultFor(fileName, outputFiles);
             } else {
                 // Use fast emit in case of errors
                 return fastEmit(fileName);
@@ -428,8 +379,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         const trans = compiler.transpileModule(files.get(fileName).text, {
             compilerOptions: compilerOptions,
             fileName,
-            reportDiagnostics: false,
-            transformers: host.getCustomTransformers ? host.getCustomTransformers() : undefined
+            reportDiagnostics: false
         });
 
         return {
@@ -439,7 +389,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     }
 
     function processUpdate({ seq, payload }: UpdateFile.Request) {
-        replyOk(seq, updateFile(payload.fileName, payload.text, payload.ifExist));
+        updateFile(payload.fileName, payload.text, payload.ifExist);
+        replyOk(seq, null);
     }
 
     function processRemove({ seq, payload }: RemoveFile.Request) {
@@ -450,18 +401,21 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
     function processEmit({ seq, payload }: EmitFile.Request) {
         updateFile(payload.fileName, payload.text);
         const emitResult = emit(payload.fileName);
-        const deps = fileDeps.getAllDeps(payload.fileName);
+        const program = getProgram();
+        const sourceFile = program.getSourceFile(payload.fileName);
+        const deps = program.getAllDependencies(sourceFile);
 
         replyOk(seq, { emitResult, deps });
     }
 
     function processFiles({ seq }: Files.Request) {
         replyOk(seq, {
-            files: service
-                .getProgram()
-                .getSourceFiles()
-                .map(f => f.fileName)
+            files: getProgram().getSourceFiles().map(f => f.fileName)
         });
+    }
+
+    function isAffectedSourceFile(affected: ts.SourceFile | ts.Program): affected is ts.SourceFile {
+        return (affected as ts.SourceFile).kind === compiler.SyntaxKind.SourceFile;
     }
 
     function processDiagnostics({ seq }: Diagnostics.Request) {
@@ -471,9 +425,12 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             console.log(chalk.cyan(`\n[${instanceName}] Checking started in a separate process...`));
         }
 
-        const program = service.getProgram();
+        const program = getProgram();
+        const sourceFiles = program.getSourceFiles();
 
-        const allDiagnostics = program.getOptionsDiagnostics().concat(program.getGlobalDiagnostics());
+        const allDiagnostics = program
+            .getOptionsDiagnostics()
+            .concat(program.getGlobalDiagnostics());
 
         const filters: Filter[] = [];
 
@@ -489,61 +446,73 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 return micromatch(fileName, loaderConfig.reportFiles).length > 0;
             });
         }
+        const diagnosticsCollected: boolean[] = new Array(sourceFiles.length);
+        const ignoreSouceFile: (sourceFile: ts.SourceFile) => boolean = file => {
+            return filters.length && filters.some(f => !f(file));
+        };
 
-        let nativeGetter: typeof program.getSourceFiles;
-        if (filters.length > 0) {
-            nativeGetter = program.getSourceFiles;
-            program.getSourceFiles = () =>
-                nativeGetter().filter(file => {
-                    return filters.every(f => f(file));
-                });
+        let result: ts.AffectedFileResult<ReadonlyArray<ts.Diagnostic>>;
+        while (result = program.getSemanticDiagnosticsOfNextAffectedFile(/*cancellationToken*/ undefined, ignoreSouceFile)) {
+            // If whole program is affected, just get those diagnostics from cache again in later pass
+            // But if its single file, set the results push the results
+            if (isAffectedSourceFile(result.affected)) {
+                const file = result.affected as ts.SourceFile;
+                allDiagnostics.push(...program.getSyntacticDiagnostics(file));
+                // Semantic diagnostics
+                allDiagnostics.push(...result.result);
+                diagnosticsCollected[sourceFiles.indexOf(file)] = true;
+            }
         }
 
-        allDiagnostics.push(...program.getSyntacticDiagnostics());
-        allDiagnostics.push(...program.getSemanticDiagnostics());
+        sourceFiles.forEach(file => {
+            if (diagnosticsCollected[sourceFiles.indexOf(file)] || ignoreSouceFile(file)) {
+                // Skip the file
+                return;
+            }
+
+            allDiagnostics.push(...program.getSyntacticDiagnostics(file));
+            allDiagnostics.push(...program.getSemanticDiagnostics(file));
+        });
 
         if (loaderConfig.debug) {
             console.log(`[${instanceName}] @DEBUG Typechecked files`, program.getSourceFiles());
         }
 
-        if (nativeGetter) {
-            program.getSourceFiles = nativeGetter;
-        }
+        const processedDiagnostics = allDiagnostics
+            .filter(diag => !ignoreDiagnostics[diag.code])
+            .map(diagnostic => {
+                const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+                let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
 
-        const processedDiagnostics = allDiagnostics.filter(diag => !ignoreDiagnostics[diag.code]).map(diagnostic => {
-            const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
-            let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
+                if (fileName && fileName[0] !== '.') {
+                    fileName = './' + toUnix(fileName);
+                }
 
-            if (fileName && fileName[0] !== ".") {
-                fileName = "./" + toUnix(fileName);
-            }
+                let pretty = '';
+                let line = 0;
+                let character = 0;
+                let code = diagnostic.code;
 
-            let pretty = "";
-            let line = 0;
-            let character = 0;
-            let code = diagnostic.code;
+                if (diagnostic.file) {
+                    const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+                    line = pos.line;
+                    character = pos.character;
+                    pretty = (`[${instanceName}] ${chalk.red(fileName)}:${line + 1}:${character + 1} \n    TS${code}: ${chalk.red(message)}`);
+                } else {
+                    pretty = (chalk.red(`[${instanceName}] TS${code}: ${message}`));
+                }
 
-            if (diagnostic.file) {
-                const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-                line = pos.line;
-                character = pos.character;
-                pretty = `[${instanceName}] ${chalk.red(fileName)}:${line + 1}:${character +
-                    1} \n    TS${code}: ${chalk.red(message)}`;
-            } else {
-                pretty = chalk.red(`[${instanceName}] TS${code}: ${message}`);
-            }
-
-            return {
-                category: diagnostic.category,
-                code: diagnostic.code,
-                fileName,
-                start: diagnostic.start,
-                message,
-                pretty,
-                line,
-                character
-            };
-        });
+                return {
+                    category: diagnostic.category,
+                    code: diagnostic.code,
+                    fileName,
+                    start: diagnostic.start,
+                    message,
+                    pretty,
+                    line,
+                    character
+                };
+            });
 
         replyOk(seq, processedDiagnostics);
     }
@@ -564,7 +533,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         } as Res);
     }
 
-    receive(function(req: Req) {
+    receive(function (req: Req) {
         try {
             switch (req.type) {
                 case MessageType.Init:
@@ -585,6 +554,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 case MessageType.Files:
                     processFiles(req);
                     break;
+
             }
         } catch (e) {
             console.error(`[${instanceName}]: Child process failed to process the request: `, e);

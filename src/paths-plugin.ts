@@ -1,14 +1,14 @@
-import { setupTs, readConfigFile } from './instance';
-import { LoaderConfig } from './interfaces';
-import * as path from 'path';
-import * as _ from 'lodash';
-import * as ts from 'typescript';
+import { setupTs, readConfigFile } from "./instance";
+import { LoaderConfig } from "./interfaces";
+import * as path from "path";
+import * as _ from "lodash";
+import * as ts from "typescript";
 
 const ModulesInRootPlugin: new (a: string, b: string, c: string) => ResolverPlugin
-    = require('enhanced-resolve/lib/ModulesInRootPlugin');
+    = require("enhanced-resolve/lib/ModulesInRootPlugin");
 
-const createInnerCallback: CreateInnerCallback = require('enhanced-resolve/lib/createInnerCallback');
-const getInnerRequest: getInnerRequest = require('enhanced-resolve/lib/getInnerRequest');
+const createInnerCallback: CreateInnerCallback = require("enhanced-resolve/lib/createInnerCallback");
+const getInnerRequest: getInnerRequest = require("enhanced-resolve/lib/getInnerRequest");
 
 type CreateInnerCallback = (callback: Callback, options: Callback, message?: string, messageOptional?: string) => Callback;
 type getInnerRequest = (resolver: Resolver, request: Request) => string;
@@ -66,8 +66,8 @@ export class PathPlugin implements ResolverPlugin {
     absoluteBaseUrl: string;
 
     constructor(config: LoaderConfig & ts.CompilerOptions & PathPluginOptions = {} as any) {
-        this.source = 'described-resolve';
-        this.target = 'resolve';
+        this.source = "described-resolve";
+        this.target = "resolve";
 
         this.ts = setupTs(config.compiler).tsImpl;
 
@@ -80,13 +80,13 @@ export class PathPlugin implements ResolverPlugin {
         this.baseUrl = this.options.baseUrl;
         this.absoluteBaseUrl = path.resolve(
             path.dirname(this.configFilePath),
-            this.baseUrl || '.'
+            this.baseUrl || "."
         );
 
         this.mappings = [];
         let paths = this.options.paths || {};
         Object.keys(paths).forEach(alias => {
-            let onlyModule = alias.indexOf('*') === -1;
+            let onlyModule = alias.indexOf("*") === -1;
             let excapedAlias = escapeRegExp(alias);
             let targets = paths[alias];
             targets.forEach(target => {
@@ -94,7 +94,7 @@ export class PathPlugin implements ResolverPlugin {
                 if (onlyModule) {
                     aliasPattern = new RegExp(`^${excapedAlias}$`);
                 } else {
-                    let withStarCapturing = excapedAlias.replace('\\*', '(.*)');
+                    let withStarCapturing = excapedAlias.replace("\\*", "(.*)");
                     aliasPattern = new RegExp(`^${withStarCapturing}`);
                 }
 
@@ -124,7 +124,7 @@ export class PathPlugin implements ResolverPlugin {
     }
 
     isTyping(target: string) {
-        return target.indexOf('@types') !== -1 || target.indexOf('.d.ts') !== -1;
+        return target.indexOf("@types") !== -1 || target.indexOf(".d.ts") !== -1;
     }
 
     createPlugin(resolver: Resolver, mapping: Mapping) {
@@ -141,10 +141,10 @@ export class PathPlugin implements ResolverPlugin {
 
             let newRequestStr = mapping.target;
             if (!mapping.onlyModule) {
-                newRequestStr = newRequestStr.replace('*', match[1]);
+                newRequestStr = newRequestStr.replace("*", match[1]);
             }
 
-            if (newRequestStr[0] === '.') {
+            if (newRequestStr[0] === ".") {
                 newRequestStr = path.resolve(this.absoluteBaseUrl, newRequestStr);
             }
 

@@ -1,4 +1,4 @@
-import { ChildProcess } from 'child_process';
+import { ChildProcess } from "child_process";
 
 export interface QueuedSender {
     send: (msg: any) => void;
@@ -12,7 +12,7 @@ const logOnError = error => { if (error) { console.error(error); } };
 // queue is free again to consume messages.
 // On Windows we always wait for the send() method to return before sending the next message
 // to workaround https://github.com/nodejs/node/issues/7657 (IPC can freeze process)
-export function createQueuedSender(childProcess: ChildProcess | NodeJS.Process): QueuedSender {
+export function createQueuedSender(childProcess: ChildProcess): QueuedSender {
     if (isWindows) {
         let msgQueue = [];
         let isSending = false;
