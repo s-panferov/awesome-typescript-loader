@@ -8,7 +8,8 @@ import { CompilerInfo, LoaderConfig, TsConfig } from './interfaces';
 import { WatchModeSymbol } from './watch-mode';
 import { createHash } from 'crypto';
 
-let colors = require('colors/safe');
+import chalk from 'chalk';
+
 let pkg = require('../package.json');
 let mkdirp = require('mkdirp');
 let enhancedResolve = require('enhanced-resolve');
@@ -50,7 +51,7 @@ export interface Loader {
     addDependency: (dep: string) => void;
     clearDependencies: () => void;
     emitFile: (fileName: string, text: string) => void;
-    emitWarning: (msg: string) => void;
+    emitWarning: (msg: Error) => void;
     emitError: (msg: string) => void;
     context: string;
     options: {
@@ -75,11 +76,11 @@ function resolveInstance(compiler, instanceName): Instance {
     return compiler._tsInstances[instanceName];
 }
 
-const COMPILER_ERROR = colors.red(`\n\nTypescript compiler cannot be found, please add it to your package.json file:
+const COMPILER_ERROR = chalk.red(`\n\nTypescript compiler cannot be found, please add it to your package.json file:
     npm install --save-dev typescript
 `);
 
-const BABEL_ERROR = colors.red(`\n\nBabel compiler cannot be found, please add it to your package.json file:
+const BABEL_ERROR = chalk.red(`\n\nBabel compiler cannot be found, please add it to your package.json file:
     npm install --save-dev babel-core
 `);
 
@@ -477,11 +478,11 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
                 .then(diags => {
                     if (!silent) {
                         if (diags.length) {
-                            console.error(colors.red(`\n[${instanceName}] Checking finished with ${diags.length} errors`));
+                            console.error(chalk.red(`\n[${instanceName}] Checking finished with ${diags.length} errors`));
                         } else {
                             let timeEnd = +new Date();
                             console.log(
-                                colors.green(`\n[${instanceName}] Ok, ${(timeEnd - timeStart) / 1000} sec.`)
+                                chalk.green(`\n[${instanceName}] Ok, ${(timeEnd - timeStart) / 1000} sec.`)
                             );
                         }
                     }

@@ -1,8 +1,8 @@
-import * as ts from 'typescript';
-import * as path from 'path';
-import * as micromatch from 'micromatch';
-import * as colors from 'colors';
-import { findResultFor, toUnix } from '../helpers';
+import * as ts from "typescript";
+import * as path from "path";
+import * as micromatch from "micromatch";
+import chalk from "chalk";
+import { findResultFor, toUnix } from "../helpers";
 import {
     Req,
     Res,
@@ -16,54 +16,53 @@ import {
     Files,
     MessageType,
     TsConfig
-} from './protocol';
+} from "./protocol";
 
-import { CaseInsensitiveMap, MapLike } from './fs';
-import { isCaseInsensitive } from '../helpers';
+import { CaseInsensitiveMap, MapLike } from "./fs";
+import { isCaseInsensitive } from "../helpers";
 
 const caseInsensitive = isCaseInsensitive();
 
 if (!module.parent) {
-    process.on('uncaughtException', function (err) {
+    process.on("uncaughtException", function(err) {
         console.log("UNCAUGHT EXCEPTION in awesome-typescript-loader");
         console.log("[Inside 'uncaughtException' event] ", err.message, err.stack);
     });
 
-    process.on('disconnect', function () {
+    process.on("disconnect", function() {
         process.exit();
     });
 
-    process.on('exit', () => {
+    process.on("exit", () => {
         // console.log('EXIT RUNTIME');
     });
 
-    createChecker(
-        process.on.bind(process, 'message'),
-        process.send.bind(process)
-    );
+    createChecker(process.on.bind(process, "message"), process.send.bind(process));
 } else {
     module.exports.run = function run() {
         let send: (msg: Req, cb: (err?: Error) => void) => void;
-        let receive = (msg) => { };
+        let receive = msg => {};
 
         createChecker(
             (receive: (msg: Req) => void) => {
                 send = (msg: Req, cb: (err?: Error) => void) => {
                     receive(msg);
-                    if (cb) { cb(); }
+                    if (cb) {
+                        cb();
+                    }
                 };
             },
-            (msg) => receive(msg)
+            msg => receive(msg)
         );
 
         return {
             on: (type: string, cb) => {
-                if (type === 'message') {
+                if (type === "message") {
                     receive = cb;
                 }
             },
             send,
-            kill: () => { }
+            kill: () => {}
         };
     };
 }
@@ -96,7 +95,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         const file = files.get(fileName);
         if (!file) {
             const text = compiler.sys.readFile(fileName);
-            if (text == null) { return; }
+            if (text == null) {
+                return;
+            }
             files.set(fileName, {
                 fileName: fileName,
                 text,
@@ -169,7 +170,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         constructor(filesRegex: RegExp) {
             this.filesRegex = filesRegex;
 
-            let {getCustomTransformers} = loaderConfig;
+            let { getCustomTransformers } = loaderConfig;
 
             if (typeof getCustomTransformers === "function") {
                 this.getCustomTransformers = getCustomTransformers;
@@ -177,22 +178,29 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 try {
                     getCustomTransformers = require(getCustomTransformers);
                 } catch (err) {
-                    throw new Error(`Failed to load customTransformers from "${loaderConfig.getCustomTransformers}": ${err.message}`)
-                };
+                    throw new Error(
+                        `Failed to load customTransformers from "${loaderConfig.getCustomTransformers}": ${err.message}`
+                    );
+                }
 
                 if (typeof getCustomTransformers !== "function") {
-                    throw new Error(`Custom transformers in "${loaderConfig.getCustomTransformers}" should export a function, got ${typeof getCustomTransformers}`)
-                };
+                    throw new Error(
+                        `Custom transformers in "${
+                            loaderConfig.getCustomTransformers
+                        }" should export a function, got ${typeof getCustomTransformers}`
+                    );
+                }
 
                 this.getCustomTransformers = getCustomTransformers;
-            };
+            }
         }
 
-        getProjectVersion() { return projectVersion.toString(); }
+        getProjectVersion() {
+            return projectVersion.toString();
+        }
 
         getScriptFileNames() {
-            const names = files.map(file => file.fileName)
-                .filter(fileName => this.filesRegex.test(fileName));
+            const names = files.map(file => file.fileName).filter(fileName => this.filesRegex.test(fileName));
             return names;
         }
 
@@ -225,9 +233,11 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         resolveTypeReferenceDirectives(typeDirectiveNames: string[], containingFile: string) {
-            const resolved = typeDirectiveNames.map(directive =>
-                compiler.resolveTypeReferenceDirective(directive, containingFile, compilerOptions, compiler.sys)
-                    .resolvedTypeReferenceDirective);
+            const resolved = typeDirectiveNames.map(
+                directive =>
+                    compiler.resolveTypeReferenceDirective(directive, containingFile, compilerOptions, compiler.sys)
+                        .resolvedTypeReferenceDirective
+            );
 
             resolved.forEach(res => {
                 if (res && res.resolvedFileName) {
@@ -239,8 +249,11 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         }
 
         resolveModuleNames(moduleNames: string[], containingFile: string) {
-            const resolved = moduleNames.map(module =>
-                compiler.resolveModuleName(module, containingFile, compilerOptions, compiler.sys, cache).resolvedModule);
+            const resolved = moduleNames.map(
+                module =>
+                    compiler.resolveModuleName(module, containingFile, compilerOptions, compiler.sys, cache)
+                        .resolvedModule
+            );
 
             resolved.forEach(res => {
                 if (res && res.resolvedFileName) {
@@ -282,7 +295,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         directoryExists(path: string) {
             return compiler.sys.directoryExists(path);
         }
-
     }
 
     let normalize: (f: string) => string;
@@ -301,24 +313,20 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         files = new CaseInsensitiveMap();
 
         if (compiler.createModuleResolutionCache) {
-            cache = compiler.createModuleResolutionCache(
-                context,
-                normalize
-            );
+            cache = compiler.createModuleResolutionCache(context, normalize);
         }
 
-        instanceName = loaderConfig.instance || 'at-loader';
+        instanceName = loaderConfig.instance || "at-loader";
 
-        host = new Host(compilerOptions.allowJs
-            ? TS_AND_JS_FILES
-            : TS_FILES
-        );
+        host = new Host(compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES);
 
         service = compiler.createLanguageService(host);
 
         compilerConfig.fileNames.forEach(fileName => {
             const text = compiler.sys.readFile(fileName);
-            if (text == null) { return; }
+            if (text == null) {
+                return;
+            }
             files.set(fileName, {
                 fileName,
                 text,
@@ -369,7 +377,9 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                     return;
                 }
             }
-            if (file.text !== text) { updated = updated || true; }
+            if (file.text !== text) {
+                updated = updated || true;
+            }
             if (!updated) {
                 return false;
             }
@@ -419,7 +429,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             compilerOptions: compilerOptions,
             fileName,
             reportDiagnostics: false,
-            transformers: host.getCustomTransformers ? host.getCustomTransformers() : undefined,
+            transformers: host.getCustomTransformers ? host.getCustomTransformers() : undefined
         });
 
         return {
@@ -447,7 +457,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 
     function processFiles({ seq }: Files.Request) {
         replyOk(seq, {
-            files: service.getProgram().getSourceFiles().map(f => f.fileName)
+            files: service
+                .getProgram()
+                .getSourceFiles()
+                .map(f => f.fileName)
         });
     }
 
@@ -455,14 +468,12 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         let silent = !!loaderConfig.silent;
 
         if (!silent) {
-            console.log(colors.cyan(`\n[${instanceName}] Checking started in a separate process...`));
+            console.log(chalk.cyan(`\n[${instanceName}] Checking started in a separate process...`));
         }
 
         const program = service.getProgram();
 
-        const allDiagnostics = program
-            .getOptionsDiagnostics()
-            .concat(program.getGlobalDiagnostics());
+        const allDiagnostics = program.getOptionsDiagnostics().concat(program.getGlobalDiagnostics());
 
         const filters: Filter[] = [];
 
@@ -482,9 +493,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         let nativeGetter: typeof program.getSourceFiles;
         if (filters.length > 0) {
             nativeGetter = program.getSourceFiles;
-            program.getSourceFiles = () => nativeGetter().filter(file => {
-                return filters.every(f => f(file));
-            });
+            program.getSourceFiles = () =>
+                nativeGetter().filter(file => {
+                    return filters.every(f => f(file));
+                });
         }
 
         allDiagnostics.push(...program.getSyntacticDiagnostics());
@@ -498,41 +510,40 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
             program.getSourceFiles = nativeGetter;
         }
 
-        const processedDiagnostics = allDiagnostics
-            .filter(diag => !ignoreDiagnostics[diag.code])
-            .map(diagnostic => {
-                const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-                let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
+        const processedDiagnostics = allDiagnostics.filter(diag => !ignoreDiagnostics[diag.code]).map(diagnostic => {
+            const message = compiler.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+            let fileName = diagnostic.file && path.relative(context, diagnostic.file.fileName);
 
-                if (fileName && fileName[0] !== '.') {
-                    fileName = './' + toUnix(fileName);
-                }
+            if (fileName && fileName[0] !== ".") {
+                fileName = "./" + toUnix(fileName);
+            }
 
-                let pretty = '';
-                let line = 0;
-                let character = 0;
-                let code = diagnostic.code;
+            let pretty = "";
+            let line = 0;
+            let character = 0;
+            let code = diagnostic.code;
 
-                if (diagnostic.file) {
-                    const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-                    line = pos.line;
-                    character = pos.character;
-                    pretty = (`[${instanceName}] ${colors.red(fileName)}:${line + 1}:${character + 1} \n    TS${code}: ${colors.red(message)}`);
-                } else {
-                    pretty = (colors.red(`[${instanceName}] TS${code}: ${message}`));
-                }
+            if (diagnostic.file) {
+                const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+                line = pos.line;
+                character = pos.character;
+                pretty = `[${instanceName}] ${chalk.red(fileName)}:${line + 1}:${character +
+                    1} \n    TS${code}: ${chalk.red(message)}`;
+            } else {
+                pretty = chalk.red(`[${instanceName}] TS${code}: ${message}`);
+            }
 
-                return {
-                    category: diagnostic.category,
-                    code: diagnostic.code,
-                    fileName,
-                    start: diagnostic.start,
-                    message,
-                    pretty,
-                    line,
-                    character
-                };
-            });
+            return {
+                category: diagnostic.category,
+                code: diagnostic.code,
+                fileName,
+                start: diagnostic.start,
+                message,
+                pretty,
+                line,
+                character
+            };
+        });
 
         replyOk(seq, processedDiagnostics);
     }
@@ -553,7 +564,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
         } as Res);
     }
 
-    receive(function (req: Req) {
+    receive(function(req: Req) {
         try {
             switch (req.type) {
                 case MessageType.Init:
@@ -574,7 +585,6 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
                 case MessageType.Files:
                     processFiles(req);
                     break;
-
             }
         } catch (e) {
             console.error(`[${instanceName}]: Child process failed to process the request: `, e);
