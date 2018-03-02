@@ -14,7 +14,6 @@
     "lint": "tslint src/*.ts",
     "release": "standard-version",
     "test": "rimraf .test && mocha --timeout 30000 dist/__test__",
-    "postinstall": "node node_modules/husky/bin/install.js || true",
     "precommit": "lint-staged"
   },
   "author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
