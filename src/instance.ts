@@ -364,14 +364,14 @@ const filterMtimes = (mtimes: any) => {
 }
 
 function setupWatchRun(compiler, instanceName: string) {
-	compiler.plugin('watch-run', function(watching, callback) {
-		const instance = resolveInstance(watching.compiler, instanceName)
+	compiler.hooks.watchRun.tap('at-loader', function (compiler, callback) {
+		const instance = resolveInstance(compiler, instanceName)
 		const checker = instance.checker
 		const watcher =
-			watching.compiler.watchFileSystem.watcher ||
-			watching.compiler.watchFileSystem.wfs.watcher
+			compiler.watchFileSystem.watcher ||
+			compiler.watchFileSystem.wfs.watcher
 
-		const startTime = instance.startTime || watching.startTime
+		const startTime = instance.startTime || compiler.startTime
 		const times = filterMtimes(watcher.getTimes())
 		const lastCompiled = instance.compiledFiles
 
@@ -442,7 +442,7 @@ function isWatching(compiler: any): WatchMode {
 }
 
 function setupAfterCompile(compiler, instanceName, forkChecker = false) {
-	compiler.plugin('after-compile', function(compilation, callback) {
+	compiler.hooks.afterCompile.tap('at-loader', function (compilation, callback) {
 		// Don"t add errors for child compilations
 		if (compilation.compiler.isChild()) {
 			callback()
