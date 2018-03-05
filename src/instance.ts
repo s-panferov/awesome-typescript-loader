@@ -467,12 +467,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 		}
 
 		const files = instance.checker.getFiles().then(({ files }) => {
-			const normalized = files.map(file => {
-				const rpath = path.normalize(file)
-				instance.compiledFiles[file] = true
-				return rpath
-			})
-			Array.prototype.push.apply(compilation.fileDependencies, normalized)
+			Array.prototype.push.apply(compilation.fileDependencies, files.map(path.normalize))
 		})
 
 		const timeStart = +new Date()
