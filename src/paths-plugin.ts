@@ -41,6 +41,7 @@ export interface ResolverPlugin {
 }
 
 export interface Resolver {
+	hooks: any
 	apply(plugin: ResolverPlugin): void
 	plugin(source: string, cb: ResolverCallback)
 	doResolve(target: string, req: Request, desc: string, Callback)
@@ -63,8 +64,6 @@ export interface PathPluginOptions {
 }
 
 export class PathPlugin implements ResolverPlugin {
-	source: string
-	target: string
 	ts: typeof ts
 	configFilePath: string
 	options: ts.CompilerOptions
@@ -74,9 +73,6 @@ export class PathPlugin implements ResolverPlugin {
 	absoluteBaseUrl: string
 
 	constructor(config: LoaderConfig & ts.CompilerOptions & PathPluginOptions = {} as any) {
-		this.source = 'described-resolve'
-		this.target = 'resolve'
-
 		this.ts = setupTs(config.compiler).tsImpl
 
 		let context = config.context || process.cwd()
@@ -117,13 +113,16 @@ export class PathPlugin implements ResolverPlugin {
 		let { baseUrl, mappings } = this
 
 		if (baseUrl) {
-			resolver.apply(new ModulesInRootPlugin('module', this.absoluteBaseUrl, 'resolve'))
+			new ModulesInRootPlugin('module', this.absoluteBaseUrl, 'resolve').apply(resolver)
 		}
 
 		mappings.forEach(mapping => {
 			// skip "phantom" type references
 			if (!this.isTyping(mapping.target)) {
-				resolver.plugin(this.source, this.createPlugin(resolver, mapping))
+				resolver.hooks.describedResolve.tapAsync(
+					'at-loader',
+					this.createPlugin(resolver, mapping)
+				)
 			}
 		})
 	}
@@ -133,7 +132,7 @@ export class PathPlugin implements ResolverPlugin {
 	}
 
 	createPlugin(resolver: Resolver, mapping: Mapping) {
-		return (request, callback) => {
+		return (request, info, callback) => {
 			let innerRequest = getInnerRequest(resolver, request)
 			if (!innerRequest) {
 				return callback()
@@ -158,7 +157,7 @@ export class PathPlugin implements ResolverPlugin {
 			}) as Request
 
 			return resolver.doResolve(
-				this.target,
+				'resolve',
 				newRequest,
 				"aliased with mapping '" +
 					innerRequest +

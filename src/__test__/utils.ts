@@ -5,6 +5,10 @@ import * as child from 'child_process'
 import * as webpack from 'webpack'
 import { exec as shellExec } from 'shelljs'
 
+process.on('unhandledRejection', e => {
+	throw e
+})
+
 import { LoaderConfig } from '../interfaces'
 
 require('source-map-support').install()
@@ -32,8 +36,9 @@ export interface ConfigOptions {
 const TEST_DIR = path.join(process.cwd(), '.test')
 const SRC_DIR = './src'
 const OUT_DIR = './out'
+
 const WEBPACK = path.join(
-	path.dirname(path.dirname(require.resolve('webpack'))),
+	path.dirname(path.dirname(require.resolve('webpack-cli'))),
 	'bin',
 	'webpack.js'
 )
@@ -50,13 +55,13 @@ export function entry(file: string) {
 
 export function query(q: any) {
 	return config => {
-		_.merge(config.module.loaders.find(loader => loader.loader === LOADER).query, q)
+		_.merge(config.module.rules.find(loader => loader.loader === LOADER).query, q)
 	}
 }
 
 export function include(...folders: string[]) {
 	return config => {
-		config.module.loaders.find(loader => loader.loader === LOADER).include.push(
+		config.module.rules.find(loader => loader.loader === LOADER).include.push(
 			...folders.map(f => {
 				return path.join(process.cwd(), f)
 			})
@@ -65,7 +70,8 @@ export function include(...folders: string[]) {
 }
 
 export function webpackConfig(...enchance: any[]): webpack.Configuration {
-	const config = {
+	const config: webpack.Configuration = {
+		mode: 'development',
 		entry: { index: path.join(process.cwd(), SRC_DIR, 'index.ts') },
 		output: {
 			path: path.join(process.cwd(), OUT_DIR),
@@ -75,7 +81,7 @@ export function webpackConfig(...enchance: any[]): webpack.Configuration {
 			extensions: ['.ts', '.tsx', '.js', '.jsx']
 		},
 		module: {
-			loaders: [
+			rules: [
 				{
 					test: /\.(tsx?|jsx?)/,
 					loader: LOADER,
@@ -285,7 +291,7 @@ export function checkOutput(fileName: string, fragment: string) {
 		process.exit()
 	}
 
-	expect(source.replace(/\s/g, '')).include(fragment.replace(/\s/g, ''))
+	expect(source.replace(/([\s\n]|\\n)/g, '')).include(fragment.replace(/([\s\n]|\\n)/g, ''))
 }
 
 export function readOutput(fileName: string) {

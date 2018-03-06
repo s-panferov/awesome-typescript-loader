@@ -6,7 +6,8 @@ export function config(env) {
 		`
         const path = require('path')
         module.exports = {
-            entry: { index: path.join(process.cwd(), '${env.SRC_DIR}', 'index.ts') },
+			entry: { index: path.join(process.cwd(), '${env.SRC_DIR}', 'index.ts') },
+			mode: 'development',
             output: {
                 path: path.join(process.cwd(), '${env.OUT_DIR}'),
                 filename: '[name].js'
@@ -15,7 +16,7 @@ export function config(env) {
                 extensions: ['.ts', '.tsx', '.js', '.jsx'],
             },
             module: {
-                loaders: [
+                rules: [
                     {
                         test: /\.(tsx?|jsx?)/,
                         loader: path.resolve(process.cwd(), '..', '..', 'index.js'),

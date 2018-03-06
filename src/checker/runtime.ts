@@ -490,7 +490,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 		if (loaderConfig.reportFiles) {
 			filters.push(file => {
 				const fileName = path.relative(context, file.fileName)
-				return micromatch(fileName, loaderConfig.reportFiles).length > 0
+				return micromatch([fileName], loaderConfig.reportFiles).length > 0
 			})
 		}
 		const diagnosticsCollected: boolean[] = new Array(sourceFiles.length)

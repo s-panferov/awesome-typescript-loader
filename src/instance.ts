@@ -8,6 +8,8 @@ import { CompilerInfo, LoaderConfig, TsConfig } from './interfaces'
 import { WatchModeSymbol } from './watch-mode'
 import { createHash } from 'crypto'
 
+import { Compiler } from 'webpack'
+
 import chalk from 'chalk'
 
 let pkg = require('../package.json')
@@ -364,12 +366,10 @@ const filterMtimes = (mtimes: any) => {
 }
 
 function setupWatchRun(compiler, instanceName: string) {
-	compiler.hooks.watchRun.tap('at-loader', function (compiler, callback) {
+	compiler.hooks.watchRun.tapAsync('at-loader', function(compiler, callback) {
 		const instance = resolveInstance(compiler, instanceName)
 		const checker = instance.checker
-		const watcher =
-			compiler.watchFileSystem.watcher ||
-			compiler.watchFileSystem.wfs.watcher
+		const watcher = compiler.watchFileSystem.watcher || compiler.watchFileSystem.wfs.watcher
 
 		const startTime = instance.startTime || compiler.startTime
 		const times = filterMtimes(watcher.getTimes())
@@ -442,7 +442,7 @@ function isWatching(compiler: any): WatchMode {
 }
 
 function setupAfterCompile(compiler, instanceName, forkChecker = false) {
-	compiler.hooks.afterCompile.tap('at-loader', function (compilation, callback) {
+	compiler.hooks.afterCompile.tapAsync('at-loader', function(compilation, callback) {
 		// Don"t add errors for child compilations
 		if (compilation.compiler.isChild()) {
 			callback()
