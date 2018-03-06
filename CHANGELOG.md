@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="5.0.0-0"></a>
+# [5.0.0-0](https://github.com/s-panferov/awesome-typescript-loader/compare/v4.0.0-1...v5.0.0-0) (2018-03-06)
+
+
+### Features
+
+* support webpack4 ([98b0ddc](https://github.com/s-panferov/awesome-typescript-loader/commit/98b0ddc))
+
+
+
+<a name="4.0.0"></a>
+# [4.0.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v4.0.0-1...v4.0.0) (2018-03-06)
+
+
+### Features
+
+* support webpack4 ([98b0ddc](https://github.com/s-panferov/awesome-typescript-loader/commit/98b0ddc))
+
+
+
 <a name="4.0.0-1"></a>
 # [4.0.0-1](https://github.com/s-panferov/awesome-typescript-loader/compare/v4.0.0-0...v4.0.0-1) (2018-03-02)
 
