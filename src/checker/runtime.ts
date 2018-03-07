@@ -158,10 +158,10 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 	}
 
 	function getDefaultLibFileName(options: ts.CompilerOptions) {
-		return path.join(
+		return toUnix(path.join(
 			path.dirname(compiler.sys.getExecutingFilePath()),
 			compiler.getDefaultLibFileName(options)
-		)
+		))
 	}
 
 	function invokeWatcherCallbacks(
