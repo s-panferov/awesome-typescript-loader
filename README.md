@@ -178,7 +178,7 @@ You may want to `"babelrc": false to disable `.babelrc` if you don't want it:
     "babelOptions": {
         "babelrc": false, /* Important line */
         "presets": [
-            ["env", { "targets": "last 2 versions, ie 11", "modules": false }]
+            ["@babel/preset-env", { "targets": "last 2 versions, ie 11", "modules": false }]
         ]
     },
     "babelCore": "@babel/core", // needed for Babel v7
