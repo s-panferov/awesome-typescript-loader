@@ -456,7 +456,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 
 		let emitError = msg => {
 			if (asyncErrors) {
-				console.log(msg, '\n')
+				console.error(chalk.red(msg), '\n')
 			} else {
 				if (!instance.loaderConfig.errorsAsWarnings) {
 					compilation.errors.push(new Error(msg))
