@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="5.0.0"></a>
+# [5.0.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v5.0.0-1...v5.0.0) (2018-04-06)
+
+
+
 <a name="5.0.0-1"></a>
 # [5.0.0-1](https://github.com/s-panferov/awesome-typescript-loader/compare/v5.0.0-0...v5.0.0-1) (2018-03-07)
 
