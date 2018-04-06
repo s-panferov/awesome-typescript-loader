@@ -2,6 +2,7 @@ import * as ts from 'typescript'
 import * as path from 'path'
 import * as micromatch from 'micromatch'
 import chalk from 'chalk'
+import * as weblog from 'webpack-log'
 import { findResultFor, toUnix, unorderedRemoveItem } from '../helpers'
 import {
 	Req,
@@ -89,6 +90,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 	let instanceName: string
 	let context: string
 	let rootFilesChanged = false
+	let log = weblog({ name: 'atl' })
 
 	let filesRegex: RegExp
 	const watchedFiles: WatchCallbacks<ts.FileWatcherCallback> = new Map()
@@ -306,14 +308,21 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 		context = payload.context
 		filesRegex = compilerOptions.allowJs ? TS_AND_JS_FILES : TS_FILES
 
+		if (loaderConfig.debug) {
+			log = weblog({ name: 'atl', level: 'debug' })
+		}
+
 		instanceName = loaderConfig.instance || 'at-loader'
 
 		compilerConfig.fileNames.forEach(fileName => ensureFile(fileName))
 		watch = createWatch()
 
-		if (loaderConfig.debug) {
-			console.log(`[${instanceName}] @DEBUG Initial files`, Object.keys(files))
-		}
+		log.debug(
+			'Initial files:',
+			Object.keys(files)
+				.map(file => chalk.cyan(file))
+				.join(', ')
+		)
 
 		if (loaderConfig.ignoreDiagnostics) {
 			loaderConfig.ignoreDiagnostics.forEach(diag => {
@@ -469,7 +478,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 		let silent = !!loaderConfig.silent
 
 		if (!silent) {
-			console.log(chalk.cyan(`\n[${instanceName}] Checking started in a separate process...`))
+			log.info(`Checking started in a separate process...`)
 		}
 
 		const program = getProgram()
@@ -526,9 +535,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 			allDiagnostics.push(...program.getSemanticDiagnostics(file))
 		})
 
-		if (loaderConfig.debug) {
-			console.log(`[${instanceName}] @DEBUG Typechecked files`, program.getSourceFiles())
-		}
+		log.debug(`Typechecked files:`, program.getSourceFiles())
 
 		const processedDiagnostics = allDiagnostics
 			.filter(diag => !ignoreDiagnostics[diag.code])
@@ -609,7 +616,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 					break
 			}
 		} catch (e) {
-			console.error(`[${instanceName}]: Child process failed to process the request: `, e)
+			log.error(`Child process failed to process the request:`, e)
 			replyErr(req.seq, null)
 		}
 	})

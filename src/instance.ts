@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as _ from 'lodash'
 import * as ts from 'typescript'
+import * as weblog from 'webpack-log'
 import { toUnix } from './helpers'
 import { Checker } from './checker'
 import { CompilerInfo, LoaderConfig, TsConfig } from './interfaces'
@@ -11,6 +12,8 @@ import { createHash } from 'crypto'
 import { Compiler } from 'webpack'
 
 import chalk from 'chalk'
+
+const log = weblog({ name: 'atl' })
 
 let pkg = require('../package.json')
 let mkdirp = require('mkdirp')
@@ -115,12 +118,12 @@ export function ensureInstance(
 	applyDefaults(configFilePath, compilerConfig, loaderConfig, context)
 
 	if (!loaderConfig.silent) {
+		const tscVersion = compilerInfo.compilerVersion
+		const tscPath = compilerInfo.compilerPath
+		log.info(`Using typescript@${chalk.bold(tscVersion)} from ${chalk.bold(tscPath)}`)
+
 		const sync = watching === WatchMode.Enabled ? ' (in a forked process)' : ''
-		console.log(
-			`\n[${instanceName}] Using typescript@${compilerInfo.compilerVersion} from ${
-				compilerInfo.compilerPath
-			} and ` + `"tsconfig.json" from ${configFilePath}${sync}.\n`
-		)
+		log.info(`Using ${chalk.bold('tsconfig.json')} from ${chalk.bold(configFilePath)}${sync}`)
 	}
 
 	let babelImpl = setupBabel(loaderConfig, context)
@@ -477,21 +480,12 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 				: instance.checker.getDiagnostics().then(diags => {
 						if (!silent) {
 							if (diags.length) {
-								console.error(
-									chalk.red(
-										`\n[${instanceName}] Checking finished with ${
-											diags.length
-										} errors`
-									)
+								log.error(
+									chalk.red(`Checking finished with ${diags.length} errors`)
 								)
 							} else {
-								let timeEnd = +new Date()
-								console.log(
-									chalk.green(
-										`\n[${instanceName}] Ok, ${(timeEnd - timeStart) /
-											1000} sec.`
-									)
-								)
+								let totalTime = (+new Date() - timeStart).toString()
+								log.info(`Time: ${chalk.bold(totalTime)}ms`)
 							}
 						}
 
