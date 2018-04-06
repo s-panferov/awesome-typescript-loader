@@ -9,3 +9,4 @@ prod
 .travis.yml
 appveyor.yml
 dist/__test__
+yarn-error.log

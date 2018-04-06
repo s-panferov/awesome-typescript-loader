@@ -4,6 +4,7 @@
 /dist.babel
 tscommand
 npm-debug.log
+yarn-error.log
 .awcache
 test/output
 src/test/output
