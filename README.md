@@ -65,7 +65,7 @@ module.exports = {
 
   // Add the loader for .ts files.
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.tsx?$/,
         loader: 'awesome-typescript-loader'
