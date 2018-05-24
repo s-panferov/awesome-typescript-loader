@@ -309,7 +309,7 @@ export function readConfigFile(
 ): Configs {
 	let configFilePath: string
 	if (query.configFileName && query.configFileName.match(/\.json$/)) {
-		configFilePath = absolutize(query.configFileName, context)
+		configFilePath = toUnix(absolutize(query.configFileName, context))
 	} else {
 		configFilePath = tsImpl.findConfigFile(context, tsImpl.sys.fileExists)
 	}
@@ -318,7 +318,7 @@ export function readConfigFile(
 
 	if (!configFilePath || query.configFileContent) {
 		return {
-			configFilePath: configFilePath || path.join(context, 'tsconfig.json'),
+			configFilePath: configFilePath || toUnix(path.join(context, 'tsconfig.json')),
 			compilerConfig: tsImpl.parseJsonConfigFileContent(
 				query.configFileContent || {},
 				tsImpl.sys,
