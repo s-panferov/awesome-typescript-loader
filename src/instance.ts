@@ -137,6 +137,12 @@ export function ensureInstance(
 	)
 	let compiler = <any>webpack._compiler
 
+	if (!rootCompiler.hooks) {
+		throw new Error('It looks like you\'re using an old webpack version without hooks support. ' +
+						'If you\'re using awesome-script-loader with React storybooks consider ' +
+						'upgrading @storybook/react to at least version 4.0.0-alpha.3');
+	}
+
 	setupWatchRun(compiler, instanceName)
 	setupAfterCompile(compiler, instanceName)
 
