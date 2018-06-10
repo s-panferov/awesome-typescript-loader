@@ -1,6 +1,5 @@
 import * as _ from 'lodash'
 import * as path from 'path'
-import * as fs from 'fs'
 
 import { findCompiledModule, cache } from './cache'
 import * as helpers from './helpers'
@@ -9,7 +8,6 @@ import { PathPlugin } from './paths-plugin'
 import { CheckerPlugin as _CheckerPlugin } from './watch-mode'
 
 const loaderUtils = require('loader-utils')
-const mkdirp = require('mkdirp')
 
 function loader(text) {
 	try {
@@ -170,8 +168,7 @@ function transform(
 		}
 
 		if (emitResult.declaration) {
-			mkdirp.sync(path.dirname(emitResult.declaration.name))
-			fs.writeFileSync(emitResult.declaration.name, emitResult.declaration.text)
+			instance.compiledDeclarations.push(emitResult.declaration)
 		}
 
 		return {
