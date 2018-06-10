@@ -10,15 +10,8 @@ const ModulesInRootPlugin: new (
 	c: string
 ) => ResolverPlugin = require('enhanced-resolve/lib/ModulesInRootPlugin')
 
-const createInnerCallback: CreateInnerCallback = require('enhanced-resolve/lib/createInnerCallback')
 const getInnerRequest: getInnerRequest = require('enhanced-resolve/lib/getInnerRequest')
 
-type CreateInnerCallback = (
-	callback: Callback,
-	options: Callback,
-	message?: string,
-	messageOptional?: string
-) => Callback
 type getInnerRequest = (resolver: Resolver, request: Request) => string
 
 export interface Request {
@@ -44,8 +37,13 @@ export interface Resolver {
 	hooks: any
 	apply(plugin: ResolverPlugin): void
 	plugin(source: string, cb: ResolverCallback)
-	doResolve(target: string, req: Request, desc: string, Callback)
+	doResolve(target: Hook, req: Request, desc: string, resolveContext, Callback)
+	ensureHook(name: string): Hook
 	join(relativePath: string, innerRequest: Request): Request
+}
+
+export interface Hook {
+
 }
 
 export interface Mapping {
@@ -132,7 +130,7 @@ export class PathPlugin implements ResolverPlugin {
 	}
 
 	createPlugin(resolver: Resolver, mapping: Mapping) {
-		return (request, info, callback) => {
+		return (request, resolveContext, callback) => {
 			let innerRequest = getInnerRequest(resolver, request)
 			if (!innerRequest) {
 				return callback()
@@ -156,8 +154,9 @@ export class PathPlugin implements ResolverPlugin {
 				request: newRequestStr
 			}) as Request
 
+			const target = resolver.ensureHook('resolve');
 			return resolver.doResolve(
-				'resolve',
+				target,
 				newRequest,
 				"aliased with mapping '" +
 					innerRequest +
@@ -166,14 +165,8 @@ export class PathPlugin implements ResolverPlugin {
 					"' to '" +
 					newRequestStr +
 					"'",
-				createInnerCallback(function(err, result) {
-					if (arguments.length > 0) {
-						return callback(err, result)
-					}
-
-					// don't allow other aliasing or raw request
-					callback(null, null)
-				}, callback)
+					resolveContext,
+					callback
 			)
 		}
 	}
