@@ -13,7 +13,7 @@
 		"build": "rimraf dist && tsc --pretty",
 		"lint": "tslint src/*.ts",
 		"release": "standard-version",
-		"test": "rimraf .test && mocha --trace-warnings --timeout 30000 dist/__test__",
+		"test": "rimraf .test && mocha --trace-warnings --timeout 30000 --exit dist/__test__",
 		"precommit": "lint-staged"
 	},
 	"author": "Stanislav Panferov <fnight.m@gmail.com> (http://panferov.me/)",
