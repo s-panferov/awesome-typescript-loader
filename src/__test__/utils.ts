@@ -40,7 +40,7 @@ const OUT_DIR = './out'
 const WEBPACK = path.join(
 	path.dirname(path.dirname(require.resolve('webpack-cli'))),
 	'bin',
-	'webpack.js'
+	'cli.js'
 )
 
 mkdirp.sync(TEST_DIR)

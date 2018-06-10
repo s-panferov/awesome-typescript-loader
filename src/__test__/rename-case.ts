@@ -1,6 +1,6 @@
-import { src, webpackConfig, tsconfig, watch, expectErrors, spec } from './utils'
+import { src, webpackConfig, tsconfig, watch, expectErrors, xspec } from './utils'
 
-spec(__filename, async function() {
+xspec(__filename, async function() {
 	const index = src(
 		'index.ts',
 		`

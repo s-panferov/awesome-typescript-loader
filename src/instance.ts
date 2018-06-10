@@ -139,9 +139,11 @@ export function ensureInstance(
 	let compiler = <any>webpack._compiler
 
 	if (!rootCompiler.hooks) {
-		throw new Error('It looks like you\'re using an old webpack version without hooks support. ' +
-						'If you\'re using awesome-script-loader with React storybooks consider ' +
-						'upgrading @storybook/react to at least version 4.0.0-alpha.3');
+		throw new Error(
+			"It looks like you're using an old webpack version without hooks support. " +
+				"If you're using awesome-script-loader with React storybooks consider " +
+				'upgrading @storybook/react to at least version 4.0.0-alpha.3'
+		)
 	}
 
 	setupWatchRun(compiler, instanceName)
@@ -387,7 +389,7 @@ function setupWatchRun(compiler, instanceName: string) {
 		const lastCompiled = instance.compiledFiles
 
 		instance.compiledFiles = {}
-		instance.compiledDeclarations = [];
+		instance.compiledDeclarations = []
 		instance.startTime = startTime
 
 		const set = new Set(Object.keys(times).map(toUnix))
@@ -483,10 +485,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 		})
 
 		instance.compiledDeclarations.forEach(declaration => {
-			const assetPath = path.relative(
-				compilation.compiler.context,
-				declaration.name
-			)
+			const assetPath = path.relative(compilation.compiler.outputPath, declaration.name)
 			compilation.assets[assetPath] = {
 				source: () => declaration.text,
 				size: () => declaration.text.length
@@ -510,7 +509,7 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 						}
 
 						diags.forEach(diag => emitError(diag.pretty))
-					})
+				  })
 
 		files
 			.then(() => {
