@@ -14,7 +14,8 @@ import {
 	Diagnostics,
 	UpdateFile,
 	TsConfig,
-	RemoveFile
+	RemoveFile,
+	EmitDeclaration
 } from './protocol'
 
 export interface Resolve {
@@ -109,6 +110,15 @@ export class Checker {
 				text
 			}
 		} as EmitFile.Request)
+	}
+
+	emitDeclaration(fileName: string): Promise<EmitDeclaration.ResPayload> {
+		return this.req({
+			type: 'EmitDeclaration',
+			payload: {
+				fileName
+			}
+		} as EmitDeclaration.Request)
 	}
 
 	updateFile(fileName: string, text: string, ifExist = false) {
