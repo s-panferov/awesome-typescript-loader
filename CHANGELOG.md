@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="5.1.1"></a>
+## [5.1.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v5.1.0...v5.1.1) (2018-06-19)
+
+
+### Bug Fixes
+
+* **dependencies:** make webpack-log a dependency ([#593](https://github.com/s-panferov/awesome-typescript-loader/issues/593)) ([247730d](https://github.com/s-panferov/awesome-typescript-loader/commit/247730d))
+
+
+
 <a name="5.1.0"></a>
 # [5.1.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v5.0.0...v5.1.0) (2018-06-10)
 
