@@ -34,7 +34,7 @@ export interface LoaderConfig {
 export interface OutputFile {
 	text: string
 	sourceMap: string
-	declaration: ts.OutputFile
+	declaration?: ts.OutputFile
 }
 
 export type TsConfig = ts.ParsedCommandLine

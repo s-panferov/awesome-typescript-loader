@@ -92,6 +92,8 @@ function compiler(loader: Loader, text: string): void {
 
 			if (!isolated && result.deps) {
 				// If our modules are isolated we don"t need to recompile all the deps
+				// This only tracks the fileDependencies for the watch functionality,
+				// it doesn't actually add the dependencies to be loaded
 				result.deps.forEach(dep => loader.addDependency(path.normalize(dep)))
 			}
 			if (cached) {
@@ -165,10 +167,6 @@ function transform(
 			resultSourceMap.sources = [sourcePath]
 			resultSourceMap.file = fileName
 			resultSourceMap.sourcesContent = [text]
-		}
-
-		if (emitResult.declaration) {
-			instance.compiledDeclarations.push(emitResult.declaration)
 		}
 
 		return {

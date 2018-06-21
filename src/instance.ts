@@ -23,7 +23,6 @@ export interface Instance {
 	id: number
 	babelImpl?: any
 	compiledFiles: { [key: string]: boolean }
-	compiledDeclarations: { name: string; text: string }[]
 	configFilePath: string
 	compilerConfig: TsConfig
 	loaderConfig: LoaderConfig
@@ -163,7 +162,6 @@ export function ensureInstance(
 		id: ++id,
 		babelImpl,
 		compiledFiles: {},
-		compiledDeclarations: [],
 		loaderConfig,
 		configFilePath,
 		compilerConfig,
@@ -389,7 +387,6 @@ function setupWatchRun(compiler, instanceName: string) {
 		const lastCompiled = instance.compiledFiles
 
 		instance.compiledFiles = {}
-		instance.compiledDeclarations = []
 		instance.startTime = startTime
 
 		const set = new Set(Object.keys(times).map(toUnix))
@@ -484,12 +481,16 @@ function setupAfterCompile(compiler, instanceName, forkChecker = false) {
 			Array.prototype.push.apply(compilation.fileDependencies, files.map(path.normalize))
 		})
 
-		instance.compiledDeclarations.forEach(declaration => {
-			const assetPath = path.relative(compilation.compiler.outputPath, declaration.name)
-			compilation.assets[assetPath] = {
-				source: () => declaration.text,
-				size: () => declaration.text.length
-			}
+		compilation.fileDependencies.forEach(file => {
+			instance.checker.emitDeclaration(file).then(declaration => {
+				if (declaration) {
+					const assetPath = path.relative(compilation.compiler.outputPath, declaration.name)
+					compilation.assets[assetPath] = {
+						source: () => declaration.text,
+						size: () => declaration.text.length
+					}
+				}
+			})
 		})
 
 		const timeStart = +new Date()

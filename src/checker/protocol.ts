@@ -8,6 +8,7 @@ export type MessageType =
 	| 'EmitFile'
 	| 'Files'
 	| 'RemoveFile'
+	| 'EmitDeclaration'
 
 export const MessageType = {
 	Init: 'Init' as 'Init',
@@ -15,7 +16,8 @@ export const MessageType = {
 	UpdateFile: 'UpdateFile' as 'UpdateFile',
 	RemoveFile: 'RemoveFile' as 'RemoveFile',
 	Diagnostics: 'Diagnostics' as 'Diagnostics',
-	EmitFile: 'EmitFile' as 'EmitFile'
+	EmitFile: 'EmitFile' as 'EmitFile',
+	EmitDeclaration: 'EmitDeclaration' as 'EmitDeclaration'
 }
 
 export interface ReqBase {
@@ -30,6 +32,7 @@ export type Req =
 	| Diagnostics.Request
 	| RemoveFile.Request
 	| Files.Request
+	| EmitDeclaration.Request
 
 export interface Res {
 	seq?: number
@@ -109,6 +112,26 @@ export namespace EmitFile {
 			declaration: { name: string; text: string }
 		}
 		deps: string[]
+	}
+
+	export interface Response extends Res {
+		payload: ResPayload
+	}
+}
+
+export namespace EmitDeclaration {
+	export interface ReqPayload {
+		fileName: string
+	}
+
+	export interface Request extends ReqBase {
+		type: 'EmitDeclaration'
+		payload: ReqPayload
+	}
+
+	export interface ResPayload {
+		name: string
+		text: string
 	}
 
 	export interface Response extends Res {
