@@ -104,7 +104,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 	let watchHost: WatchHost
 	let watch: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>
 
-	let finalTransformers: undefined | (() => ts.CustomTransformers)
+	let finalTransformers: undefined | ((program: ts.Program) => ts.CustomTransformers)
 
 	function createWatchHost(): WatchHost {
 		return {
@@ -410,7 +410,7 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 			writeFile,
 			/*cancellationToken*/ undefined,
 			/*emitOnlyDtsFiles*/ false,
-			finalTransformers && finalTransformers()
+			finalTransformers && finalTransformers(program.getProgram())
 		)
 		return outputFiles
 	}
@@ -433,7 +433,8 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 		const trans = compiler.transpileModule(files.get(fileName).text, {
 			compilerOptions: compilerOptions,
 			fileName,
-			reportDiagnostics: false
+			reportDiagnostics: false,
+			transformers: finalTransformers ? finalTransformers(getProgram().getProgram()) : undefined
 		})
 
 		return {
