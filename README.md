@@ -222,6 +222,32 @@ reportFiles: [
 ]
 ```
 
+### getCustomTransformers *(string | ((program: ts.Program) => ts.CustomTransformers | undefined)) (default=undefined)*
+
+Provide custom transformers, TypeScript 2.4.1+. Example:
+
+```js
+const styledComponentsTransformer = require('typescript-plugin-styled-components').default;
+const keysTransformer = require('ts-transformer-keys/transformer').default;
+
+// ...
+rules: [
+    {
+        test: /\.tsx?$/,
+        loader: 'awesome-typescript-loader',
+        options: {
+            // ... other loader's options
+            getCustomTransformers: program => ({
+                before: [
+                    styledComponentsTransformer(),
+                    keysTransformer(program)
+                ]
+            })
+        }
+    }
+]
+```
+
 ## Compiler options
 
 You can pass compiler options inside the loader query string or in a TS config file.
