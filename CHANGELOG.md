@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="5.2.0"></a>
+# [5.2.0](https://github.com/s-panferov/awesome-typescript-loader/compare/v5.1.1...v5.2.0) (2018-06-21)
+
+
+### Features
+
+* pass ts.Program as an argument for getCustomTransformers ([#594](https://github.com/s-panferov/awesome-typescript-loader/issues/594)) ([c0d10bf](https://github.com/s-panferov/awesome-typescript-loader/commit/c0d10bf))
+
+
+
 <a name="5.1.1"></a>
 ## [5.1.1](https://github.com/s-panferov/awesome-typescript-loader/compare/v5.1.0...v5.1.1) (2018-06-19)
 
