@@ -28,7 +28,7 @@ export interface LoaderConfig {
 	debug?: boolean
 	reportFiles?: string[]
 	context?: string
-	getCustomTransformers?: string | (() => ts.CustomTransformers | undefined)
+	getCustomTransformers?: string | ((program: ts.Program) => ts.CustomTransformers | undefined)
 }
 
 export interface OutputFile {
