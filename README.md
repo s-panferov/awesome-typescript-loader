@@ -174,7 +174,7 @@ which can improve warm-up time.
 
 If you're using `babelOptions`, anything in `.babelrc` will take precedence. This breaks expected usage for scenarios where you need two sets of Babel configs (example: one for Webpack, one for your build tools).
 
-You may want to `"babelrc": false to disable `.babelrc` if you don't want it:
+You may want to `"babelrc": false` to disable `.babelrc` if you don't want it:
 
 ```json
 {
