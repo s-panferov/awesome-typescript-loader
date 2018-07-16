@@ -182,7 +182,7 @@ You may want to `"babelrc": false` to disable `.babelrc` if you don't want it:
     "babelOptions": {
         "babelrc": false, /* Important line */
         "presets": [
-            ["@babel/preset-env", { "targets": "last 2 versions, ie 11", "modules": false }]
+            ["@babel/preset-env", { "targets": browsers: ['last 2 version'] }]
         ]
     },
     "babelCore": "@babel/core", // needed for Babel v7
