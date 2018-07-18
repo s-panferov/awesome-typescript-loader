@@ -345,6 +345,13 @@ export function readConfigFile(
 	}
 
 	let jsonConfigFile = tsImpl.readConfigFile(configFilePath, tsImpl.sys.readFile)
+	if (jsonConfigFile.error) {
+		console.error('Error occurred while reading tsconfig file', configFilePath, jsonConfigFile)
+		throw new Error(
+			_.get(jsonConfigFile, 'error.messageText.messageText') ||
+				_.get(jsonConfigFile, 'error.messageText')
+		)
+	}
 	let compilerConfig = tsImpl.parseJsonConfigFileContent(
 		jsonConfigFile.config,
 		tsImpl.sys,
