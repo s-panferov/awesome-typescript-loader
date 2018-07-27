@@ -7,7 +7,7 @@
   "scripts": {
     "prepublish": "npm run build",
     "watch": "npm run watch:ts",
-    "watch:ts": "npm run build:ts -- --watch --diagnostics",
+    "watch:ts": "npm run build -- --watch --diagnostics",
     "prebuild": "npm run lint",
     "compile": "tsc --pretty",
     "build": "rimraf dist && tsc --pretty",
