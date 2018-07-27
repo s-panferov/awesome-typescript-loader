@@ -10,7 +10,7 @@
     "prebuild": "npm run lint",
     "compile": "tsc --pretty",
     "build": "rimraf dist && tsc --pretty",
-    "lint": "tslint src/*.ts",
+    "lint": "tslint src/**/*.ts",
     "release": "standard-version",
     "test": "rimraf .test && mocha --trace-warnings --timeout 30000 --exit dist/__test__",
     "precommit": "lint-staged"
