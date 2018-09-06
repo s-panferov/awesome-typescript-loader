@@ -43,7 +43,7 @@
     "webpack-log": "^1.2.0"
   },
   "peerDependencies": {
-    "typescript": "^2.7"
+    "typescript": "^3"
   },
   "devDependencies": {
     "@types/chai": "^4.1.3",
