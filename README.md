@@ -5,7 +5,7 @@
 
 See also:
 
-1. [tygen](https://github.com/s-panferov/tygen) — TypeScript documentation generator.
+1. [tsdoc.io](https://tsdoc.io) — TypeScript documentation portal.
 
 ## Installation
 
