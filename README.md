@@ -5,7 +5,7 @@
 
 See also:
 
-1. [tsdoc.io](https://tsdoc.io) — TypeScript documentation portal.
+1. [tsdoc.io](https://tsdoc.io) — TypeScript documentation portal (backed by [tygen](https://github.com/s-panferov/tygen)).
 
 ## Installation
 
