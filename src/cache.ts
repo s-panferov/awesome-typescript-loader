@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import * as zlib from 'zlib'
-import { createHash } from 'crypto'
+import objectHash = require('object-hash')
 
 export interface CompiledModule {
 	fileName: string
@@ -59,17 +59,14 @@ function write(filename: string, result: any) {
  *
  * @return {String}
  */
-function filename(source: string, identifier, options) {
-	let hash = createHash('sha512') as any
-	let contents = JSON.stringify({
+export function filename(source: string, identifier, options) {
+	let basename = objectHash({
 		identifier: identifier,
 		options: options,
 		source: source
 	})
 
-	hash.end(contents)
-
-	return hash.read().toString('hex') + '.json.gzip'
+	return basename + '.json.gzip'
 }
 
 export interface CacheParams<T> {
