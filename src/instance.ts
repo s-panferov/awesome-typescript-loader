@@ -121,7 +121,7 @@ export function ensureInstance(
 	if (!loaderConfig.silent) {
 		const tscVersion = compilerInfo.compilerVersion
 		const tscPath = compilerInfo.compilerPath
-		log.info(`Using typescript@${chalk.bold(tscVersion)} from ${chalk.bold(tscPath)}`)
+		log.info(`Using compiler ${chalk.bold(tscPath)}@${chalk.bold(tscVersion)}`)
 
 		const sync = watching === WatchMode.Enabled ? ' (in a forked process)' : ''
 		log.info(`Using ${chalk.bold('tsconfig.json')} from ${chalk.bold(configFilePath)}${sync}`)
