@@ -141,7 +141,7 @@ export function ensureInstance(
 	if (!rootCompiler.hooks) {
 		throw new Error(
 			"It looks like you're using an old webpack version without hooks support. " +
-				"If you're using awesome-script-loader with React storybooks consider " +
+				"If you're using awesome-typescript-loader with React storybooks consider " +
 				'upgrading @storybook/react to at least version 4.0.0-alpha.3'
 		)
 	}
