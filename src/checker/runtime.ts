@@ -1,4 +1,5 @@
 import * as ts from 'typescript'
+import * as os from 'os'
 import * as path from 'path'
 import * as micromatch from 'micromatch'
 import chalk from 'chalk'
@@ -557,6 +558,17 @@ function createChecker(receive: (cb: (msg: Req) => void) => void, send: (msg: Re
 					const pos = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start)
 					line = pos.line
 					character = pos.character
+				}
+
+				if (ts.formatDiagnosticsWithColorAndContext) {
+					pretty = ts.formatDiagnosticsWithColorAndContext([diagnostic], {
+						getCurrentDirectory: () => context,
+						getCanonicalFileName: (fileName) => path.normalize(fileName),
+						getNewLine: () => os.EOL,
+					});
+					pretty = `[${instanceName}]: ${pretty}`;
+				}
+				else if (diagnostic.file) {
 					pretty = `[${instanceName}] ${chalk.red(fileName)}:${line + 1}:${character +
 						1} \n    TS${code}: ${chalk.red(message)}`
 				} else {
