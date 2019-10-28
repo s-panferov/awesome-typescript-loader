@@ -364,7 +364,7 @@ export function readConfigFile(
 	}
 }
 
-let EXTENSIONS = /\.tsx?$|\.jsx?|.json$/
+let EXTENSIONS = /\.tsx?$|\.jsx?$|\.json$/
 export type Dict<T> = { [key: string]: T }
 
 const filterMtimes = (mtimes: any) => {
