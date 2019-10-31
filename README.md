@@ -86,7 +86,7 @@ After that, you will be able to build TypeScript files with webpack.
 
 ## NodeJS versions
 
-**The loader supports NodeJS 4 and newer.**
+**The loader supports NodeJS 8 and newer.**
 
 ## tsconfig.json
 

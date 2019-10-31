@@ -37,7 +37,7 @@
     "enhanced-resolve": "^4.0.0",
     "loader-utils": "^1.1.0",
     "lodash": "^4.17.5",
-    "micromatch": "^3.1.9",
+    "micromatch": "^4.0.2",
     "mkdirp": "^0.5.1",
     "source-map-support": "^0.5.3",
     "webpack-log": "^1.2.0"
