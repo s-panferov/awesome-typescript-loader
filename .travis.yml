@@ -7,4 +7,4 @@ before_script:
   - yarn install
   - yarn run build
 node_js:
-  - "7"
+  - "8"
